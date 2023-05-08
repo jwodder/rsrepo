@@ -22,6 +22,9 @@ pub struct New {
     #[clap(long)]
     repo_name: Option<String>,
 
+    #[clap(long)]
+    copyright_year: Option<String>,
+
     dirpath: PathBuf,
 }
 
@@ -41,7 +44,7 @@ impl New {
             github_user: config.github_user,
             author: config.author,
             author_email,
-            this_year: chrono::Local::now().year(),
+            copyright_year: self.copyright_year(),
             project_name: project_name.into(),
             repo_name: self.repo_name()?.into(),
             bin: self.bin(),
@@ -82,6 +85,13 @@ impl New {
         self.lib
     }
 
+    pub fn copyright_year(&self) -> String {
+        match self.copyright_year.as_ref() {
+            Some(s) => s.clone(),
+            None => chrono::Local::now().year().to_string(),
+        }
+    }
+
     fn project_name(&self) -> anyhow::Result<&str> {
         if let Some(s) = self.project_name.as_ref() {
             return Ok(s);
@@ -110,7 +120,7 @@ struct NewContext {
     github_user: String,
     author: String,
     author_email: String,
-    this_year: i32,
+    copyright_year: String,
     project_name: String,
     repo_name: String,
     bin: bool,
