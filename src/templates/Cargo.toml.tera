@@ -1,0 +1,18 @@
+[package]
+name = "{{project_name}}"
+version = "0.1.0-dev"
+edition = "2021"
+#rust-version = ???
+#description = ???
+authors = ["{{author|toml_escape}} <{{author_email}}>"]
+repository = "https://github.com/{{github_user}}/{{repo_name}}"
+{% if not lib %}
+documentation = "https://github.com/{{github_user}}/{{repo_name}}"
+{% endif %}
+license = "MIT"
+keywords = []
+# See <https://crates.io/category_slugs> for a list of categories
+categories = []
+exclude = ["/.*"]
+
+[dependencies]

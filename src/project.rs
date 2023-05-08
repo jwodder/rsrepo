@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use crate::cmd::{CommandOutputError, LoggedCommand};
 use serde::Deserialize;
 use std::borrow::Cow;
