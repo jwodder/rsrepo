@@ -29,3 +29,79 @@ fn new_implicit_bin() {
         .exclude([".git"])
         .assert_eq();
 }
+
+#[test]
+fn new_explicit_bin() {
+    let tmp_path = tempdir().unwrap();
+    let repo = tmp_path.path().join("foobar");
+    Command::cargo_bin("rsrepo")
+        .unwrap()
+        .arg("--config")
+        .arg(Path::new(DATA_DIR).join("config.toml"))
+        .arg("new")
+        .arg("--bin")
+        .arg("--copyright-year=2525")
+        .arg(&repo)
+        .assert()
+        .success();
+    Command::new("git")
+        .arg("rev-parse")
+        .arg("--git-dir")
+        .current_dir(&repo)
+        .assert()
+        .success();
+    CmpDirtrees::new(&Path::new(DATA_DIR).join("new").join("bin"), &repo)
+        .exclude([".git"])
+        .assert_eq();
+}
+
+#[test]
+fn new_lib() {
+    let tmp_path = tempdir().unwrap();
+    let repo = tmp_path.path().join("foobar");
+    Command::cargo_bin("rsrepo")
+        .unwrap()
+        .arg("--config")
+        .arg(Path::new(DATA_DIR).join("config.toml"))
+        .arg("new")
+        .arg("--lib")
+        .arg("--copyright-year=2525")
+        .arg(&repo)
+        .assert()
+        .success();
+    Command::new("git")
+        .arg("rev-parse")
+        .arg("--git-dir")
+        .current_dir(&repo)
+        .assert()
+        .success();
+    CmpDirtrees::new(&Path::new(DATA_DIR).join("new").join("lib"), &repo)
+        .exclude([".git"])
+        .assert_eq();
+}
+
+#[test]
+fn new_bin_lib() {
+    let tmp_path = tempdir().unwrap();
+    let repo = tmp_path.path().join("foobar");
+    Command::cargo_bin("rsrepo")
+        .unwrap()
+        .arg("--config")
+        .arg(Path::new(DATA_DIR).join("config.toml"))
+        .arg("new")
+        .arg("--bin")
+        .arg("--lib")
+        .arg("--copyright-year=2525")
+        .arg(&repo)
+        .assert()
+        .success();
+    Command::new("git")
+        .arg("rev-parse")
+        .arg("--git-dir")
+        .current_dir(&repo)
+        .assert()
+        .success();
+    CmpDirtrees::new(&Path::new(DATA_DIR).join("new").join("bin-lib"), &repo)
+        .exclude([".git"])
+        .assert_eq();
+}
