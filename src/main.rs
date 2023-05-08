@@ -1,6 +1,8 @@
 mod cmd;
 mod commands;
 mod config;
+mod github;
+mod http_util;
 mod project;
 mod tmpltr;
 use crate::commands::Command;

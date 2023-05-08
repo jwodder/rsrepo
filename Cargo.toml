@@ -14,9 +14,14 @@ anyhow = "1.0.71"
 chrono = { version = "0.4.24", default-features = false, features = ["clock"] }
 clap = { version = "4.2.7", default-features = false, features = ["derive", "error-context", "help", "std", "suggestions", "usage", "wrap_help"] }
 fern = "0.6.2"
+gh-token = "0.1.1"
 home = "0.5.5"
 include_dir = "0.7.3"
+indent_write = "2.2.0"
 log = "0.4.17"
+mime = "0.3.17"
+parse_link_header = "0.3.3"
+reqwest = { version = "0.11.17", features = ["blocking", "json"] }
 serde = { version = "1.0.162", features = ["derive"] }
 serde_json = "1.0.96"
 shell-words = "1.1.0"
