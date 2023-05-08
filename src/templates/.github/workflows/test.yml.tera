@@ -116,7 +116,6 @@ jobs:
 
       - name: Check formatting
         run: cargo fmt --check
-
 {% if lib %}
   docs:
     runs-on: ubuntu-latest
@@ -137,6 +136,5 @@ jobs:
         run: cargo doc --no-deps --all-features
         env:
           RUSTDOCFLAGS: -Dwarnings
-
 {% endif %}
 # vim:set et sts=2:

@@ -1,4 +1,4 @@
-{% if not bin %}
+{% if not bin -%}
 /Cargo.lock
-{% endif %}
+{% endif -%}
 /target

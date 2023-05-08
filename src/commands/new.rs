@@ -5,6 +5,7 @@ use anyhow::{bail, Context};
 use chrono::Datelike;
 use clap::Args;
 use serde::Serialize;
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
@@ -85,7 +86,7 @@ impl New {
         if let Some(s) = self.project_name.as_ref() {
             return Ok(s);
         }
-        if let Some(s) = self.dirpath.parent().and_then(Path::to_str) {
+        if let Some(s) = self.dirpath.file_name().and_then(OsStr::to_str) {
             Ok(s)
         } else {
             bail!(

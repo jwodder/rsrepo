@@ -6,9 +6,9 @@ edition = "2021"
 #description = ???
 authors = ["{{author|toml_escape}} <{{author_email}}>"]
 repository = "https://github.com/{{github_user}}/{{repo_name}}"
-{% if not lib %}
+{% if not lib -%}
 documentation = "https://github.com/{{github_user}}/{{repo_name}}"
-{% endif %}
+{% endif -%}
 license = "MIT"
 keywords = []
 # See <https://crates.io/category_slugs> for a list of categories
