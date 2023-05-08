@@ -7,7 +7,7 @@ use thiserror::Error;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Project {
-    path: PathBuf,
+    manifest_file: PathBuf,
 }
 
 impl Project {
@@ -17,15 +17,21 @@ impl Project {
         if !location.root.is_absolute() {
             return Err(LocateProjectError::InvalidPath(location.root.into()));
         }
-        if let Some(path) = location.root.parent() {
-            Ok(Project { path: path.into() })
+        if location.root.parent().is_some() {
+            Ok(Project {
+                manifest_file: location.root.into(),
+            })
         } else {
             Err(LocateProjectError::InvalidPath(location.root.into()))
         }
     }
 
     pub fn path(&self) -> &Path {
-        &self.path
+        self.manifest_file.parent().unwrap()
+    }
+
+    pub fn manifest_file(&self) -> &Path {
+        &self.manifest_file
     }
 }
 
