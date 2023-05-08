@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use std::ffi::{OsStr, OsString};
 use std::process::Command;
 use std::process::{ExitStatus, Stdio};
