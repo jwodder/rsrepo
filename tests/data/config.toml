@@ -1,0 +1,3 @@
+author = "Some Rustacean"
+author-email = "rustacean+{{project_name}}@test.nil"
+github-user = "rs.test"

@@ -1,0 +1,15 @@
+[package]
+name = "foobar"
+version = "0.1.0-dev"
+edition = "2021"
+#rust-version = ???
+#description = ???
+authors = ["Some Rustacean <rustacean+foobar@test.nil>"]
+repository = "https://github.com/rs.test/foobar"
+license = "MIT"
+keywords = []
+# See <https://crates.io/category_slugs> for a list of categories
+categories = []
+exclude = ["/.*"]
+
+[dependencies]
