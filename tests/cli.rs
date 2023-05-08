@@ -109,3 +109,96 @@ fn new_bin_lib() {
         .exclude([".git"])
         .assert_eq();
 }
+
+#[test]
+fn new_custom_project_name() {
+    let tmp_path = tempdir().unwrap();
+    let repo = tmp_path.path().join("foobar");
+    Command::cargo_bin("rsrepo")
+        .unwrap()
+        .arg("--log-level=TRACE")
+        .arg("--config")
+        .arg(Path::new(DATA_DIR).join("config.toml"))
+        .arg("new")
+        .arg("--lib")
+        .arg("--copyright-year=2525")
+        .arg("--project-name=quux")
+        .arg(&repo)
+        .assert()
+        .success();
+    Command::new("git")
+        .arg("rev-parse")
+        .arg("--git-dir")
+        .current_dir(&repo)
+        .assert()
+        .success();
+    CmpDirtrees::new(
+        &Path::new(DATA_DIR).join("new").join("custom-project-name"),
+        &repo,
+    )
+    .exclude([".git"])
+    .assert_eq();
+}
+
+#[test]
+fn new_custom_repo_name() {
+    let tmp_path = tempdir().unwrap();
+    let repo = tmp_path.path().join("foobar");
+    Command::cargo_bin("rsrepo")
+        .unwrap()
+        .arg("--log-level=TRACE")
+        .arg("--config")
+        .arg(Path::new(DATA_DIR).join("config.toml"))
+        .arg("new")
+        .arg("--lib")
+        .arg("--copyright-year=2525")
+        .arg("--repo-name=quux")
+        .arg(&repo)
+        .assert()
+        .success();
+    Command::new("git")
+        .arg("rev-parse")
+        .arg("--git-dir")
+        .current_dir(&repo)
+        .assert()
+        .success();
+    CmpDirtrees::new(
+        &Path::new(DATA_DIR).join("new").join("custom-repo-name"),
+        &repo,
+    )
+    .exclude([".git"])
+    .assert_eq();
+}
+
+#[test]
+fn new_custom_project_repo_name() {
+    let tmp_path = tempdir().unwrap();
+    let repo = tmp_path.path().join("foobar");
+    Command::cargo_bin("rsrepo")
+        .unwrap()
+        .arg("--log-level=TRACE")
+        .arg("--config")
+        .arg(Path::new(DATA_DIR).join("config.toml"))
+        .arg("new")
+        .arg("--lib")
+        .arg("--copyright-year=2525")
+        .arg("--project-name=gnusto")
+        .arg("--repo-name=cleesh")
+        .arg(&repo)
+        .assert()
+        .success();
+    Command::new("git")
+        .arg("rev-parse")
+        .arg("--git-dir")
+        .current_dir(&repo)
+        .assert()
+        .success();
+    CmpDirtrees::new(
+        &Path::new(DATA_DIR)
+            .join("new")
+            .join("custom-project-repo-name"),
+        &repo,
+    )
+    .exclude([".git"])
+    .assert_eq();
+}
