@@ -5,7 +5,9 @@ mod project;
 mod tmpltr;
 use crate::commands::Command;
 use crate::config::Config;
+use anyhow::Context;
 use clap::Parser;
+use std::env::set_current_dir;
 use std::path::PathBuf;
 
 #[derive(Debug, Eq, Parser, PartialEq)]
@@ -40,6 +42,9 @@ impl Arguments {
             .chain(std::io::stderr())
             .apply()
             .unwrap();
+        if let Some(dir) = self.chdir {
+            set_current_dir(dir).context("Failed to change directory")?;
+        }
         let config = Config::load(self.config.as_deref())?;
         self.command.run(config)
     }
