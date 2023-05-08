@@ -12,6 +12,7 @@ fn new_implicit_bin() {
     let repo = tmp_path.path().join("foobar");
     Command::cargo_bin("rsrepo")
         .unwrap()
+        .arg("--log-level=TRACE")
         .arg("--config")
         .arg(Path::new(DATA_DIR).join("config.toml"))
         .arg("new")
@@ -36,6 +37,7 @@ fn new_explicit_bin() {
     let repo = tmp_path.path().join("foobar");
     Command::cargo_bin("rsrepo")
         .unwrap()
+        .arg("--log-level=TRACE")
         .arg("--config")
         .arg(Path::new(DATA_DIR).join("config.toml"))
         .arg("new")
@@ -61,6 +63,7 @@ fn new_lib() {
     let repo = tmp_path.path().join("foobar");
     Command::cargo_bin("rsrepo")
         .unwrap()
+        .arg("--log-level=TRACE")
         .arg("--config")
         .arg(Path::new(DATA_DIR).join("config.toml"))
         .arg("new")
@@ -86,6 +89,7 @@ fn new_bin_lib() {
     let repo = tmp_path.path().join("foobar");
     Command::cargo_bin("rsrepo")
         .unwrap()
+        .arg("--log-level=TRACE")
         .arg("--config")
         .arg(Path::new(DATA_DIR).join("config.toml"))
         .arg("new")
