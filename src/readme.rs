@@ -7,6 +7,7 @@ use nom::sequence::{delimited, terminated};
 use nom::{Finish, IResult};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::str::FromStr;
 use thiserror::Error;
 
@@ -40,6 +41,28 @@ impl FromStr for Readme {
     }
 }
 
+impl fmt::Display for Readme {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        for badge in &self.badges {
+            writeln!(f, "{badge}")?;
+        }
+        writeln!(f)?;
+        if !self.links.is_empty() {
+            let mut first = true;
+            for lnk in &self.links {
+                if !std::mem::replace(&mut first, false) {
+                    write!(f, " | ")?;
+                }
+                write!(f, "{lnk}")?;
+            }
+            writeln!(f)?;
+            writeln!(f)?;
+        }
+        write!(f, "{}", self.text)?;
+        Ok(())
+    }
+}
+
 #[derive(Copy, Clone, Debug, Error, Eq, PartialEq)]
 #[error("invalid readme")]
 pub struct ParseReadmeError;
@@ -54,6 +77,12 @@ pub struct Badge {
 impl Badge {
     pub fn kind(&self) -> Option<BadgeKind> {
         BadgeKind::for_url(&self.url)
+    }
+}
+
+impl fmt::Display for Badge {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "[![{}]({})]({})", self.alt, self.url, self.target)
     }
 }
 
@@ -138,6 +167,12 @@ pub struct Link {
     pub text: String,
 }
 
+impl fmt::Display for Link {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "[{}]({})", self.text, self.url)
+    }
+}
+
 struct Image {
     url: String,
     alt: String,
@@ -213,6 +248,6 @@ mod tests {
         let readme = src.parse::<Readme>().unwrap();
         let expected = serde_json::from_str::<Readme>(jsonsrc).unwrap();
         assert_eq!(readme, expected);
-        // TODO: assert_eq!(readme.to_string(), src);
+        assert_eq!(readme.to_string(), src);
     }
 }
