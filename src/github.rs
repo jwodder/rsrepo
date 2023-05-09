@@ -6,6 +6,7 @@ use reqwest::blocking::{Client, ClientBuilder};
 use reqwest::header::{self, HeaderMap};
 use reqwest::Url;
 use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize, Serializer};
+use std::borrow::Cow;
 use std::fmt;
 
 static USER_AGENT: &str = concat!(
@@ -87,8 +88,8 @@ impl GitHub {
         Ok(r)
     }
 
-    pub fn create_label(&self, repo: &GHRepo, label: Label) -> anyhow::Result<()> {
-        let _: Label = self.post(&format!("{}/labels", repo.api_url()), &label)?;
+    pub fn create_label(&self, repo: &GHRepo, label: Label<'_>) -> anyhow::Result<()> {
+        let _: Label<'_> = self.post(&format!("{}/labels", repo.api_url()), &label)?;
         Ok(())
     }
 }
@@ -241,14 +242,14 @@ impl<'de> Deserialize<'de> for Topic {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-pub struct Label {
-    name: String,
-    color: String,
-    description: String,
+pub struct Label<'a> {
+    name: Cow<'a, str>,
+    color: Cow<'a, str>,
+    description: Cow<'a, str>,
 }
 
-impl Label {
-    pub fn new(name: &str, color: &str, description: &str) -> Label {
+impl<'a> Label<'a> {
+    pub fn new(name: &'a str, color: &'a str, description: &'a str) -> Self {
         Label {
             name: name.into(),
             color: color.into(),
