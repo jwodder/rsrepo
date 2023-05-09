@@ -1,4 +1,3 @@
-use std::borrow::Borrow;
 use std::ffi::OsStr;
 use std::path::Path;
 use std::process::Command;
@@ -22,7 +21,7 @@ impl LoggedCommand {
         let arg = arg.as_ref();
         self.cmdline.push(' ');
         self.cmdline
-            .push_str(shell_words::quote(arg.to_string_lossy().borrow()).borrow());
+            .push_str(&shell_words::quote(&arg.to_string_lossy()));
         self.cmd.arg(arg);
         self
     }
@@ -36,7 +35,7 @@ impl LoggedCommand {
             let arg = arg.as_ref();
             self.cmdline.push(' ');
             self.cmdline
-                .push_str(shell_words::quote(arg.to_string_lossy().borrow()).borrow());
+                .push_str(&shell_words::quote(&arg.to_string_lossy()));
             self.cmd.arg(arg);
         }
         self
