@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use indent_write::indentable::Indentable;
 use mime::{Mime, JSON};
 use reqwest::blocking::Response;

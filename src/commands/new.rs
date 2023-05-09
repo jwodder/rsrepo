@@ -6,7 +6,7 @@ use chrono::Datelike;
 use clap::Args;
 use serde::Serialize;
 use std::ffi::OsStr;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
 pub struct New {
@@ -51,7 +51,10 @@ impl New {
             lib: self.lib(),
         };
         log::info!("Creating Git repository ...");
-        LoggedCommand::new("git", [Path::new("init"), Path::new("--"), &self.dirpath])
+        LoggedCommand::new("git")
+            .arg("init")
+            .arg("--")
+            .arg(&self.dirpath)
             .status()
             .context("Failed to init Git repository")?;
         for template in [

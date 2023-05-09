@@ -1,6 +1,7 @@
 mod cmd;
 mod commands;
 mod config;
+mod git;
 mod github;
 mod http_util;
 mod project;

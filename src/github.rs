@@ -1,5 +1,7 @@
+#![allow(dead_code)]
 use crate::http_util::RaisingResponse;
 use anyhow::Context;
+use ghrepo::GHRepo;
 use reqwest::blocking::{Client, ClientBuilder};
 use reqwest::header::{self, HeaderMap};
 use reqwest::Url;
@@ -76,13 +78,18 @@ impl GitHub {
             .with_context(|| format!("Failed to deserialize response from {path}"))
     }
 
-    fn create_repository(&self, config: NewRepoConfig) -> anyhow::Result<Repository> {
+    pub fn create_repository(&self, config: NewRepoConfig) -> anyhow::Result<Repository> {
         let (create_repo_body, set_topics_body) = config.into_payloads();
         let r: Repository = self.post("/user/repos", &create_repo_body)?;
         if !set_topics_body.is_empty() {
             let _: SetTopicsBody = self.put(&r.url, &set_topics_body)?;
         }
         Ok(r)
+    }
+
+    pub fn create_label(&self, repo: &GHRepo, label: Label) -> anyhow::Result<()> {
+        let _: Label = self.post(&format!("{}/labels", repo.api_url()), &label)?;
+        Ok(())
     }
 }
 
@@ -105,17 +112,28 @@ struct CreateRepoBody {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
-struct Repository {
-    id: u64,
-    name: String,
-    full_name: String,
-    private: bool,
-    html_url: String,
-    description: String,
-    url: String,
-    ssh_url: String,
-    topics: Vec<String>,
+pub struct Repository {
+    pub id: u64,
+    pub name: String,
+    pub full_name: String,
+    pub private: bool,
+    pub html_url: String,
+    pub description: String,
+    pub url: String,
+    pub ssh_url: String,
+    pub topics: Vec<String>,
     // owner?
+}
+
+impl Repository {
+    pub fn ghrepo(&self) -> anyhow::Result<GHRepo> {
+        self.full_name.parse().with_context(|| {
+            format!(
+                "ghrepo failed to parse repository fullname {:?}",
+                self.full_name
+            )
+        })
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -179,7 +197,7 @@ impl NewRepoConfig {
 pub struct Topic(String);
 
 impl Topic {
-    fn new(s: &str) -> Topic {
+    pub fn new(s: &str) -> Topic {
         Topic(
             s.chars()
                 .map(|ch| {
@@ -219,5 +237,22 @@ impl<'de> Deserialize<'de> for Topic {
         D: Deserializer<'de>,
     {
         String::deserialize(deserializer).map(Topic)
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct Label {
+    name: String,
+    color: String,
+    description: String,
+}
+
+impl Label {
+    pub fn new(name: &str, color: &str, description: &str) -> Label {
+        Label {
+            name: name.into(),
+            color: color.into(),
+            description: description.into(),
+        }
     }
 }
