@@ -50,7 +50,7 @@ impl Mkgithub {
 
         log::info!("Setting remote and pushing");
         let git = project.git();
-        if git.remotes()?.contains(&String::from("origin")) {
+        if git.remotes()?.contains("origin") {
             git.rm_remote("origin")?;
         }
         git.add_remote("origin", &r.ssh_url)?;

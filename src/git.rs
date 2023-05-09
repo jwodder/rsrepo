@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use crate::cmd::{CommandError, CommandOutputError, LoggedCommand};
-use crate::util::this_year;
+use crate::util::{this_year, StringLines};
 use anyhow::{bail, Context};
 use std::collections::HashSet;
 use std::ffi::OsStr;
@@ -39,8 +39,7 @@ impl<'a> Git<'a> {
             .map(|s| s.trim().to_string())
     }
 
-    // TODO: Make this return an iterator of String lines instead of a Vec
-    pub fn readlines<I, S>(&self, arg0: &str, args: I) -> Result<Vec<String>, CommandOutputError>
+    pub fn readlines<I, S>(&self, arg0: &str, args: I) -> Result<StringLines, CommandOutputError>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
@@ -49,11 +48,12 @@ impl<'a> Git<'a> {
             .args(args)
             .current_dir(self.path)
             .check_output()
-            .map(|s| s.lines().map(|ln| ln.to_string()).collect())
+            .map(StringLines::new)
     }
 
-    pub fn remotes(&self) -> Result<Vec<String>, CommandOutputError> {
+    pub fn remotes(&self) -> Result<HashSet<String>, CommandOutputError> {
         self.readlines::<[&str; 0], _>("remote", [])
+            .map(|iter| iter.collect())
     }
 
     pub fn rm_remote(&self, remote: &str) -> Result<(), CommandError> {
@@ -67,7 +67,6 @@ impl<'a> Git<'a> {
     pub fn commit_years(&self, include_now: bool) -> anyhow::Result<HashSet<i32>> {
         let mut years = self
             .readlines("log", ["--format=%ad", "--date=format:%Y"])?
-            .into_iter()
             .map(|s| s.parse())
             .collect::<Result<HashSet<i32>, _>>()
             .context("Error parsing Git commit years")?;
@@ -80,7 +79,6 @@ impl<'a> Git<'a> {
     pub fn default_branch(&self) -> anyhow::Result<String> {
         let branches: HashSet<_> = self
             .readlines("branch", ["--format=%(refname:short)"])?
-            .into_iter()
             .collect();
         if let Some(initdefault) = self.get_config("init.defaultBranch", None)? {
             if branches.contains(&initdefault) {
@@ -96,10 +94,7 @@ impl<'a> Git<'a> {
     }
 
     pub fn latest_tag(&self) -> Result<Option<String>, CommandOutputError> {
-        Ok(self
-            .readlines("tag", ["-l", "--sort=-creatordate"])?
-            .into_iter()
-            .next())
+        Ok(self.readlines("tag", ["-l", "--sort=-creatordate"])?.next())
     }
 
     pub fn get_config(
