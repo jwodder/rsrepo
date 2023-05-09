@@ -1,0 +1,35 @@
+{
+    "badges": [
+        {
+            "alt": "Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.",
+            "url": "https://www.repostatus.org/badges/latest/wip.svg",
+            "target": "https://www.repostatus.org/#wip"
+        },
+        {
+            "alt": "CI Status",
+            "url": "https://github.com/rs.test/foobar/actions/workflows/test.yml/badge.svg",
+            "target": "https://github.com/rs.test/foobar/actions/workflows/test.yml"
+        },
+        {
+            "alt": "codecov.io",
+            "url": "https://codecov.io/gh/rs.test/foobar/branch/master/graph/badge.svg",
+            "target": "https://codecov.io/gh/rs.test/foobar"
+        },
+        {
+            "alt": "MIT License",
+            "url": "https://img.shields.io/github/license/rs.test/foobar.svg",
+            "target": "https://opensource.org/licenses/MIT"
+        }
+    ],
+    "links": [
+        {
+            "text": "GitHub",
+            "url": "https://github.com/rs.test/foobar"
+        },
+        {
+            "text": "Issues",
+            "url": "https://github.com/rs.test/foobar/issues"
+        }
+    ],
+    "text": "INSERT LONG DESCRIPTION HERE\n"
+}

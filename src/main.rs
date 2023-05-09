@@ -5,6 +5,7 @@ mod git;
 mod github;
 mod http_util;
 mod project;
+mod readme;
 mod tmpltr;
 mod util;
 use crate::commands::Command;
