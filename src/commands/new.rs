@@ -9,23 +9,33 @@ use serde::Serialize;
 use std::ffi::OsStr;
 use std::path::PathBuf;
 
+/// Create a new repository and populate it with Rust packaging boilerplate
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
 pub struct New {
+    /// Template a binary crate
+    ///
+    /// This is the default if neither `--bin` nor `--lib` is given.
     #[clap(long)]
     bin: bool,
 
+    /// Template a library crate
     #[clap(long)]
     lib: bool,
 
-    #[clap(short = 'p', long)]
+    /// Name of project; defaults to the directory basename
+    #[clap(short = 'p', long, value_name = "NAME")]
     project_name: Option<String>,
 
-    #[clap(long)]
+    /// GitHub repository name; defaults to the project name
+    #[clap(long, value_name = "NAME")]
     repo_name: Option<String>,
 
-    #[clap(long)]
+    /// Copyright year(s) to put in the LICENSE; defaults to the current year
+    #[clap(long, value_name = "STRING")]
     copyright_year: Option<String>,
 
+    /// Directory to create & populate
+    #[clap(value_name = "PATH")]
     dirpath: PathBuf,
 }
 

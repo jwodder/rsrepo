@@ -15,13 +15,16 @@ use clap::Parser;
 use std::env::set_current_dir;
 use std::path::PathBuf;
 
+/// Manage Cargo project boilerplate
 #[derive(Debug, Eq, Parser, PartialEq)]
 #[clap(version)]
 struct Arguments {
-    #[clap(short = 'C', long)]
+    /// Change to the given directory before doing anything else
+    #[clap(short = 'C', long, value_name = "DIRECTORY")]
     chdir: Option<PathBuf>,
 
-    #[clap(short = 'c', long)]
+    /// Use the specified configuration file [default: ~/.config/rsrepo.toml]
+    #[clap(short = 'c', long, value_name = "FILE")]
     config: Option<PathBuf>,
 
     /// Set logging level

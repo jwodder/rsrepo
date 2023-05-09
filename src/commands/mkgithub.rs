@@ -6,11 +6,18 @@ use anyhow::bail;
 use clap::Args;
 use ghrepo::GHRepo;
 
+/// Create a GitHub repository for the project and push
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
 pub struct Mkgithub {
+    /// Make the new repository private
     #[clap(short = 'P', long)]
     private: bool,
 
+    /// Name for the repository
+    ///
+    /// If not specified, defaults to the name used in the `repository` URL in
+    /// the Cargo metadata, or to the name of the project.
+    #[clap(value_name = "NAME")]
     repo_name: Option<String>,
 }
 
