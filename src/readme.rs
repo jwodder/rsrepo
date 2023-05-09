@@ -1,6 +1,6 @@
 #![allow(dead_code)]
-use nom::bytes::complete::{is_not, tag, take_until};
-use nom::character::complete::{char, line_ending};
+use nom::bytes::complete::{is_not, tag};
+use nom::character::complete::{alpha1, char, line_ending};
 use nom::combinator::{all_consuming, map_res, rest};
 use nom::multi::{many1, separated_list1};
 use nom::sequence::{delimited, terminated};
@@ -86,6 +86,7 @@ impl fmt::Display for Badge {
     }
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum BadgeKind {
     Repostatus(Repostatus),
     GitHubActions,
@@ -118,6 +119,7 @@ impl BadgeKind {
     }
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Repostatus {
     Abandoned,
     Active,
@@ -233,13 +235,17 @@ fn link(input: &str) -> IResult<&str, Link> {
 }
 
 fn repostatus_url(input: &str) -> IResult<&str, Repostatus> {
-    let (input, _) = tag("https://www.repostatus.org/badges/latest/")(input)?;
-    map_res(take_until(".svg"), |s: &str| s.parse::<Repostatus>())(input)
+    delimited(
+        tag("https://www.repostatus.org/badges/latest/"),
+        map_res(alpha1, |s: &str| s.parse::<Repostatus>()),
+        tag(".svg"),
+    )(input)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rstest::rstest;
 
     #[test]
     fn readme01() {
@@ -249,5 +255,64 @@ mod tests {
         let expected = serde_json::from_str::<Readme>(jsonsrc).unwrap();
         assert_eq!(readme, expected);
         assert_eq!(readme.to_string(), src);
+        assert_eq!(readme.repostatus(), Some(Repostatus::Wip));
+    }
+
+    #[rstest]
+    #[case(
+        "https://www.repostatus.org/badges/latest/wip.svg",
+        Some(BadgeKind::Repostatus(Repostatus::Wip))
+    )]
+    #[case(
+        "https://github.com/rs.test/foobar/actions/workflows/test.yml/badge.svg",
+        Some(BadgeKind::GitHubActions)
+    )]
+    #[case(
+        "https://codecov.io/gh/rs.test/foobar/branch/master/graph/badge.svg",
+        Some(BadgeKind::Codecov)
+    )]
+    #[case(
+        "https://img.shields.io/github/license/rs.test/foobar.svg",
+        Some(BadgeKind::License)
+    )]
+    fn badge_kind_for_url(#[case] url: &str, #[case] kind: Option<BadgeKind>) {
+        assert_eq!(BadgeKind::for_url(url), kind);
+    }
+
+    #[rstest]
+    #[case(
+        "https://www.repostatus.org/badges/latest/abandoned.svg",
+        Some(Repostatus::Abandoned)
+    )]
+    #[case(
+        "https://www.repostatus.org/badges/latest/active.svg",
+        Some(Repostatus::Active)
+    )]
+    #[case(
+        "https://www.repostatus.org/badges/latest/concept.svg",
+        Some(Repostatus::Concept)
+    )]
+    #[case(
+        "https://www.repostatus.org/badges/latest/inactive.svg",
+        Some(Repostatus::Inactive)
+    )]
+    #[case(
+        "https://www.repostatus.org/badges/latest/moved.svg",
+        Some(Repostatus::Moved)
+    )]
+    #[case(
+        "https://www.repostatus.org/badges/latest/suspended.svg",
+        Some(Repostatus::Suspended)
+    )]
+    #[case(
+        "https://www.repostatus.org/badges/latest/unsupported.svg",
+        Some(Repostatus::Unsupported)
+    )]
+    #[case(
+        "https://www.repostatus.org/badges/latest/wip.svg",
+        Some(Repostatus::Wip)
+    )]
+    fn repostatus_for_url(#[case] url: &str, #[case] status: Option<Repostatus>) {
+        assert_eq!(Repostatus::for_url(url), status);
     }
 }
