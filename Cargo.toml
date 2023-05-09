@@ -24,3 +24,7 @@ assert_cmd = "2.0.11"
 similar = "2.2.1"
 tempdir = "0.3.7"
 tempfile = "3.5.0"
+
+[profile.release]
+lto = true
+strip = true
