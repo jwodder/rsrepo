@@ -85,6 +85,10 @@ impl New {
             log::info!("Rendering src/lib.rs ...");
             templater.render_file(&self.dirpath, "src/lib.rs", &context)?;
         }
+        LoggedCommand::new("pre-commit")
+            .arg("install")
+            .current_dir(&self.dirpath)
+            .status()?;
         Ok(())
     }
 
