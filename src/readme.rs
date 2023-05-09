@@ -19,7 +19,7 @@ pub struct Readme {
 }
 
 impl Readme {
-    fn repostatus(&self) -> Option<Repostatus> {
+    pub fn repostatus(&self) -> Option<Repostatus> {
         for badge in &self.badges {
             if let Some(BadgeKind::Repostatus(rs)) = badge.kind() {
                 return Some(rs);

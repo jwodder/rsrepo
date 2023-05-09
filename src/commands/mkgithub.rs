@@ -1,6 +1,7 @@
 use crate::config::Config;
 use crate::github::{GitHub, Label, NewRepoConfig, Topic};
 use crate::project::Project;
+use crate::readme::Repostatus;
 use anyhow::bail;
 use clap::Args;
 use ghrepo::GHRepo;
@@ -27,7 +28,7 @@ impl Mkgithub {
             }
         };
 
-        let mut topics = Vec::new();
+        let mut topics = Vec::from([Topic::new("rust")]);
         for keyword in metadata.keywords {
             let tp = Topic::new(&keyword);
             if tp != keyword {
@@ -35,8 +36,9 @@ impl Mkgithub {
             }
             topics.push(tp);
         }
-        topics.push(Topic::new("rust"));
-        // TODO: Add work-in-progress topic if README has WIP repostatus badge
+        if project.readme()?.and_then(|r| r.repostatus()) == Some(Repostatus::Wip) {
+            topics.push(Topic::new("work-in-progress"));
+        }
 
         let mut repo_cfg = NewRepoConfig::new(&name)
             .private(self.private)

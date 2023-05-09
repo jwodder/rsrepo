@@ -1,9 +1,12 @@
 use crate::cmd::{CommandOutputError, LoggedCommand};
 use crate::git::Git;
+use crate::readme::Readme;
 use anyhow::Context;
 use cargo_metadata::{MetadataCommand, Package};
 use serde::Deserialize;
 use std::borrow::Cow;
+use std::fs::read_to_string;
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
@@ -52,6 +55,14 @@ impl Project {
             .into_iter()
             .next()
             .ok_or_else(|| anyhow::anyhow!("No projects listed in metadata"))
+    }
+
+    pub fn readme(&self) -> anyhow::Result<Option<Readme>> {
+        match read_to_string(self.path().join("README.md")) {
+            Ok(s) => Ok(Some(s.parse::<Readme>()?)),
+            Err(e) if e.kind() == ErrorKind::NotFound => Ok(None),
+            Err(e) => Err(e).context("failed to read README.md"),
+        }
     }
 }
 
