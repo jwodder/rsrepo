@@ -320,3 +320,20 @@ pub struct Release {
     //pub author: SimpleUser,
     //pub assets: Vec<ReleaseAsset>,
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case("work-in-progress", "work-in-progress")]
+    #[case("Julian day", "julian-day")]
+    fn new_topic(#[case] s: &str, #[case] tp: &str) {
+        let topic = Topic::new(s);
+        assert_eq!(topic, tp);
+        if s != tp {
+            assert_ne!(topic, s);
+        }
+    }
+}
