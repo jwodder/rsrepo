@@ -6,6 +6,7 @@ description = "Rust project templater & releaser"
 authors = ["John Thorvald Wodder II <rsrepo@varonathe.org>"]
 repository = "https://github.com/jwodder/rsrepo"
 documentation = "https://github.com/jwodder/rsrepo"
+keywords = ["cargo", "template-project"]
 license = "MIT"
 exclude = ["/.*"]
 
