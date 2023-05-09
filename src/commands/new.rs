@@ -1,5 +1,6 @@
 use crate::cmd::LoggedCommand;
 use crate::config::Config;
+use crate::git::Git;
 use crate::tmpltr::Templater;
 use crate::util::this_year;
 use anyhow::{bail, Context};
@@ -40,16 +41,7 @@ impl New {
                 },
             )
             .context("Failed to render author-email template")?;
-        let context = NewContext {
-            github_user: config.github_user,
-            author: config.author,
-            author_email,
-            copyright_year: self.copyright_year(),
-            project_name: project_name.into(),
-            repo_name: self.repo_name()?.into(),
-            bin: self.bin(),
-            lib: self.lib(),
-        };
+
         log::info!("Creating Git repository ...");
         LoggedCommand::new("git")
             .arg("init")
@@ -57,6 +49,22 @@ impl New {
             .arg(&self.dirpath)
             .status()
             .context("Failed to init Git repository")?;
+
+        let default_branch = Git::new(&self.dirpath)
+            .current_branch()?
+            .ok_or_else(|| anyhow::anyhow!("No branch set in new repository"))?;
+        let context = NewContext {
+            github_user: config.github_user,
+            author: config.author,
+            author_email,
+            copyright_year: self.copyright_year(),
+            project_name: project_name.into(),
+            repo_name: self.repo_name()?.into(),
+            default_branch,
+            bin: self.bin(),
+            lib: self.lib(),
+        };
+
         for template in [
             "Cargo.toml",
             ".gitignore",
@@ -126,6 +134,7 @@ struct NewContext {
     copyright_year: String,
     project_name: String,
     repo_name: String,
+    default_branch: String,
     bin: bool,
     lib: bool,
 }

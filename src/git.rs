@@ -16,23 +16,25 @@ impl<'a> Git<'a> {
         Git { path }
     }
 
-    pub fn run<I, S>(&self, arg0: &str, args: I) -> Result<(), CommandError>
+    pub fn run<I, S>(&self, cmd: &str, args: I) -> Result<(), CommandError>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        LoggedCommand::new(arg0)
+        LoggedCommand::new("git")
+            .arg(cmd)
             .args(args)
             .current_dir(self.path)
             .status()
     }
 
-    pub fn read<I, S>(&self, arg0: &str, args: I) -> Result<String, CommandOutputError>
+    pub fn read<I, S>(&self, cmd: &str, args: I) -> Result<String, CommandOutputError>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        LoggedCommand::new(arg0)
+        LoggedCommand::new("git")
+            .arg(cmd)
             .args(args)
             .current_dir(self.path)
             .check_output()
