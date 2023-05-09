@@ -40,11 +40,11 @@ impl Mkgithub {
             topics.push(Topic::new("work-in-progress"));
         }
 
-        let mut repo_cfg = NewRepoConfig::new(&name)
+        let mut repo_cfg = NewRepoConfig::new(name)
             .private(self.private)
             .topics(topics);
         if let Some(s) = metadata.description {
-            repo_cfg = repo_cfg.description(&s);
+            repo_cfg = repo_cfg.description(s);
         }
         let github = GitHub::new()?;
         let r = github.create_repository(repo_cfg)?;

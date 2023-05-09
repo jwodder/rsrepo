@@ -92,6 +92,10 @@ impl GitHub {
         let _: Label<'_> = self.post(&format!("{}/labels", repo.api_url()), &label)?;
         Ok(())
     }
+
+    pub fn create_release(&self, repo: &GHRepo, release: CreateRelease) -> anyhow::Result<Release> {
+        self.post(&format!("{}/releases", repo.api_url()), &release)
+    }
 }
 
 fn mkurl(path: &str) -> anyhow::Result<Url> {
@@ -157,7 +161,7 @@ pub struct NewRepoConfig {
 }
 
 impl NewRepoConfig {
-    pub fn new(name: &str) -> Self {
+    pub fn new<S: Into<String>>(name: S) -> Self {
         Self {
             name: name.into(),
             description: None,
@@ -166,7 +170,7 @@ impl NewRepoConfig {
         }
     }
 
-    pub fn description(mut self, description: &str) -> Self {
+    pub fn description<S: Into<String>>(mut self, description: S) -> Self {
         self.description = Some(description.into());
         self
     }
@@ -256,4 +260,63 @@ impl<'a> Label<'a> {
             description: description.into(),
         }
     }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct CreateRelease {
+    tag_name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    body: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    prerelease: Option<bool>,
+}
+
+impl CreateRelease {
+    pub fn new<S: Into<String>>(tag_name: S) -> CreateRelease {
+        CreateRelease {
+            tag_name: tag_name.into(),
+            name: None,
+            body: None,
+            prerelease: None,
+        }
+    }
+
+    pub fn name<S: Into<String>>(mut self, name: S) -> Self {
+        self.name = Some(name.into());
+        self
+    }
+
+    pub fn body<S: Into<String>>(mut self, body: S) -> Self {
+        self.body = Some(body.into());
+        self
+    }
+
+    pub fn prerelease(mut self, prerelease: bool) -> Self {
+        self.prerelease = Some(prerelease);
+        self
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+pub struct Release {
+    pub url: String,
+    pub html_url: String,
+    pub assets_url: String,
+    pub upload_url: String,
+    pub tarball_url: String,
+    pub zipball_url: String,
+    pub id: u64,
+    pub tag_name: String,
+    pub target_commitish: String,
+    pub name: String,
+    #[serde(default)]
+    pub body: Option<String>,
+    pub draft: bool,
+    pub prerelease: bool,
+    //pub created_at: DateTime<FixedOffset>,
+    //pub published_at: DateTime<FixedOffset>,
+    //pub author: SimpleUser,
+    //pub assets: Vec<ReleaseAsset>,
 }
