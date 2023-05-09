@@ -115,4 +115,12 @@ impl<'a> Git<'a> {
             Err(e) => Err(e),
         }
     }
+
+    pub fn current_branch(&self) -> Result<Option<String>, CommandOutputError> {
+        match self.read("symbolic-ref", ["--short", "-q", "HEAD"]) {
+            Ok(branch) => Ok(Some(branch)),
+            Err(CommandOutputError::Exit { rc, .. }) if rc.code() == Some(1) => Ok(None),
+            Err(e) => Err(e),
+        }
+    }
 }
