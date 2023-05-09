@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use crate::cmd::{CommandError, CommandOutputError, LoggedCommand};
+use crate::util::this_year;
 use anyhow::{bail, Context};
-use chrono::Datelike;
 use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::path::Path;
@@ -72,7 +72,7 @@ impl<'a> Git<'a> {
             .collect::<Result<HashSet<i32>, _>>()
             .context("Error parsing Git commit years")?;
         if include_now {
-            years.insert(chrono::Local::now().year());
+            years.insert(this_year());
         }
         Ok(years)
     }

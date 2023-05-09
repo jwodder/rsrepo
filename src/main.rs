@@ -6,6 +6,7 @@ mod github;
 mod http_util;
 mod project;
 mod tmpltr;
+mod util;
 use crate::commands::Command;
 use crate::config::Config;
 use anyhow::Context;

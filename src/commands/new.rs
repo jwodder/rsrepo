@@ -1,8 +1,8 @@
 use crate::cmd::LoggedCommand;
 use crate::config::Config;
 use crate::tmpltr::Templater;
+use crate::util::this_year;
 use anyhow::{bail, Context};
-use chrono::Datelike;
 use clap::Args;
 use serde::Serialize;
 use std::ffi::OsStr;
@@ -91,7 +91,7 @@ impl New {
     pub fn copyright_year(&self) -> String {
         match self.copyright_year.as_ref() {
             Some(s) => s.clone(),
-            None => chrono::Local::now().year().to_string(),
+            None => this_year().to_string(),
         }
     }
 
