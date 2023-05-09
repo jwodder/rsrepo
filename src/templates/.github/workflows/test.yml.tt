@@ -9,12 +9,12 @@ on:
     - cron: '0 12 * * *'
 
 concurrency:
-  group: ${{ '{{' }} github.workflow }}-${{ '{{' }} github.event_name }}-${{ '{{' }} github.ref_name }}
+  group: $\{\{ github.workflow }}-$\{\{ github.event_name }}-$\{\{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
   test:
-    runs-on: ${{ '{{' }} matrix.os }}
+    runs-on: $\{\{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -38,7 +38,7 @@ jobs:
         if: matrix.toolchain != 'minimal'
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: ${{ '{{' }} matrix.toolchain }}
+          toolchain: $\{\{ matrix.toolchain }}
 
       - name: Determine minimal supported Rust
         if: matrix.toolchain == 'minimal'
@@ -51,7 +51,7 @@ jobs:
         if: matrix.toolchain == 'minimal'
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: ${{ '{{' }} steps.minimal-version.outputs.msrv }}
+          toolchain: $\{\{ steps.minimal-version.outputs.msrv }}
 
       - name: Activate cache
         if: "!startsWith(github.ref_name, 'dependabot/')"
@@ -116,7 +116,7 @@ jobs:
 
       - name: Check formatting
         run: cargo fmt --check
-{% if lib %}
+{{ if lib }}
   docs:
     runs-on: ubuntu-latest
     steps:
@@ -136,5 +136,5 @@ jobs:
         run: cargo doc --no-deps --all-features
         env:
           RUSTDOCFLAGS: -Dwarnings
-{% endif %}
+{{ endif }}
 # vim:set et sts=2:

@@ -1,0 +1,4 @@
+{{ if not bin -}}
+/Cargo.lock
+{{ endif -}}
+/target

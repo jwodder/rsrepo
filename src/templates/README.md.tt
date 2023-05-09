@@ -1,0 +1,8 @@
+[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+[![CI Status](https://github.com/{github_user}/{repo_name}/actions/workflows/test.yml/badge.svg)](https://github.com/{github_user}/{repo_name}/actions/workflows/test.yml)
+[![codecov.io](https://codecov.io/gh/{github_user}/{repo_name}/branch/{default_branch}/graph/badge.svg)](https://codecov.io/gh/{github_user}/{repo_name})
+[![MIT License](https://img.shields.io/github/license/{github_user}/{repo_name}.svg)](https://opensource.org/licenses/MIT)
+
+[GitHub](https://github.com/{github_user}/{repo_name}) | [Issues](https://github.com/{github_user}/{repo_name}/issues)
+
+INSERT LONG DESCRIPTION HERE

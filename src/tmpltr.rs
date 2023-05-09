@@ -1,23 +1,22 @@
 use anyhow::{bail, Context as _};
 use include_dir::{include_dir, Dir, DirEntry};
 use serde::Serialize;
-use std::collections::{HashMap, VecDeque};
-use std::fs::{create_dir_all, File};
-use std::io::BufWriter;
+use serde_json::Value;
+use std::collections::VecDeque;
+use std::fs::{create_dir_all, write};
 use std::path::Path;
-use tera::{Context, Tera, Value};
+use tinytemplate::{error::Error, format_unescaped, TinyTemplate};
 
 static TEMPLATE_DATA: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/src/templates");
 
-#[derive(Debug)]
-pub struct Templater {
-    engine: Tera,
+pub struct Templater<'a> {
+    engine: TinyTemplate<'a>,
 }
 
-impl Templater {
+impl<'a> Templater<'a> {
     pub fn load() -> anyhow::Result<Self> {
-        let mut engine = Tera::default();
-        log::debug!("Loading Tera templates");
+        let mut engine = TinyTemplate::new();
+        log::debug!("Loading templates");
         let mut dirs = VecDeque::from([&TEMPLATE_DATA]);
         loop {
             let Some(d) = dirs.pop_front() else { break };
@@ -32,13 +31,14 @@ impl Templater {
                             bail!("Template source is not UTF-8: {path}");
                         };
                         engine
-                            .add_raw_template(path, content)
+                            .add_template(path, content)
                             .with_context(|| format!("Failed to load template {path}"))?;
                     }
                 }
             }
         }
-        engine.register_filter("toml_escape", toml_escape);
+        engine.add_formatter("toml_escape", toml_escape);
+        engine.set_default_formatter(&format_unescaped);
         Ok(Templater { engine })
     }
 
@@ -48,38 +48,36 @@ impl Templater {
         template: &str,
         context: S,
     ) -> anyhow::Result<()> {
-        let context = Context::from_serialize(context)
-            .context("Failed to construct Context from Serialize value")?;
         let path = dirpath.join(template);
         create_dir_all(path.parent().unwrap())
             .with_context(|| format!("Failed to create parent directory for {}", path.display()))?;
-        let fp = BufWriter::new(
-            File::create(&path)
-                .with_context(|| format!("Error creating file {}", path.display()))?,
-        );
-        self.engine
-            .render_to(&format!("{template}.tera"), &context, fp)
-            .with_context(|| format!("Failed to render template {template:?} to file"))
+        let content = self
+            .engine
+            .render(&format!("{template}.tt"), &context)
+            .with_context(|| format!("Failed to render template {template:?}"))?;
+        write(&path, content)
+            .with_context(|| format!("Failed to write templated text to {}", path.display()))?;
+        Ok(())
     }
 
     pub fn render_str<S: Serialize>(
         &mut self,
-        template_content: &str,
+        template_content: &'a str,
         context: S,
     ) -> anyhow::Result<String> {
-        let context = Context::from_serialize(context)
-            .context("Failed to construct Context from Serialize value")?;
         self.engine
-            .render_str(template_content, &context)
+            .add_template("__str", template_content)
+            .context("Failed to register dynamic template")?;
+        self.engine
+            .render("__str", &context)
             .context("Failed to render dynamic template")
     }
 }
 
-fn toml_escape(value: &Value, _: &HashMap<String, Value>) -> Result<Value, tera::Error> {
+fn toml_escape(value: &Value, out: &mut String) -> Result<(), Error> {
     let Value::String(s) = value else {
-        return Err(tera::Error::msg("toml_escape can only escape strings"));
+        return Err(Error::GenericError {msg: "toml_escape can only escape strings".into()});
     };
-    let mut out = String::new();
     for ch in s.chars() {
         match ch {
             '"' | '\\' => {
@@ -95,5 +93,5 @@ fn toml_escape(value: &Value, _: &HashMap<String, Value>) -> Result<Value, tera:
             _ => out.push(ch),
         }
     }
-    Ok(Value::String(out))
+    Ok(())
 }
