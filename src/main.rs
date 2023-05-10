@@ -10,8 +10,11 @@ mod tmpltr;
 mod util;
 use crate::commands::Command;
 use crate::config::Config;
+use anstream::AutoStream;
+use anstyle::{AnsiColor, Style};
 use anyhow::Context;
 use clap::Parser;
+use log::{Level, LevelFilter};
 use std::env::set_current_dir;
 use std::path::PathBuf;
 
@@ -34,7 +37,7 @@ struct Arguments {
         default_value = "INFO",
         value_name = "OFF|ERROR|WARN|INFO|DEBUG|TRACE"
     )]
-    log_level: log::LevelFilter,
+    log_level: LevelFilter,
 
     #[command(subcommand)]
     command: Command,
@@ -42,14 +45,7 @@ struct Arguments {
 
 impl Arguments {
     fn run(self) -> anyhow::Result<()> {
-        fern::Dispatch::new()
-            .format(|out, message, record| {
-                out.finish(format_args!("[{:<5}] {}", record.level(), message))
-            })
-            .level(self.log_level)
-            .chain(std::io::stderr())
-            .apply()
-            .unwrap();
+        init_logging(self.log_level);
         if let Some(dir) = self.chdir {
             set_current_dir(dir).context("Failed to change directory")?;
         }
@@ -60,4 +56,31 @@ impl Arguments {
 
 fn main() -> anyhow::Result<()> {
     Arguments::parse().run()
+}
+
+fn init_logging(log_level: LevelFilter) {
+    let stderr: Box<dyn std::io::Write + Send + 'static> =
+        Box::new(AutoStream::auto(std::io::stderr()));
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            use AnsiColor::*;
+            let style = match record.level() {
+                Level::Error => Style::new().fg_color(Some(Red.into())),
+                Level::Warn => Style::new().fg_color(Some(Yellow.into())),
+                Level::Info => Style::new().bold(),
+                Level::Debug => Style::new().fg_color(Some(Cyan.into())),
+                Level::Trace => Style::new().fg_color(Some(Green.into())),
+            };
+            out.finish(format_args!(
+                "{}[{:<5}] {}{}",
+                style.render(),
+                record.level(),
+                message,
+                style.render_reset(),
+            ))
+        })
+        .level(log_level)
+        .chain(stderr)
+        .apply()
+        .unwrap();
 }
