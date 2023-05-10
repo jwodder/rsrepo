@@ -9,6 +9,7 @@ documentation = "https://github.com/jwodder/rsrepo"
 keywords = ["cargo", "template-project"]
 license = "MIT"
 exclude = ["/.*"]
+publish = false
 
 [dependencies]
 anstream = "0.3.2"
