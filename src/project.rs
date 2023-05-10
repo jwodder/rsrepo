@@ -7,8 +7,8 @@ use anyhow::Context;
 use cargo_metadata::{MetadataCommand, Package};
 use serde::Deserialize;
 use std::borrow::Cow;
-use std::fs::read_to_string;
-use std::io::ErrorKind;
+use std::fs::{read_to_string, File};
+use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
@@ -67,12 +67,26 @@ impl Project {
         }
     }
 
+    pub fn set_readme(&self, readme: Readme) -> anyhow::Result<()> {
+        let mut fp = File::create(self.path().join("README.md"))
+            .context("failed to open README.md for writing")?;
+        write!(&mut fp, "{}", readme).context("failed writing to README.md")?;
+        Ok(())
+    }
+
     pub fn changelog(&self) -> anyhow::Result<Option<Changelog>> {
         match read_to_string(self.path().join("CHANGELOG.md")) {
             Ok(s) => Ok(Some(s.parse::<Changelog>()?)),
             Err(e) if e.kind() == ErrorKind::NotFound => Ok(None),
             Err(e) => Err(e).context("failed to read CHANGELOG.md"),
         }
+    }
+
+    pub fn set_changelog(&self, changelog: Changelog) -> anyhow::Result<()> {
+        let mut fp = File::create(self.path().join("CHANGELG.md"))
+            .context("failed to open CHANGELG.md for writing")?;
+        write!(&mut fp, "{}", changelog).context("failed writing to CHANGELG.md")?;
+        Ok(())
     }
 }
 
