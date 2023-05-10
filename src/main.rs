@@ -1,3 +1,4 @@
+mod changelog;
 mod cmd;
 mod commands;
 mod config;
