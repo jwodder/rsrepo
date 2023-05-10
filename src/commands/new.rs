@@ -13,12 +13,12 @@ use std::path::PathBuf;
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
 pub struct New {
     /// Template a binary crate
-    ///
-    /// This is the default if neither `--bin` nor `--lib` is given.
     #[clap(long)]
     bin: bool,
 
     /// Template a library crate
+    ///
+    /// This is the default if neither `--bin` nor `--lib` is given.
     #[clap(long)]
     lib: bool,
 
@@ -103,11 +103,11 @@ impl New {
     }
 
     pub fn bin(&self) -> bool {
-        self.bin || !self.lib
+        self.bin
     }
 
     pub fn lib(&self) -> bool {
-        self.lib
+        self.lib || !self.bin
     }
 
     pub fn copyright_year(&self) -> String {

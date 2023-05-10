@@ -7,7 +7,7 @@ use tempfile::tempdir;
 pub static DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data");
 
 #[test]
-fn new_implicit_bin() {
+fn new_implicit_lib() {
     let tmp_path = tempdir().unwrap();
     let repo = tmp_path.path().join("foobar");
     Command::cargo_bin("rsrepo")
@@ -26,39 +26,13 @@ fn new_implicit_bin() {
         .current_dir(&repo)
         .assert()
         .success();
-    CmpDirtrees::new(&Path::new(DATA_DIR).join("new").join("bin"), &repo)
+    CmpDirtrees::new(&Path::new(DATA_DIR).join("new").join("lib"), &repo)
         .exclude([".git"])
         .assert_eq();
 }
 
 #[test]
-fn new_explicit_bin() {
-    let tmp_path = tempdir().unwrap();
-    let repo = tmp_path.path().join("foobar");
-    Command::cargo_bin("rsrepo")
-        .unwrap()
-        .arg("--log-level=TRACE")
-        .arg("--config")
-        .arg(Path::new(DATA_DIR).join("config.toml"))
-        .arg("new")
-        .arg("--bin")
-        .arg("--copyright-year=2525")
-        .arg(&repo)
-        .assert()
-        .success();
-    Command::new("git")
-        .arg("rev-parse")
-        .arg("--git-dir")
-        .current_dir(&repo)
-        .assert()
-        .success();
-    CmpDirtrees::new(&Path::new(DATA_DIR).join("new").join("bin"), &repo)
-        .exclude([".git"])
-        .assert_eq();
-}
-
-#[test]
-fn new_lib() {
+fn new_explicit_lib() {
     let tmp_path = tempdir().unwrap();
     let repo = tmp_path.path().join("foobar");
     Command::cargo_bin("rsrepo")
@@ -79,6 +53,32 @@ fn new_lib() {
         .assert()
         .success();
     CmpDirtrees::new(&Path::new(DATA_DIR).join("new").join("lib"), &repo)
+        .exclude([".git"])
+        .assert_eq();
+}
+
+#[test]
+fn new_bin() {
+    let tmp_path = tempdir().unwrap();
+    let repo = tmp_path.path().join("foobar");
+    Command::cargo_bin("rsrepo")
+        .unwrap()
+        .arg("--log-level=TRACE")
+        .arg("--config")
+        .arg(Path::new(DATA_DIR).join("config.toml"))
+        .arg("new")
+        .arg("--bin")
+        .arg("--copyright-year=2525")
+        .arg(&repo)
+        .assert()
+        .success();
+    Command::new("git")
+        .arg("rev-parse")
+        .arg("--git-dir")
+        .current_dir(&repo)
+        .assert()
+        .success();
+    CmpDirtrees::new(&Path::new(DATA_DIR).join("new").join("bin"), &repo)
         .exclude([".git"])
         .assert_eq();
 }
