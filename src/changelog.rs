@@ -211,14 +211,31 @@ fn in_development(input: &str) -> IResult<&str, ChangelogHeader> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ffi::OsStr;
+    use std::fs::{read_dir, read_to_string};
+    use std::path::Path;
 
     #[test]
-    fn changelog01() {
-        let src = include_str!("testdata/changelog01.md");
-        let jsonsrc = include_str!("testdata/changelog01.json");
-        let changelog = src.parse::<Changelog>().unwrap();
-        let expected = serde_json::from_str::<Changelog>(jsonsrc).unwrap();
-        assert_eq!(changelog, expected);
-        assert_eq!(changelog.to_string(), src);
+    fn test_changelog() {
+        let diriter = read_dir(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/testdata/changelog"
+        ))
+        .unwrap();
+        for entry in diriter {
+            let entry = entry.unwrap();
+            let fname = entry.file_name();
+            let fname = Path::new(&fname);
+            if fname.extension() == Some(OsStr::new("md")) {
+                eprintln!("Testing: {}", fname.display());
+                let path = entry.path();
+                let src = read_to_string(&path).unwrap();
+                let jsonsrc = read_to_string(path.with_extension("json")).unwrap();
+                let changelog = src.parse::<Changelog>().unwrap();
+                let expected = serde_json::from_str::<Changelog>(&jsonsrc).unwrap();
+                assert_eq!(changelog, expected);
+                assert_eq!(changelog.to_string(), src);
+            }
+        }
     }
 }

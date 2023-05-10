@@ -1,0 +1,19 @@
+{
+    "sections": [
+        {
+            "header": {
+                "type": "in-progress",
+                "version": "0.2.0"
+            },
+            "content": "- Increased MSRV to 1.66\n\n- Added `serde` support\n"
+        },
+        {
+            "header": {
+                "type": "released",
+                "version": "0.1.0",
+                "date": "2023-04-15"
+            },
+            "content": "Initial release\n"
+        }
+    ]
+}

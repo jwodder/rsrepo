@@ -1,0 +1,19 @@
+{
+    "intro": "",
+    "sections": [
+        {
+            "header": {
+                "type": "in-development"
+            },
+            "content": "- Increased MSRV to 1.66\n"
+        },
+        {
+            "header": {
+                "type": "released",
+                "version": "0.1.0",
+                "date": "2023-04-15"
+            },
+            "content": "Initial release\n"
+        }
+    ]
+}
