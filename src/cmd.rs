@@ -10,9 +10,10 @@ pub struct LoggedCommand {
 }
 
 impl LoggedCommand {
-    pub fn new(arg0: &str) -> Self {
+    pub fn new<S: AsRef<OsStr>>(arg0: S) -> Self {
+        let arg0 = arg0.as_ref();
         LoggedCommand {
-            cmdline: shell_words::quote(arg0).to_string(),
+            cmdline: quote_osstr(arg0),
             cmd: Command::new(arg0),
         }
     }
@@ -20,8 +21,7 @@ impl LoggedCommand {
     pub fn arg<S: AsRef<OsStr>>(&mut self, arg: S) -> &mut Self {
         let arg = arg.as_ref();
         self.cmdline.push(' ');
-        self.cmdline
-            .push_str(&shell_words::quote(&arg.to_string_lossy()));
+        self.cmdline.push_str(&quote_osstr(arg));
         self.cmd.arg(arg);
         self
     }
@@ -34,8 +34,7 @@ impl LoggedCommand {
         for arg in args {
             let arg = arg.as_ref();
             self.cmdline.push(' ');
-            self.cmdline
-                .push_str(&shell_words::quote(&arg.to_string_lossy()));
+            self.cmdline.push_str(&quote_osstr(arg));
             self.cmd.arg(arg);
         }
         self
@@ -109,4 +108,8 @@ pub enum CommandOutputError {
         cmdline: String,
         source: std::str::Utf8Error,
     },
+}
+
+fn quote_osstr(s: &OsStr) -> String {
+    shell_words::quote(&s.to_string_lossy()).to_string()
 }

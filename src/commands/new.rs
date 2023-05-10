@@ -8,6 +8,7 @@ use clap::Args;
 use serde::Serialize;
 use std::ffi::OsStr;
 use std::path::PathBuf;
+use which::which;
 
 /// Create a new repository and populate it with Rust packaging boilerplate
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
@@ -95,10 +96,14 @@ impl New {
             log::info!("Rendering src/lib.rs ...");
             templater.render_file(&self.dirpath, "src/lib.rs", &context)?;
         }
-        LoggedCommand::new("pre-commit")
-            .arg("install")
-            .current_dir(&self.dirpath)
-            .status()?;
+        if let Ok(pre_commit) = which("pre-commit") {
+            LoggedCommand::new(pre_commit)
+                .arg("install")
+                .current_dir(&self.dirpath)
+                .status()?;
+        } else {
+            log::warn!("pre-commit not found; not running `pre-commit install`");
+        }
         Ok(())
     }
 
