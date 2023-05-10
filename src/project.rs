@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+use crate::changelog::Changelog;
 use crate::cmd::{CommandOutputError, LoggedCommand};
 use crate::git::Git;
 use crate::readme::Readme;
@@ -62,6 +64,14 @@ impl Project {
             Ok(s) => Ok(Some(s.parse::<Readme>()?)),
             Err(e) if e.kind() == ErrorKind::NotFound => Ok(None),
             Err(e) => Err(e).context("failed to read README.md"),
+        }
+    }
+
+    pub fn changelog(&self) -> anyhow::Result<Option<Changelog>> {
+        match read_to_string(self.path().join("CHANGELOG.md")) {
+            Ok(s) => Ok(Some(s.parse::<Changelog>()?)),
+            Err(e) if e.kind() == ErrorKind::NotFound => Ok(None),
+            Err(e) => Err(e).context("failed to read CHANGELOG.md"),
         }
     }
 }
