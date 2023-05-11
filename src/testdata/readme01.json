@@ -16,6 +16,11 @@
             "target": "https://codecov.io/gh/rs.test/foobar"
         },
         {
+            "alt": "Minimum Supported Rust Version",
+            "url": "https://img.shields.io/badge/MSRV-1.69-orange",
+            "target": "https://www.rust-lang.org"
+        },
+        {
             "alt": "MIT License",
             "url": "https://img.shields.io/github/license/rs.test/foobar.svg",
             "target": "https://opensource.org/licenses/MIT"

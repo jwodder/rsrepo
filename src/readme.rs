@@ -91,6 +91,7 @@ pub enum BadgeKind {
     Repostatus(Repostatus),
     GitHubActions,
     Codecov,
+    Msrv,
     License,
 }
 
@@ -109,11 +110,18 @@ impl BadgeKind {
                 [_, _, _, "branch", _, "graph", "badge.svg"]
             )
             .then_some(BadgeKind::Codecov),
-            Some("img.shields.io") => matches!(
-                url.path_segments()?.collect::<Vec<_>>()[..],
-                [_, "license", _, _]
-            )
-            .then_some(BadgeKind::License),
+            Some("img.shields.io") => {
+                if url.path().starts_with("/badge/MSRV-") {
+                    Some(BadgeKind::Msrv)
+                } else if matches!(
+                    url.path_segments()?.collect::<Vec<_>>()[..],
+                    [_, "license", _, _]
+                ) {
+                    Some(BadgeKind::License)
+                } else {
+                    None
+                }
+            }
             _ => None,
         }
     }
@@ -271,6 +279,7 @@ mod tests {
         "https://codecov.io/gh/rs.test/foobar/branch/master/graph/badge.svg",
         Some(BadgeKind::Codecov)
     )]
+    #[case("https://img.shields.io/badge/MSRV-1.69-orange", Some(BadgeKind::Msrv))]
     #[case(
         "https://img.shields.io/github/license/rs.test/foobar.svg",
         Some(BadgeKind::License)
