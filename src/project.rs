@@ -5,6 +5,7 @@ use crate::git::Git;
 use crate::readme::Readme;
 use anyhow::Context;
 use cargo_metadata::{MetadataCommand, Package};
+use semver::Version;
 use serde::Deserialize;
 use std::borrow::Cow;
 use std::fs::{read_to_string, File};
@@ -61,6 +62,18 @@ impl Project {
             .join("lib.rs")
             .try_exists()
             .context("could not determine whether src/main.rs exists")
+    }
+
+    pub fn latest_tag_version(&self) -> anyhow::Result<Option<Version>> {
+        if let Some(tag) = self.git().latest_tag()? {
+            tag.strip_prefix('v')
+                .unwrap_or(&tag)
+                .parse::<Version>()
+                .with_context(|| format!("Failed to parse latest Git tag {tag:?} as a version"))
+                .map(Some)
+        } else {
+            Ok(None)
+        }
     }
 
     pub fn git(&self) -> Git<'_> {
