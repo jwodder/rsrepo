@@ -1,10 +1,12 @@
 use crate::cmd::LoggedCommand;
 use crate::config::Config;
 use crate::git::Git;
+use crate::github::GitHub;
 use crate::tmpltr::Templater;
-use crate::util::this_year;
+use crate::util::{this_year, RustVersion};
 use anyhow::{bail, Context};
 use clap::Args;
+use ghrepo::GHRepo;
 use serde::Serialize;
 use std::ffi::OsStr;
 use std::path::PathBuf;
@@ -22,6 +24,10 @@ pub struct New {
     /// This is the default if neither `--bin` nor `--lib` is given.
     #[clap(long)]
     lib: bool,
+
+    /// MSRV for the new crate.  Defaults to the latest stable rustc version.
+    #[clap(long)]
+    msrv: Option<RustVersion>,
 
     /// Name of project; defaults to the directory basename
     #[clap(short = 'p', long, value_name = "NAME")]
@@ -53,6 +59,17 @@ impl New {
             )
             .context("Failed to render author-email template")?;
 
+        let msrv = if let Some(rv) = self.msrv {
+            rv
+        } else {
+            let rustrepo = GHRepo::new("rust-lang", "rust").unwrap();
+            let stable = GitHub::default().latest_release(&rustrepo)?;
+            stable
+                .tag_name
+                .parse::<RustVersion>()
+                .context("Failed to parse latest stable rustc version")?
+        };
+
         log::info!("Creating Git repository ...");
         LoggedCommand::new("git")
             .arg("init")
@@ -74,6 +91,7 @@ impl New {
             default_branch,
             bin: self.bin(),
             lib: self.lib(),
+            msrv,
         };
 
         for template in [
@@ -156,6 +174,7 @@ struct NewContext {
     default_branch: String,
     bin: bool,
     lib: bool,
+    msrv: RustVersion,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]

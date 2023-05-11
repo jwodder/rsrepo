@@ -2,7 +2,7 @@
 name = "quux"
 version = "0.1.0-dev"
 edition = "2021"
-#rust-version = ???
+rust-version = "1.69"
 #description = ???
 authors = ["Simon \"Some Rustacean\" McRustowicz <rustacean+quux@test.nil>"]
 repository = "https://github.com/rs.test/quux"

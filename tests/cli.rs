@@ -17,6 +17,7 @@ fn new_implicit_lib() {
         .arg(Path::new(DATA_DIR).join("config.toml"))
         .arg("new")
         .arg("--copyright-year=2525")
+        .arg("--msrv=1.69")
         .arg(&repo)
         .assert()
         .success();
@@ -43,6 +44,7 @@ fn new_explicit_lib() {
         .arg("new")
         .arg("--lib")
         .arg("--copyright-year=2525")
+        .arg("--msrv=1.69")
         .arg(&repo)
         .assert()
         .success();
@@ -69,6 +71,7 @@ fn new_bin() {
         .arg("new")
         .arg("--bin")
         .arg("--copyright-year=2525")
+        .arg("--msrv=1.69")
         .arg(&repo)
         .assert()
         .success();
@@ -96,6 +99,7 @@ fn new_bin_lib() {
         .arg("--bin")
         .arg("--lib")
         .arg("--copyright-year=2525")
+        .arg("--msrv=1.69")
         .arg(&repo)
         .assert()
         .success();
@@ -122,6 +126,7 @@ fn new_custom_project_name() {
         .arg("new")
         .arg("--lib")
         .arg("--copyright-year=2525")
+        .arg("--msrv=1.69")
         .arg("--project-name=quux")
         .arg(&repo)
         .assert()
@@ -152,6 +157,7 @@ fn new_custom_repo_name() {
         .arg("new")
         .arg("--lib")
         .arg("--copyright-year=2525")
+        .arg("--msrv=1.69")
         .arg("--repo-name=quux")
         .arg(&repo)
         .assert()
@@ -182,6 +188,7 @@ fn new_custom_project_repo_name() {
         .arg("new")
         .arg("--lib")
         .arg("--copyright-year=2525")
+        .arg("--msrv=1.69")
         .arg("--project-name=gnusto")
         .arg("--repo-name=cleesh")
         .arg(&repo)

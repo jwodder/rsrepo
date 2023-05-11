@@ -2,7 +2,7 @@
 name = "{project_name}"
 version = "0.1.0-dev"
 edition = "2021"
-#rust-version = ???
+rust-version = "{msrv}"
 #description = ???
 authors = ["{author|toml_escape} <{author_email}>"]
 repository = "https://github.com/{github_user}/{repo_name}"
