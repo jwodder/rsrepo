@@ -3,7 +3,8 @@ use crate::changelog::Changelog;
 use crate::cmd::{CommandOutputError, LoggedCommand};
 use crate::git::Git;
 use crate::readme::Readme;
-use anyhow::Context;
+use crate::util::CopyrightLine;
+use anyhow::{bail, Context};
 use cargo_metadata::{MetadataCommand, Package};
 use semver::Version;
 use serde::Deserialize;
@@ -130,9 +131,39 @@ impl Project {
     }
 
     pub fn set_changelog(&self, changelog: Changelog) -> anyhow::Result<()> {
-        let mut fp = File::create(self.path().join("CHANGELG.md"))
-            .context("failed to open CHANGELG.md for writing")?;
-        write!(&mut fp, "{}", changelog).context("failed writing to CHANGELG.md")?;
+        let mut fp = File::create(self.path().join("CHANGELOG.md"))
+            .context("failed to open CHANGELOG.md for writing")?;
+        write!(&mut fp, "{}", changelog).context("failed writing to CHANGELOG.md")?;
+        Ok(())
+    }
+
+    pub fn update_license_years<I>(&self, years: I) -> anyhow::Result<()>
+    where
+        I: IntoIterator<Item = i32>,
+    {
+        let mut years = Some(years);
+        let license =
+            read_to_string(self.path().join("LICENSE")).context("failed to read LICENSE file")?;
+        let mut found = false;
+        let mut fp = File::create(self.path().join("LICENSE"))
+            .context("failed to open LICENSE for writing")?;
+        for line in license.lines() {
+            match (found, line.parse::<CopyrightLine>()) {
+                (false, Ok(mut crl)) => {
+                    found = true;
+                    if let Some(years) = years.take() {
+                        for y in years {
+                            crl.add_year(y);
+                        }
+                    }
+                    writeln!(fp, "{crl}").context("error writing to LICENSE")?;
+                }
+                _ => writeln!(fp, "{line}").context("error writing to LICENSE")?,
+            }
+        }
+        if !found {
+            bail!("Copyright line not found in LICENSE");
+        }
         Ok(())
     }
 }
@@ -160,7 +191,7 @@ mod tests {
     use assert_fs::TempDir;
 
     #[test]
-    fn test_set_cargo_version() {
+    fn set_cargo_version() {
         let tmpdir = TempDir::new().unwrap();
         let manifest = tmpdir.child("Cargo.toml");
         manifest
@@ -184,6 +215,35 @@ mod tests {
             "edition = \"2021\"\n",
             "\n",
             "[dependencies]\n",
+        ));
+    }
+
+    #[test]
+    fn update_license_years() {
+        let tmpdir = TempDir::new().unwrap();
+        let manifest = tmpdir.child("Cargo.toml");
+        let license = tmpdir.child("LICENSE");
+        license
+            .write_str(concat!(
+                "The Foobar License\n",
+                "\n",
+                "Copyright (c) 2021-2022 John T. Wodder II\n",
+                "Copyright (c) 2020 The Prime Mover and their Agents\n",
+                "\n",
+                "Permission is not granted.\n",
+            ))
+            .unwrap();
+        let project = Project {
+            manifest_path: manifest.path().into(),
+        };
+        project.update_license_years([2023]).unwrap();
+        license.assert(concat!(
+            "The Foobar License\n",
+            "\n",
+            "Copyright (c) 2021-2023 John T. Wodder II\n",
+            "Copyright (c) 2020 The Prime Mover and their Agents\n",
+            "\n",
+            "Permission is not granted.\n",
         ));
     }
 }
