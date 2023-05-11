@@ -16,6 +16,7 @@ use anyhow::Context;
 use clap::Parser;
 use log::{Level, LevelFilter};
 use std::env::set_current_dir;
+use std::io;
 use std::path::PathBuf;
 
 /// Manage Cargo project boilerplate
@@ -59,8 +60,7 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn init_logging(log_level: LevelFilter) {
-    let stderr: Box<dyn std::io::Write + Send + 'static> =
-        Box::new(AutoStream::auto(std::io::stderr()));
+    let stderr: Box<dyn io::Write + Send> = Box::new(AutoStream::auto(io::stderr()));
     fern::Dispatch::new()
         .format(|out, message, record| {
             use AnsiColor::*;
