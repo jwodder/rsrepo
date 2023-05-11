@@ -28,6 +28,17 @@ impl Readme {
         None
     }
 
+    pub fn set_repostatus_badge(&mut self, badge: Badge) {
+        match self
+            .badges
+            .iter()
+            .position(|badge| matches!(badge.kind(), Some(BadgeKind::Repostatus(_))))
+        {
+            Some(i) => self.badges[i] = badge,
+            None => self.badges.insert(0, badge),
+        }
+    }
+
     // Returns `true` if changed
     pub fn ensure_crates_links(&mut self, project: &str) -> bool {
         let mut changed = false;
@@ -310,6 +321,31 @@ mod tests {
         assert_eq!(readme, expected);
         assert_eq!(readme.to_string(), src);
         assert_eq!(readme.repostatus(), Some(Repostatus::Wip));
+    }
+
+    #[test]
+    fn active_readme() {
+        let src = include_str!("testdata/readme/active.md");
+        let jsonsrc = include_str!("testdata/readme/active.json");
+        let readme = src.parse::<Readme>().unwrap();
+        let expected = serde_json::from_str::<Readme>(jsonsrc).unwrap();
+        assert_eq!(readme, expected);
+        assert_eq!(readme.to_string(), src);
+        assert_eq!(readme.repostatus(), Some(Repostatus::Active));
+    }
+
+    #[test]
+    fn set_repostatus_badge() {
+        let mut readme = include_str!("testdata/readme/new.md")
+            .parse::<Readme>()
+            .unwrap();
+        let expected = include_str!("testdata/readme/active.md");
+        readme.set_repostatus_badge(Badge {
+            alt: "Project Status: Active – The project has reached a stable, usable state and is being actively developed.".into(),
+            url: "https://www.repostatus.org/badges/latest/active.svg".into(),
+            target: "https://www.repostatus.org/#active".into(),
+        });
+        assert_eq!(readme.to_string(), expected);
     }
 
     #[test]

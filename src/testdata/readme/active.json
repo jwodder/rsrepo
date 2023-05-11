@@ -1,0 +1,40 @@
+{
+    "badges": [
+        {
+            "alt": "Project Status: Active – The project has reached a stable, usable state and is being actively developed.",
+            "url": "https://www.repostatus.org/badges/latest/active.svg",
+            "target": "https://www.repostatus.org/#active"
+        },
+        {
+            "alt": "CI Status",
+            "url": "https://github.com/rs.test/foobar/actions/workflows/test.yml/badge.svg",
+            "target": "https://github.com/rs.test/foobar/actions/workflows/test.yml"
+        },
+        {
+            "alt": "codecov.io",
+            "url": "https://codecov.io/gh/rs.test/foobar/branch/master/graph/badge.svg",
+            "target": "https://codecov.io/gh/rs.test/foobar"
+        },
+        {
+            "alt": "Minimum Supported Rust Version",
+            "url": "https://img.shields.io/badge/MSRV-1.69-orange",
+            "target": "https://www.rust-lang.org"
+        },
+        {
+            "alt": "MIT License",
+            "url": "https://img.shields.io/github/license/rs.test/foobar.svg",
+            "target": "https://opensource.org/licenses/MIT"
+        }
+    ],
+    "links": [
+        {
+            "text": "GitHub",
+            "url": "https://github.com/rs.test/foobar"
+        },
+        {
+            "text": "Issues",
+            "url": "https://github.com/rs.test/foobar/issues"
+        }
+    ],
+    "text": "INSERT LONG DESCRIPTION HERE\n"
+}
