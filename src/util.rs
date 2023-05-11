@@ -1,15 +1,19 @@
 #![allow(dead_code)]
 use chrono::Datelike;
-use nom::character::complete::{char, u32 as nom_u32};
-use nom::combinator::{all_consuming, opt};
-use nom::sequence::preceded;
+use nom::bytes::complete::tag;
+use nom::character::complete::{char, i32 as nom_i32, space0, space1, u32 as nom_u32};
+use nom::combinator::{all_consuming, opt, rest};
+use nom::multi::separated_list1;
+use nom::sequence::{preceded, tuple};
 use nom::{Finish, IResult};
+use rangemap::RangeInclusiveSet;
 use semver::Version;
 use serde::de::{Deserializer, Unexpected, Visitor};
 use serde::ser::Serializer;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::iter::FusedIterator;
+use std::ops::RangeInclusive;
 use std::str::FromStr;
 use thiserror::Error;
 
@@ -146,6 +150,77 @@ pub fn bump_version(v: Version, level: Bump) -> Version {
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CopyrightLine {
+    years: RangeInclusiveSet<i32>,
+    authors: String,
+}
+
+impl CopyrightLine {
+    pub fn add_year(&mut self, year: i32) {
+        self.years.insert(year..=year);
+    }
+}
+
+impl FromStr for CopyrightLine {
+    type Err = ParseCopyrightError;
+
+    fn from_str(s: &str) -> Result<CopyrightLine, ParseCopyrightError> {
+        match all_consuming(copyright)(s).finish() {
+            Ok((_, c)) => Ok(c),
+            Err(_) => Err(ParseCopyrightError),
+        }
+    }
+}
+
+impl fmt::Display for CopyrightLine {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Copyright (c) ")?;
+        let mut first = true;
+        for rng in self.years.iter() {
+            if !std::mem::replace(&mut first, false) {
+                write!(f, ", ")?;
+            }
+            if rng.start() == rng.end() {
+                write!(f, "{}", rng.start())?;
+            } else {
+                write!(f, "{}-{}", rng.start(), rng.end())?;
+            }
+        }
+        write!(f, " {}", self.authors)?;
+        Ok(())
+    }
+}
+
+#[derive(Copy, Clone, Debug, Error, Eq, PartialEq)]
+#[error("invalid copyright line")]
+pub struct ParseCopyrightError;
+
+fn copyright(input: &str) -> IResult<&str, CopyrightLine> {
+    let (input, _) = tuple((tag("Copyright"), space1, tag("(c)"), space1))(input)?;
+    let (input, ranges) = separated_list1(tuple((space0, char(','), space0)), year_range)(input)?;
+    let (input, _) = space1(input)?;
+    let (input, authors) = rest(input)?;
+    Ok((
+        input,
+        CopyrightLine {
+            years: ranges.into_iter().collect(),
+            authors: authors.into(),
+        },
+    ))
+}
+
+fn year_range(input: &str) -> IResult<&str, RangeInclusive<i32>> {
+    let (input, start) = nom_i32(input)?;
+    let (input, end) = opt(preceded(tuple((space0, char('-'), space0)), nom_i32))(input)?;
+    let rng = if let Some(end) = end {
+        start..=end
+    } else {
+        start..=start
+    };
+    Ok((input, rng))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -238,5 +313,90 @@ mod tests {
     #[case("1.2.3", Bump::Patch, "1.2.4")]
     fn test_bump_version(#[case] v: Version, #[case] level: Bump, #[case] bumped: Version) {
         assert_eq!(bump_version(v, level), bumped);
+    }
+
+    #[test]
+    fn test_copyright_line_one_year() {
+        let s = "Copyright (c) 2023 John T. Wodder II";
+        let crl = s.parse::<CopyrightLine>().unwrap();
+        let mut years = RangeInclusiveSet::new();
+        years.insert(2023..=2023);
+        assert_eq!(
+            crl,
+            CopyrightLine {
+                years,
+                authors: "John T. Wodder II".into()
+            }
+        );
+        assert_eq!(crl.to_string(), s);
+    }
+
+    #[test]
+    fn test_copyright_line_two_years() {
+        let s = "Copyright (c) 2023,2025 John T. Wodder II";
+        let crl = s.parse::<CopyrightLine>().unwrap();
+        let mut years = RangeInclusiveSet::new();
+        years.insert(2023..=2023);
+        years.insert(2025..=2025);
+        assert_eq!(
+            crl,
+            CopyrightLine {
+                years,
+                authors: "John T. Wodder II".into()
+            }
+        );
+        assert_eq!(
+            crl.to_string(),
+            "Copyright (c) 2023, 2025 John T. Wodder II"
+        );
+    }
+
+    #[test]
+    fn test_copyright_line_two_unmerged_years() {
+        let s = "Copyright  (c)\t2023 , 2024  John T. Wodder II";
+        let crl = s.parse::<CopyrightLine>().unwrap();
+        let mut years = RangeInclusiveSet::new();
+        years.insert(2023..=2024);
+        assert_eq!(
+            crl,
+            CopyrightLine {
+                years,
+                authors: "John T. Wodder II".into()
+            }
+        );
+        assert_eq!(crl.to_string(), "Copyright (c) 2023-2024 John T. Wodder II");
+    }
+
+    #[test]
+    fn test_copyright_line_range() {
+        let s = "Copyright (c) 2021 - 2023 John T. Wodder II";
+        let crl = s.parse::<CopyrightLine>().unwrap();
+        let mut years = RangeInclusiveSet::new();
+        years.insert(2021..=2023);
+        assert_eq!(
+            crl,
+            CopyrightLine {
+                years,
+                authors: "John T. Wodder II".into()
+            }
+        );
+        assert_eq!(crl.to_string(), "Copyright (c) 2021-2023 John T. Wodder II");
+    }
+
+    #[test]
+    fn test_copyright_line_range_year() {
+        let s = "Copyright (c) 2021-2023, 2025 John T. Wodder II";
+        let crl = s.parse::<CopyrightLine>().unwrap();
+        let mut years = RangeInclusiveSet::new();
+        years.insert(2021..=2023);
+        years.insert(2025..=2025);
+        assert_eq!(
+            crl,
+            CopyrightLine {
+                years,
+                authors: "John T. Wodder II".into()
+            }
+        );
+        assert_eq!(crl.to_string(), s);
     }
 }
