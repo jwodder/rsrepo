@@ -43,6 +43,26 @@ impl Project {
         &self.manifest_path
     }
 
+    pub fn is_bin(&self) -> anyhow::Result<bool> {
+        let srcdir = self.path().join("src");
+        Ok(srcdir
+            .join("main.rs")
+            .try_exists()
+            .context("could not determine whether src/main.rs exists")?
+            || srcdir
+                .join("bin")
+                .try_exists()
+                .context("could not determine whether src/bin/ exists")?)
+    }
+
+    pub fn is_lib(&self) -> anyhow::Result<bool> {
+        let srcdir = self.path().join("src");
+        srcdir
+            .join("lib.rs")
+            .try_exists()
+            .context("could not determine whether src/main.rs exists")
+    }
+
     pub fn git(&self) -> Git<'_> {
         Git::new(self.path())
     }
