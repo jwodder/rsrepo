@@ -53,7 +53,7 @@ impl Mkgithub {
         if let Some(s) = metadata.description {
             repo_cfg = repo_cfg.description(s);
         }
-        let github = GitHub::new()?;
+        let github = GitHub::authed()?;
         let r = github.create_repository(repo_cfg)?;
         log::info!("Created GitHub repository {}", r.html_url);
 

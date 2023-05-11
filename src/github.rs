@@ -25,20 +25,24 @@ pub struct GitHub {
 }
 
 impl GitHub {
-    pub fn new() -> anyhow::Result<GitHub> {
-        let token = gh_token::get().context("Failed to retrieve GitHub token")?;
-        let authorization = format!("token {token}");
+    pub fn new<S: AsRef<str>>(token: Option<S>) -> GitHub {
+        let authorization = token.map(|tk| format!("token {}", tk.as_ref()));
         let client = AgentBuilder::new()
             .user_agent(USER_AGENT)
             .https_only(true)
-            .middleware(move |req: ureq::Request, next: ureq::MiddlewareNext| {
-                next.handle(
-                    req.set("Authorization", &authorization)
-                        .set("Accept", "application/vnd.github+json"),
-                )
+            .middleware(move |mut req: ureq::Request, next: ureq::MiddlewareNext| {
+                if let Some(auth) = authorization.as_ref() {
+                    req = req.set("Authorization", auth);
+                }
+                next.handle(req.set("Accept", "application/vnd.github+json"))
             })
             .build();
-        Ok(GitHub { client })
+        GitHub { client }
+    }
+
+    pub fn authed() -> anyhow::Result<GitHub> {
+        let token = gh_token::get().context("Failed to retrieve GitHub token")?;
+        Ok(GitHub::new(Some(token)))
     }
 
     fn request<T: Serialize, U: DeserializeOwned>(
@@ -92,6 +96,12 @@ impl GitHub {
 
     pub fn create_release(&self, repo: &GHRepo, release: CreateRelease) -> anyhow::Result<Release> {
         self.post(&format!("{}/releases", repo.api_url()), release)
+    }
+}
+
+impl Default for GitHub {
+    fn default() -> GitHub {
+        GitHub::new::<&str>(None)
     }
 }
 
