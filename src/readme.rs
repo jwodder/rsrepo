@@ -27,6 +27,41 @@ impl Readme {
         }
         None
     }
+
+    // Returns `true` if changed
+    pub fn ensure_crates_links(&mut self, project: &str) -> bool {
+        let mut changed = false;
+        let github_index = self
+            .links
+            .iter()
+            .position(|lnk| lnk.text == "GitHub")
+            .unwrap_or(0);
+        let crates_index = match self.links.iter().position(|lnk| lnk.text == "crates.io") {
+            Some(i) => i,
+            None => {
+                self.links.insert(
+                    github_index + 1,
+                    Link {
+                        url: format!("https://crates.io/crates/{project}"),
+                        text: "crates.io".into(),
+                    },
+                );
+                changed = true;
+                github_index + 1
+            }
+        };
+        if !self.links.iter().any(|lnk| lnk.text == "Documentation") {
+            self.links.insert(
+                crates_index + 1,
+                Link {
+                    url: format!("https://docs.rs/{project}"),
+                    text: "Documentation".into(),
+                },
+            );
+            changed = true;
+        }
+        changed
+    }
 }
 
 impl FromStr for Readme {
@@ -256,14 +291,37 @@ mod tests {
     use rstest::rstest;
 
     #[test]
-    fn readme01() {
-        let src = include_str!("testdata/readme01.md");
-        let jsonsrc = include_str!("testdata/readme01.json");
+    fn new_readme() {
+        let src = include_str!("testdata/readme/new.md");
+        let jsonsrc = include_str!("testdata/readme/new.json");
         let readme = src.parse::<Readme>().unwrap();
         let expected = serde_json::from_str::<Readme>(jsonsrc).unwrap();
         assert_eq!(readme, expected);
         assert_eq!(readme.to_string(), src);
         assert_eq!(readme.repostatus(), Some(Repostatus::Wip));
+    }
+
+    #[test]
+    fn with_crates_readme() {
+        let src = include_str!("testdata/readme/with-crates.md");
+        let jsonsrc = include_str!("testdata/readme/with-crates.json");
+        let readme = src.parse::<Readme>().unwrap();
+        let expected = serde_json::from_str::<Readme>(jsonsrc).unwrap();
+        assert_eq!(readme, expected);
+        assert_eq!(readme.to_string(), src);
+        assert_eq!(readme.repostatus(), Some(Repostatus::Wip));
+    }
+
+    #[test]
+    fn ensure_crates_links() {
+        let mut readme = include_str!("testdata/readme/new.md")
+            .parse::<Readme>()
+            .unwrap();
+        let expected = include_str!("testdata/readme/with-crates.md");
+        assert!(readme.ensure_crates_links("foobar"));
+        assert_eq!(readme.to_string(), expected);
+        assert!(!readme.ensure_crates_links("foobar"));
+        assert_eq!(readme.to_string(), expected);
     }
 
     #[rstest]
