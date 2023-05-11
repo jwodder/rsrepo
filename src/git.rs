@@ -4,7 +4,7 @@ use crate::util::{this_year, StringLines};
 use anyhow::{bail, Context};
 use std::collections::HashSet;
 use std::ffi::OsStr;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Git<'a> {
@@ -124,5 +124,15 @@ impl<'a> Git<'a> {
             Err(CommandOutputError::Exit { rc, .. }) if rc.code() == Some(1) => Ok(None),
             Err(e) => Err(e),
         }
+    }
+
+    pub fn untracked_files(&self) -> Result<Vec<PathBuf>, CommandOutputError> {
+        let s = self.read(
+            "ls-files",
+            ["-z", "-o", "--exclude-standard", "--directory"],
+        )?;
+        Ok(s.split_terminator('\0')
+            .map(PathBuf::from)
+            .collect::<Vec<_>>())
     }
 }
