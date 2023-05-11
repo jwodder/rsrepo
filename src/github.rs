@@ -97,6 +97,10 @@ impl GitHub {
     pub fn create_release(&self, repo: &GHRepo, release: CreateRelease) -> anyhow::Result<Release> {
         self.post(&format!("{}/releases", repo.api_url()), release)
     }
+
+    pub fn latest_release(&self, repo: &GHRepo) -> anyhow::Result<Release> {
+        self.get(&format!("{}/releases/latest", repo.api_url()))
+    }
 }
 
 impl Default for GitHub {
