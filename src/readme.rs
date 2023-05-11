@@ -5,11 +5,11 @@ use nom::combinator::{all_consuming, map_res, rest};
 use nom::multi::{many1, separated_list1};
 use nom::sequence::{delimited, terminated};
 use nom::{Finish, IResult};
-use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
 use thiserror::Error;
+use url::Url;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Readme {

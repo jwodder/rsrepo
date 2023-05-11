@@ -1,13 +1,12 @@
 #![allow(dead_code)]
-use crate::http_util::RaisingResponse;
+use crate::http_util::StatusError;
 use anyhow::Context;
 use ghrepo::GHRepo;
-use reqwest::blocking::{Client, ClientBuilder};
-use reqwest::header::{self, HeaderMap};
-use reqwest::Url;
 use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize, Serializer};
 use std::borrow::Cow;
 use std::fmt;
+use ureq::{Agent, AgentBuilder};
+use url::Url;
 
 static USER_AGENT: &str = concat!(
     env!("CARGO_PKG_NAME"),
@@ -22,79 +21,77 @@ static API_ENDPOINT: &str = "https://api.github.com";
 
 #[derive(Clone, Debug)]
 pub struct GitHub {
-    client: Client,
+    client: Agent,
 }
 
 impl GitHub {
     pub fn new() -> anyhow::Result<GitHub> {
         let token = gh_token::get().context("Failed to retrieve GitHub token")?;
-        let mut headers = HeaderMap::new();
-        let mut auth = header::HeaderValue::try_from(&format!("token {token}"))
-            .context("Failed to create Authorization header value")?;
-        auth.set_sensitive(true);
-        headers.insert(header::AUTHORIZATION, auth);
-        headers.insert(
-            header::ACCEPT,
-            header::HeaderValue::try_from("application/vnd.github+json")
-                .context("Failed to create Accept header value")?,
-        );
-        let client = ClientBuilder::new()
+        let authorization = format!("token {token}");
+        let client = AgentBuilder::new()
             .user_agent(USER_AGENT)
-            .default_headers(headers)
             .https_only(true)
-            .build()
-            .context("Failed to construct GitHub client")?;
+            .middleware(move |req: ureq::Request, next: ureq::MiddlewareNext| {
+                next.handle(
+                    req.set("Authorization", &authorization)
+                        .set("Accept", "application/vnd.github+json"),
+                )
+            })
+            .build();
         Ok(GitHub { client })
     }
 
+    fn request<T: Serialize, U: DeserializeOwned>(
+        &self,
+        method: &str,
+        path: &str,
+        payload: Option<T>,
+    ) -> anyhow::Result<U> {
+        let url = mkurl(path)?;
+        //log::debug!("{} {}", method, url);
+        let req = self.client.request_url(method, &url);
+        let r = if let Some(p) = payload {
+            req.send_json(p)
+        } else {
+            req.call()
+        };
+        match r {
+            Ok(r) => r
+                .into_json::<U>()
+                .with_context(|| format!("Failed to deserialize response from {path}")),
+            Err(ureq::Error::Status(_, r)) => Err(StatusError::for_response(method, r).into()),
+            Err(e) => Err(e).with_context(|| format!("Failed to make {method} request to {path}")),
+        }
+    }
+
     fn get<T: DeserializeOwned>(&self, path: &str) -> anyhow::Result<T> {
-        self.client
-            .get(mkurl(path)?)
-            .send()
-            .with_context(|| format!("Failed to make GET request to {path}"))?
-            .raise_for_status()?
-            .json::<T>()
-            .with_context(|| format!("Failed to deserialize response from {path}"))
+        self.request::<(), T>("GET", path, None)
     }
 
-    fn post<T: Serialize, U: DeserializeOwned>(&self, path: &str, body: &T) -> anyhow::Result<U> {
-        self.client
-            .post(mkurl(path)?)
-            .json(body)
-            .send()
-            .with_context(|| format!("Failed to make POST request to {path}"))?
-            .raise_for_status()?
-            .json::<U>()
-            .with_context(|| format!("Failed to deserialize response from {path}"))
+    fn post<T: Serialize, U: DeserializeOwned>(&self, path: &str, body: T) -> anyhow::Result<U> {
+        self.request::<T, U>("POST", path, Some(body))
     }
 
-    fn put<T: Serialize, U: DeserializeOwned>(&self, path: &str, body: &T) -> anyhow::Result<U> {
-        self.client
-            .put(mkurl(path)?)
-            .json(body)
-            .send()
-            .with_context(|| format!("Failed to make PUT request to {path}"))?
-            .raise_for_status()?
-            .json::<U>()
-            .with_context(|| format!("Failed to deserialize response from {path}"))
+    fn put<T: Serialize, U: DeserializeOwned>(&self, path: &str, body: T) -> anyhow::Result<U> {
+        self.request::<T, U>("PUT", path, Some(body))
     }
 
     pub fn create_repository(&self, config: NewRepoConfig) -> anyhow::Result<Repository> {
         let (create_repo_body, set_topics_body) = config.into_payloads();
-        let r: Repository = self.post("/user/repos", &create_repo_body)?;
+        let r: Repository = self.post("/user/repos", create_repo_body)?;
         if !set_topics_body.is_empty() {
-            let _: SetTopicsBody = self.put(&r.url, &set_topics_body)?;
+            let _: SetTopicsBody = self.put(&r.url, set_topics_body)?;
         }
         Ok(r)
     }
 
     pub fn create_label(&self, repo: &GHRepo, label: Label<'_>) -> anyhow::Result<()> {
-        let _: Label<'_> = self.post(&format!("{}/labels", repo.api_url()), &label)?;
+        let _: Label<'_> = self.post(&format!("{}/labels", repo.api_url()), label)?;
         Ok(())
     }
 
     pub fn create_release(&self, repo: &GHRepo, release: CreateRelease) -> anyhow::Result<Release> {
-        self.post(&format!("{}/releases", repo.api_url()), &release)
+        self.post(&format!("{}/releases", repo.api_url()), release)
     }
 }
 
