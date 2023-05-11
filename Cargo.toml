@@ -35,12 +35,14 @@ shell-words = "1.1.0"
 thiserror = "1.0.40"
 tinytemplate = "1.2.1"
 toml = { version = "0.7.3", default-features = false, features = ["parse"] }
+toml_edit = "0.19.8"
 ureq = { version = "2.6.2", features = ["json"] }
 url = "2.3.1"
 which = "4.4.0"
 
 [dev-dependencies]
 assert_cmd = "2.0.11"
+assert_fs = "1.0.13"
 rstest = { version = "0.17.0", default-features = false }
 similar = "2.2.1"
 tempfile = "3.5.0"

@@ -12,6 +12,7 @@ use std::fs::{read_to_string, File};
 use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
 use thiserror::Error;
+use toml_edit::Document;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Project {
@@ -76,6 +77,19 @@ impl Project {
         }
     }
 
+    pub fn set_cargo_version(&self, v: Version) -> anyhow::Result<()> {
+        let src =
+            read_to_string(self.path().join("Cargo.toml")).context("Failed to read Cargo.toml")?;
+        let mut doc = src
+            .parse::<Document>()
+            .context("Failed to parse Cargo.toml")?;
+        doc["project"]["version"] = toml_edit::value(v.to_string());
+        let mut fp = File::create(self.path().join("Cargo.toml"))
+            .context("failed to open Cargo.toml for writing")?;
+        write!(&mut fp, "{}", doc).context("failed writing to Cargo.toml")?;
+        Ok(())
+    }
+
     pub fn git(&self) -> Git<'_> {
         Git::new(self.path())
     }
@@ -137,4 +151,39 @@ pub enum LocateProjectError {
     Deserialize(#[from] serde_json::Error),
     #[error("manifest path is absolute or parentless: {}", .0.display())]
     InvalidPath(PathBuf),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use assert_fs::prelude::*;
+    use assert_fs::TempDir;
+
+    #[test]
+    fn test_set_cargo_version() {
+        let tmpdir = TempDir::new().unwrap();
+        let manifest = tmpdir.child("Cargo.toml");
+        manifest
+            .write_str(concat!(
+                "[project]\n",
+                "name = \"foobar\"\n",
+                "version = \"0.1.0\"\n",
+                "edition = \"2021\"\n",
+                "\n",
+                "[dependencies]\n",
+            ))
+            .unwrap();
+        let project = Project {
+            manifest_path: manifest.path().into(),
+        };
+        project.set_cargo_version(Version::new(1, 2, 3)).unwrap();
+        manifest.assert(concat!(
+            "[project]\n",
+            "name = \"foobar\"\n",
+            "version = \"1.2.3\"\n",
+            "edition = \"2021\"\n",
+            "\n",
+            "[dependencies]\n",
+        ));
+    }
 }
