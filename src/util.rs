@@ -114,6 +114,7 @@ impl<'de> Visitor<'de> for RustVersionVisitor {
 pub struct ParseRustVersionError;
 
 fn rust_version(input: &str) -> IResult<&str, RustVersion> {
+    let (input, _) = opt(char('v'))(input)?;
     let (input, major) = nom_u32(input)?;
     let (input, _) = char('.')(input)?;
     let (input, minor) = nom_u32(input)?;
@@ -171,6 +172,34 @@ mod tests {
     #[test]
     fn three_part_rust_version() {
         let rv = "1.69.0".parse::<RustVersion>().unwrap();
+        assert_eq!(
+            rv,
+            RustVersion {
+                major: 1,
+                minor: 69,
+                patch: Some(0)
+            }
+        );
+        assert_eq!(rv.to_string(), "1.69.0");
+    }
+
+    #[test]
+    fn v_two_part_rust_version() {
+        let rv = "v1.69".parse::<RustVersion>().unwrap();
+        assert_eq!(
+            rv,
+            RustVersion {
+                major: 1,
+                minor: 69,
+                patch: None
+            }
+        );
+        assert_eq!(rv.to_string(), "1.69");
+    }
+
+    #[test]
+    fn v_three_part_rust_version() {
+        let rv = "v1.69.0".parse::<RustVersion>().unwrap();
         assert_eq!(
             rv,
             RustVersion {
