@@ -1,7 +1,17 @@
 use chrono::Datelike;
+use nom::character::complete::{char, u32 as nom_u32};
+use nom::combinator::{all_consuming, opt};
+use nom::sequence::preceded;
+use nom::{Finish, IResult};
+use serde::de::{Deserializer, Unexpected, Visitor};
+use serde::ser::Serializer;
+use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::iter::FusedIterator;
+use std::str::FromStr;
+use thiserror::Error;
 
-pub(crate) fn this_year() -> i32 {
+pub fn this_year() -> i32 {
     chrono::Local::now().year()
 }
 
@@ -37,6 +47,87 @@ impl Iterator for StringLines {
 
 impl FusedIterator for StringLines {}
 
+#[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct RustVersion {
+    major: u32,
+    minor: u32,
+    patch: Option<u32>,
+}
+
+impl FromStr for RustVersion {
+    type Err = ParseRustVersionError;
+
+    fn from_str(s: &str) -> Result<RustVersion, ParseRustVersionError> {
+        match all_consuming(rust_version)(s).finish() {
+            Ok((_, rv)) => Ok(rv),
+            Err(_) => Err(ParseRustVersionError),
+        }
+    }
+}
+
+impl fmt::Display for RustVersion {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}.{}", self.major, self.minor)?;
+        if let Some(patch) = self.patch {
+            write!(f, ".{}", patch)?;
+        }
+        Ok(())
+    }
+}
+
+impl Serialize for RustVersion {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        self.to_string().serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for RustVersion {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_str(RustVersionVisitor)
+    }
+}
+
+struct RustVersionVisitor;
+
+impl<'de> Visitor<'de> for RustVersionVisitor {
+    type Value = RustVersion;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a Rust version of the form X.Y or X.Y.Z")
+    }
+
+    fn visit_str<E>(self, input: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        input
+            .parse::<RustVersion>()
+            .map_err(|_| E::invalid_value(Unexpected::Str(input), &self))
+    }
+}
+
+#[derive(Copy, Clone, Debug, Error, Eq, PartialEq)]
+#[error("invalid Rust version/MSRV")]
+pub struct ParseRustVersionError;
+
+fn rust_version(input: &str) -> IResult<&str, RustVersion> {
+    let (input, major) = nom_u32(input)?;
+    let (input, _) = char('.')(input)?;
+    let (input, minor) = nom_u32(input)?;
+    let (input, patch) = opt(preceded(char('.'), nom_u32))(input)?;
+    Ok((
+        input,
+        RustVersion {
+            major,
+            minor,
+            patch,
+        },
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -61,5 +152,33 @@ mod tests {
         assert_eq!(iter.next().unwrap(), "baz");
         assert_eq!(iter.next(), None);
         assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn two_part_rust_version() {
+        let rv = "1.69".parse::<RustVersion>().unwrap();
+        assert_eq!(
+            rv,
+            RustVersion {
+                major: 1,
+                minor: 69,
+                patch: None
+            }
+        );
+        assert_eq!(rv.to_string(), "1.69");
+    }
+
+    #[test]
+    fn three_part_rust_version() {
+        let rv = "1.69.0".parse::<RustVersion>().unwrap();
+        assert_eq!(
+            rv,
+            RustVersion {
+                major: 1,
+                minor: 69,
+                patch: Some(0)
+            }
+        );
+        assert_eq!(rv.to_string(), "1.69.0");
     }
 }
