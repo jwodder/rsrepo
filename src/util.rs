@@ -1,8 +1,10 @@
+#![allow(dead_code)]
 use chrono::Datelike;
 use nom::character::complete::{char, u32 as nom_u32};
 use nom::combinator::{all_consuming, opt};
 use nom::sequence::preceded;
 use nom::{Finish, IResult};
+use semver::Version;
 use serde::de::{Deserializer, Unexpected, Visitor};
 use serde::ser::Serializer;
 use serde::{Deserialize, Serialize};
@@ -129,9 +131,25 @@ fn rust_version(input: &str) -> IResult<&str, RustVersion> {
     ))
 }
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum Bump {
+    Major,
+    Minor,
+    Patch,
+}
+
+pub fn bump_version(v: Version, level: Bump) -> Version {
+    match level {
+        Bump::Major => Version::new(v.major + 1, 0, 0),
+        Bump::Minor => Version::new(v.major, v.minor + 1, 0),
+        Bump::Patch => Version::new(v.major, v.minor, v.patch + 1),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rstest::rstest;
 
     #[test]
     fn string_lines() {
@@ -209,5 +227,16 @@ mod tests {
             }
         );
         assert_eq!(rv.to_string(), "1.69.0");
+    }
+
+    #[rstest]
+    #[case("0.5.0", Bump::Major, "1.0.0")]
+    #[case("0.5.0", Bump::Minor, "0.6.0")]
+    #[case("0.5.0", Bump::Patch, "0.5.1")]
+    #[case("1.2.3", Bump::Major, "2.0.0")]
+    #[case("1.2.3", Bump::Minor, "1.3.0")]
+    #[case("1.2.3", Bump::Patch, "1.2.4")]
+    fn test_bump_version(#[case] v: Version, #[case] level: Bump, #[case] bumped: Version) {
+        assert_eq!(bump_version(v, level), bumped);
     }
 }
