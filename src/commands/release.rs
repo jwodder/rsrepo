@@ -15,13 +15,19 @@ use std::fs::create_dir_all;
 use std::io::{self, Write};
 use tempfile::NamedTempFile;
 
+/// Prepare & publish a new release
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
-#[group(multiple = false)]
+#[group(multiple = false, id = "bump")]
 pub struct BumpOptions {
+    /// Release the next major version
     #[clap(long)]
     major: bool,
+
+    /// Release the next minor version
     #[clap(long)]
     minor: bool,
+
+    /// Release the next patch version
     #[clap(long)]
     patch: bool,
 }
@@ -31,6 +37,9 @@ pub struct Release {
     #[command(flatten)]
     bump: BumpOptions,
 
+    /// The version to release.  If neither this argument nor a bump option is
+    /// specified, the Cargo.toml version is used without a prerelease or
+    /// metadata.
     #[clap(value_parser = parse_v_version, conflicts_with = "bump")]
     version: Option<Version>,
 }
