@@ -15,27 +15,10 @@ use std::fs::create_dir_all;
 use std::io::{self, Write};
 use tempfile::NamedTempFile;
 
-/// Prepare & publish a new release
-#[derive(Args, Clone, Debug, Eq, PartialEq)]
-#[group(multiple = false, id = "bump")]
-pub struct BumpOptions {
-    /// Release the next major version
-    #[clap(long)]
-    major: bool,
-
-    /// Release the next minor version
-    #[clap(long)]
-    minor: bool,
-
-    /// Release the next patch version
-    #[clap(long)]
-    patch: bool,
-}
-
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
 pub struct Release {
     #[command(flatten)]
-    bump: BumpOptions,
+    bumping: Bumping,
 
     /// The version to release.  If neither this argument nor a bump option is
     /// specified, the Cargo.toml version is used without a prerelease or
@@ -61,34 +44,10 @@ impl Release {
 
         // Determine new version
         let new_version = if let Some(v) = self.version {
-            // Overrides all checks
-            v
+            v // Skips the checks from the other branch
         } else {
-            let tag_version = project.latest_tag_version()?;
-            if let Some(tag_version) = tag_version.as_ref() {
-                // If the latest tag is not equal to the manifest version
-                // (equality only allowed when bumping; enforced by the check
-                // for tag existence below) and the manifest version is not a
-                // greater prerelease, error.
-                // TODO: Unit-test this to confirm I like the logic.
-                if tag_version >= &old_version || old_version.pre.is_empty() {
-                    // TODO: Improve error message
-                    bail!("Latest Git-tagged version exceeds manifest version");
-                }
-            }
-            if let Some(bump) = self.bump() {
-                if let Some(tag_version) = tag_version {
-                    if !tag_version.pre.is_empty() {
-                        bail!("Latest Git tag is a prerelease; cannot bump");
-                    }
-                    bump_version(tag_version, bump)
-                } else {
-                    bail!("No Git tag to bump");
-                }
-            } else {
-                // Strip any pre-release segment
-                Version::new(old_version.major, old_version.minor, old_version.patch)
-            }
+            self.bumping
+                .bump(project.latest_tag_version()?, &old_version)?
         };
         if git.tag_exists(&new_version.to_string())?
             || git.tag_exists(&format!("v{new_version}"))?
@@ -317,13 +276,61 @@ impl Release {
 
         Ok(())
     }
+}
 
-    fn bump(&self) -> Option<Bump> {
-        if self.bump.major {
+/// Prepare & publish a new release
+#[derive(Args, Clone, Debug, Default, Eq, PartialEq)]
+#[group(multiple = false, id = "bump")]
+pub struct Bumping {
+    /// Release the next major version
+    #[clap(long)]
+    major: bool,
+
+    /// Release the next minor version
+    #[clap(long)]
+    minor: bool,
+
+    /// Release the next patch version
+    #[clap(long)]
+    patch: bool,
+}
+
+impl Bumping {
+    fn bump(
+        &self,
+        tag_version: Option<Version>,
+        manifest_version: &Version,
+    ) -> anyhow::Result<Version> {
+        if let Some(level) = self.level() {
+            if let Some(tag_version) = tag_version {
+                if !tag_version.pre.is_empty() {
+                    bail!("Latest Git tag is a prerelease; cannot bump");
+                }
+                Ok(bump_version(tag_version, level))
+            } else {
+                bail!("No Git tag to bump");
+            }
+        } else {
+            if let Some(tag_version) = tag_version.as_ref() {
+                if tag_version >= manifest_version {
+                    bail!("Latest Git-tagged version exceeds manifest version");
+                }
+            }
+            // Strip any pre-release segment
+            Ok(Version::new(
+                manifest_version.major,
+                manifest_version.minor,
+                manifest_version.patch,
+            ))
+        }
+    }
+
+    fn level(&self) -> Option<Bump> {
+        if self.major {
             Some(Bump::Major)
-        } else if self.bump.minor {
+        } else if self.minor {
             Some(Bump::Minor)
-        } else if self.bump.patch {
+        } else if self.patch {
             Some(Bump::Patch)
         } else {
             None
@@ -356,4 +363,91 @@ fn write_commit_template<W: Write>(
     writeln!(fp, "# The rest will be used as the release body.")?;
     fp.flush()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case("1.2.3", "1.2.4", "1.2.4")]
+    #[case("1.2.3", "1.2.4-dev", "1.2.4")]
+    #[case("1.2.3-alpha", "1.2.3-alpha.1", "1.2.3")]
+    fn bumping_default(
+        #[case] tag_version: Version,
+        #[case] manifest_version: Version,
+        #[case] bumped: Version,
+    ) {
+        assert_eq!(
+            Bumping::default()
+                .bump(Some(tag_version), &manifest_version)
+                .unwrap(),
+            bumped
+        );
+    }
+
+    #[rstest]
+    #[case("1.2.4", "1.2.4")]
+    #[case("1.2.4-dev", "1.2.4")]
+    fn bumping_default_no_tag(#[case] manifest_version: Version, #[case] bumped: Version) {
+        assert_eq!(
+            Bumping::default().bump(None, &manifest_version).unwrap(),
+            bumped
+        );
+    }
+
+    #[rstest]
+    #[case("1.2.3", "1.2.3")]
+    #[case("1.2.3", "1.2.0")]
+    #[case("1.2.3", "1.2.3-dev")]
+    #[case("1.2.3", "1.2.2-dev")]
+    #[case("1.2.3-alpha.1", "1.2.3-alpha")]
+    fn bumping_default_err(#[case] tag_version: Version, #[case] manifest_version: Version) {
+        assert!(Bumping::default()
+            .bump(Some(tag_version), &manifest_version)
+            .is_err());
+    }
+
+    #[rstest]
+    #[case("1.2.3", "1.2.3", "1.3.0")]
+    #[case("1.2.3", "1.2.3-dev", "1.3.0")]
+    #[case("1.2.3", "1.3.0-dev", "1.3.0")]
+    #[case("1.1.5", "1.2.3", "1.2.0")]
+    #[case("1.2.3", "1.1.5", "1.3.0")]
+    fn bumping_minor(
+        #[case] tag_version: Version,
+        #[case] manifest_version: Version,
+        #[case] bumped: Version,
+    ) {
+        let bumping = Bumping {
+            minor: true,
+            ..Bumping::default()
+        };
+        assert_eq!(
+            bumping.bump(Some(tag_version), &manifest_version).unwrap(),
+            bumped,
+        );
+    }
+
+    #[test]
+    fn bumping_minor_pre_tag() {
+        let bumping = Bumping {
+            minor: true,
+            ..Bumping::default()
+        };
+        let tag_version = "1.2.3-dev".parse::<Version>().unwrap();
+        let manifest_version = Version::new(1, 2, 3);
+        assert!(bumping.bump(Some(tag_version), &manifest_version).is_err());
+    }
+
+    #[test]
+    fn bumping_minor_no_tag() {
+        let bumping = Bumping {
+            minor: true,
+            ..Bumping::default()
+        };
+        let manifest_version = Version::new(1, 2, 3);
+        assert!(bumping.bump(None, &manifest_version).is_err());
+    }
 }
