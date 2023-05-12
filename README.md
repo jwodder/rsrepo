@@ -25,8 +25,8 @@ Certain commands automatically edit the projects' `README.md` and/or
 documented in [`doc/readme-format.md`][readme] and
 [`doc/changelog-format.md`][changelog], respectively.
 
-[readme]: https://github.com/jwodder/confab/blob/master/doc/readme-format.md
-[changelog]: https://github.com/jwodder/confab/blob/master/doc/changelog-format.md
+[readme]: https://github.com/jwodder/rsrepo/blob/master/doc/readme-format.md
+[changelog]: https://github.com/jwodder/rsrepo/blob/master/doc/changelog-format.md
 
 Global Options
 --------------
