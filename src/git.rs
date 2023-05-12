@@ -16,16 +16,18 @@ impl<'a> Git<'a> {
         Git { path }
     }
 
+    pub fn command(&self) -> LoggedCommand {
+        let mut cmd = LoggedCommand::new("git");
+        cmd.current_dir(self.path);
+        cmd
+    }
+
     pub fn run<I, S>(&self, cmd: &str, args: I) -> Result<(), CommandError>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        LoggedCommand::new("git")
-            .arg(cmd)
-            .args(args)
-            .current_dir(self.path)
-            .status()
+        self.command().arg(cmd).args(args).status()
     }
 
     pub fn read<I, S>(&self, cmd: &str, args: I) -> Result<String, CommandOutputError>
@@ -33,22 +35,21 @@ impl<'a> Git<'a> {
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        LoggedCommand::new("git")
+        self.command()
             .arg(cmd)
             .args(args)
-            .current_dir(self.path)
             .check_output()
             .map(|s| s.trim().to_string())
     }
 
-    pub fn readlines<I, S>(&self, arg0: &str, args: I) -> Result<StringLines, CommandOutputError>
+    pub fn readlines<I, S>(&self, cmd: &str, args: I) -> Result<StringLines, CommandOutputError>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
     {
-        LoggedCommand::new(arg0)
+        self.command()
+            .arg(cmd)
             .args(args)
-            .current_dir(self.path)
             .check_output()
             .map(StringLines::new)
     }
