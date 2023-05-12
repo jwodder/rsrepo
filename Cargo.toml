@@ -44,6 +44,7 @@ which = "4.4.0"
 [dev-dependencies]
 assert_cmd = "2.0.11"
 assert_fs = "1.0.13"
+predicates = { version = "3.0.3", default-features = false }
 rstest = { version = "0.17.0", default-features = false }
 similar = "2.2.1"
 tempfile = "3.5.0"

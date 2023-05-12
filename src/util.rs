@@ -261,7 +261,6 @@ pub fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtreeIntoE
                         dest: target,
                     });
                 }
-                entries.pop_front();
             }
             None => {
                 if let Err(source) = remove_dir(&entries.dirpath) {
@@ -341,6 +340,9 @@ impl DirWithEntries {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use assert_fs::prelude::*;
+    use assert_fs::TempDir;
+    use predicates::prelude::*;
     use rstest::rstest;
 
     #[test]
@@ -515,5 +517,63 @@ mod tests {
             }
         );
         assert_eq!(crl.to_string(), s);
+    }
+
+    #[test]
+    fn test_move_dirtree_into() {
+        let src = TempDir::new().unwrap();
+        src.child("foo").create_dir_all().unwrap();
+        src.child("foo")
+            .child("apple.txt")
+            .write_str("Apple\n")
+            .unwrap();
+        src.child("foo").child("bar").create_dir_all().unwrap();
+        src.child("foo")
+            .child("bar")
+            .child("banana.txt")
+            .write_str("Banana\n")
+            .unwrap();
+        src.child("foo")
+            .child("bar")
+            .child("coconut.txt")
+            .write_str("Coconut\n")
+            .unwrap();
+        src.child("foo").child("empty").create_dir_all().unwrap();
+        src.child("gnusto").create_dir_all().unwrap();
+        src.child("gnusto")
+            .child("pear.txt")
+            .write_str("Pear\n")
+            .unwrap();
+        let dest = TempDir::new().unwrap();
+        dest.child("foo").create_dir_all().unwrap();
+        dest.child("foo")
+            .child("pomegranate.txt")
+            .write_str("Pomegranate\n")
+            .unwrap();
+        dest.child("cleesh").create_dir_all().unwrap();
+        dest.child("cleesh")
+            .child("mango.txt")
+            .write_str("Mango.txt\n")
+            .unwrap();
+        move_dirtree_into(&src, &dest).unwrap();
+        dest.child("foo").child("apple.txt").assert("Apple\n");
+        dest.child("foo")
+            .child("bar")
+            .child("banana.txt")
+            .assert("Banana\n");
+        dest.child("foo")
+            .child("bar")
+            .child("coconut.txt")
+            .assert("Coconut\n");
+        dest.child("foo")
+            .child("pomegranate.txt")
+            .assert("Pomegranate\n");
+        dest.child("foo")
+            .child("empty")
+            .assert(predicate::path::missing());
+        dest.child("gnusto").child("pear.txt").assert("Pear\n");
+        dest.child("cleesh")
+            .child("mango.txt")
+            .assert("Mango.txt\n");
     }
 }

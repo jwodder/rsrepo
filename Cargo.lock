@@ -857,6 +857,7 @@ dependencies = [
  "log",
  "mime",
  "nom",
+ "predicates",
  "rangemap",
  "renamore",
  "rstest",
