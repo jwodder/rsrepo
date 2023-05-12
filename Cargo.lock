@@ -812,6 +812,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a5996294f19bd3aae0453a862ad728f60e6600695733dd5df01da90c54363a3c"
 
 [[package]]
+name = "renamore"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "65fd6f57812ae5cd2e22a0745d993662552c949986f7f18d6a3695541762427e"
+dependencies = [
+ "cc",
+ "tempfile",
+]
+
+[[package]]
 name = "ring"
 version = "0.16.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -848,6 +858,7 @@ dependencies = [
  "mime",
  "nom",
  "rangemap",
+ "renamore",
  "rstest",
  "semver",
  "serde",

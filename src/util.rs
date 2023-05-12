@@ -7,13 +7,18 @@ use nom::multi::separated_list1;
 use nom::sequence::{preceded, tuple};
 use nom::{Finish, IResult};
 use rangemap::RangeInclusiveSet;
+use renamore::rename_exclusive;
 use semver::Version;
 use serde::de::{Deserializer, Unexpected, Visitor};
 use serde::ser::Serializer;
 use serde::{Deserialize, Serialize};
+use std::collections::VecDeque;
 use std::fmt;
+use std::fs::{read_dir, remove_dir, symlink_metadata};
+use std::io;
 use std::iter::FusedIterator;
 use std::ops::RangeInclusive;
+use std::path::{Path, PathBuf, StripPrefixError};
 use std::str::FromStr;
 use thiserror::Error;
 
@@ -219,6 +224,89 @@ fn year_range(input: &str) -> IResult<&str, RangeInclusive<i32>> {
         start..=start
     };
     Ok((input, rng))
+}
+
+pub fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtreeIntoError> {
+    use MoveDirtreeIntoError::*;
+    let ftype = symlink_metadata(src)
+        .map_err(|source| Stat {
+            source,
+            path: src.into(),
+        })?
+        .file_type();
+    let mut stack = vec![VecDeque::from([(src.to_path_buf(), ftype)])];
+    while let Some(entries) = stack.last_mut() {
+        match entries.front() {
+            Some((entry, ftype)) => {
+                if ftype.is_dir() {
+                    let mut next_entries = VecDeque::new();
+                    for ent in read_dir(entry).map_err(|source| Opendir {
+                        source,
+                        path: entry.clone(),
+                    })? {
+                        let ent = ent.map_err(|source| Readdir {
+                            source,
+                            path: entry.clone(),
+                        })?;
+                        let ftype = ent.file_type().map_err(|source| Stat {
+                            source,
+                            path: ent.path(),
+                        })?;
+                        next_entries.push_back((ent.path(), ftype));
+                    }
+                    stack.push(next_entries);
+                } else {
+                    let relpath = entry.strip_prefix(src).map_err(|source| Relpath {
+                        source,
+                        path: entry.clone(),
+                        base: src.into(),
+                    })?;
+                    let target = dest.join(relpath);
+                    rename_exclusive(entry, &target).map_err(|source| Rename {
+                        source,
+                        src: entry.clone(),
+                        dest: target.clone(),
+                    })?;
+                    entries.pop_front();
+                }
+            }
+            None => {
+                stack.pop();
+                if let Some((dirpath, _)) = stack.last_mut().and_then(|entries| entries.pop_front())
+                {
+                    remove_dir(&dirpath).map_err(|source| Rmdir {
+                        source,
+                        path: dirpath.clone(),
+                    })?;
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+#[derive(Debug, Error)]
+pub enum MoveDirtreeIntoError {
+    #[error("could not stat path: {}: {source}", .path.display())]
+    Stat { source: io::Error, path: PathBuf },
+    #[error("could not open directory for reading: {}: {source}", .path.display())]
+    Opendir { source: io::Error, path: PathBuf },
+    #[error("could not fetch entry from directory: {}: {source}", .path.display())]
+    Readdir { source: io::Error, path: PathBuf },
+    #[error("could not remove directory: {}: {source}", .path.display())]
+    Rmdir { source: io::Error, path: PathBuf },
+    #[error("path {} beneath {} was not relative to it", .path.display(), .base.display())]
+    Relpath {
+        source: StripPrefixError,
+        path: PathBuf,
+        base: PathBuf,
+    },
+    #[error("could not rename path {} to {}: {source}", .src.display(), .dest.display())]
+    Rename {
+        source: io::Error,
+        src: PathBuf,
+        dest: PathBuf,
+    },
 }
 
 #[cfg(test)]
