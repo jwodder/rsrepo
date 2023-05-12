@@ -1,0 +1,4 @@
+# Don't dosify line endings in unit test files:
+/src/testdata/** eol=lf
+# (Do dosify templates and their rendered tests, as templates should use the
+# native line ending.)
