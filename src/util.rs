@@ -14,7 +14,7 @@ use serde::ser::Serializer;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::fmt;
-use std::fs::{read_dir, remove_dir, symlink_metadata};
+use std::fs::{read_dir, remove_dir, FileType};
 use std::io;
 use std::iter::FusedIterator;
 use std::ops::RangeInclusive;
@@ -228,57 +228,32 @@ fn year_range(input: &str) -> IResult<&str, RangeInclusive<i32>> {
 
 pub fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtreeIntoError> {
     use MoveDirtreeIntoError::*;
-    let ftype = symlink_metadata(src)
-        .map_err(|source| Stat {
-            source,
-            path: src.into(),
-        })?
-        .file_type();
-    let mut stack = vec![VecDeque::from([(src.to_path_buf(), ftype)])];
+    let mut stack = vec![DirWithEntries::new(src)?];
     while let Some(entries) = stack.last_mut() {
-        match entries.front() {
-            Some((entry, ftype)) => {
-                if ftype.is_dir() {
-                    let mut next_entries = VecDeque::new();
-                    for ent in read_dir(entry).map_err(|source| Opendir {
-                        source,
-                        path: entry.clone(),
-                    })? {
-                        let ent = ent.map_err(|source| Readdir {
-                            source,
-                            path: entry.clone(),
-                        })?;
-                        let ftype = ent.file_type().map_err(|source| Stat {
-                            source,
-                            path: ent.path(),
-                        })?;
-                        next_entries.push_back((ent.path(), ftype));
-                    }
-                    stack.push(next_entries);
-                } else {
-                    let relpath = entry.strip_prefix(src).map_err(|source| Relpath {
-                        source,
-                        path: entry.clone(),
-                        base: src.into(),
-                    })?;
-                    let target = dest.join(relpath);
-                    rename_exclusive(entry, &target).map_err(|source| Rename {
-                        source,
-                        src: entry.clone(),
-                        dest: target.clone(),
-                    })?;
-                    entries.pop_front();
-                }
+        match entries.pop_front() {
+            Some((entry, ftype)) if ftype.is_dir() => {
+                stack.push(DirWithEntries::new(&entry)?);
+            }
+            Some((entry, _)) => {
+                let relpath = entry.strip_prefix(src).map_err(|source| Relpath {
+                    source,
+                    path: entry.clone(),
+                    base: src.into(),
+                })?;
+                let target = dest.join(relpath);
+                rename_exclusive(&entry, &target).map_err(|source| Rename {
+                    source,
+                    src: entry.clone(),
+                    dest: target.clone(),
+                })?;
+                entries.pop_front();
             }
             None => {
+                remove_dir(&entries.dirpath).map_err(|source| Rmdir {
+                    source,
+                    path: entries.dirpath.clone(),
+                })?;
                 stack.pop();
-                if let Some((dirpath, _)) = stack.last_mut().and_then(|entries| entries.pop_front())
-                {
-                    remove_dir(&dirpath).map_err(|source| Rmdir {
-                        source,
-                        path: dirpath.clone(),
-                    })?;
-                }
             }
         }
     }
@@ -307,6 +282,41 @@ pub enum MoveDirtreeIntoError {
         src: PathBuf,
         dest: PathBuf,
     },
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct DirWithEntries {
+    dirpath: PathBuf,
+    entries: VecDeque<(PathBuf, FileType)>,
+}
+
+impl DirWithEntries {
+    fn new(dirpath: &Path) -> Result<DirWithEntries, MoveDirtreeIntoError> {
+        use MoveDirtreeIntoError::*;
+        let mut entries = VecDeque::new();
+        for entry in read_dir(dirpath).map_err(|source| Opendir {
+            source,
+            path: dirpath.into(),
+        })? {
+            let entry = entry.map_err(|source| Readdir {
+                source,
+                path: dirpath.into(),
+            })?;
+            let ftype = entry.file_type().map_err(|source| Stat {
+                source,
+                path: entry.path(),
+            })?;
+            entries.push_back((entry.path(), ftype));
+        }
+        Ok(DirWithEntries {
+            dirpath: dirpath.into(),
+            entries,
+        })
+    }
+
+    fn pop_front(&mut self) -> Option<(PathBuf, FileType)> {
+        self.entries.pop_front()
+    }
 }
 
 #[cfg(test)]
