@@ -1,9 +1,9 @@
 use ghrepo::GHRepo;
 use nom::bytes::complete::{is_not, tag};
-use nom::character::complete::{alpha1, char, line_ending};
+use nom::character::complete::{alpha1, char, line_ending, space1};
 use nom::combinator::{all_consuming, map_res, rest};
 use nom::multi::{many1, separated_list1};
-use nom::sequence::{delimited, terminated};
+use nom::sequence::{delimited, terminated, tuple};
 use nom::{Finish, IResult};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -250,7 +250,7 @@ struct Image {
 fn parse_readme(input: &str) -> IResult<&str, Readme> {
     let (input, badges) = many1(terminated(badge, line_ending))(input)?;
     let (input, _) = line_ending(input)?;
-    let (input, links) = separated_list1(tag(" | "), link)(input)?;
+    let (input, links) = separated_list1(tuple((space1, char('|'), space1)), link)(input)?;
     let (input, _) = line_ending(input)?;
     let (input, _) = line_ending(input)?;
     let (input, text) = rest(input)?;
