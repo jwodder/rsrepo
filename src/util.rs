@@ -232,6 +232,23 @@ pub fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtreeIntoE
     while let Some(entries) = stack.last_mut() {
         match entries.pop_front() {
             Some((entry, ftype)) if ftype.is_dir() => {
+                let relpath = match entry.strip_prefix(src) {
+                    Ok(relpath) => relpath,
+                    Err(source) => {
+                        return Err(Relpath {
+                            source,
+                            path: entry,
+                            base: src.into(),
+                        })
+                    }
+                };
+                let target = dest.join(relpath);
+                if let Err(source) = create_dir_all(&target) {
+                    return Err(Mkdir {
+                        source,
+                        path: target,
+                    });
+                }
                 stack.push(DirWithEntries::new(&entry)?);
             }
             Some((entry, _)) => {
@@ -246,16 +263,6 @@ pub fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtreeIntoE
                     }
                 };
                 let target = dest.join(relpath);
-                if let Some(p) = target.parent() {
-                    if p != Path::new("") {
-                        if let Err(source) = create_dir_all(p) {
-                            return Err(Mkdir {
-                                source,
-                                path: p.into(),
-                            });
-                        }
-                    }
-                }
                 if let Err(source) = rename_exclusive(&entry, &target) {
                     return Err(Rename {
                         source,
@@ -585,7 +592,7 @@ mod tests {
             .assert("Pomegranate\n");
         dest.child("foo")
             .child("empty")
-            .assert(predicate::path::missing());
+            .assert(predicate::path::is_dir());
         dest.child("foo")
             .child("quux")
             .child("glarch")
