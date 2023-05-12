@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use crate::http_util::StatusError;
 use anyhow::Context;
 use ghrepo::GHRepo;
@@ -225,7 +224,7 @@ impl NewRepoConfig {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Topic(String);
 
 impl Topic {

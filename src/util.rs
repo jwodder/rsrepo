@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use chrono::Datelike;
 use nom::bytes::complete::tag;
 use nom::character::complete::{char, i32 as nom_i32, space0, space1, u32 as nom_u32};

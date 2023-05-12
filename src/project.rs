@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use crate::changelog::Changelog;
 use crate::cmd::{CommandOutputError, LoggedCommand};
 use crate::git::Git;

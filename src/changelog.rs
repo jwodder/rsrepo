@@ -13,7 +13,7 @@ use thiserror::Error;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Changelog {
-    sections: Vec<ChangelogSection>,
+    pub sections: Vec<ChangelogSection>,
 }
 
 impl FromStr for Changelog {
@@ -74,8 +74,8 @@ impl fmt::Display for Changelog {
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct ChangelogSection {
-    header: ChangelogHeader,
-    content: String,
+    pub header: ChangelogHeader,
+    pub content: String,
 }
 
 impl fmt::Display for ChangelogSection {

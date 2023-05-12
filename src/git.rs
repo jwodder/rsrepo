@@ -1,7 +1,6 @@
-#![allow(dead_code)]
 use crate::cmd::{CommandError, CommandOutputError, LoggedCommand};
-use crate::util::{this_year, StringLines};
-use anyhow::{bail, Context};
+use crate::util::StringLines;
+use anyhow::Context;
 use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
@@ -67,56 +66,15 @@ impl<'a> Git<'a> {
         self.run("remote", ["add", remote, url])
     }
 
-    pub fn commit_years(&self, include_now: bool) -> anyhow::Result<HashSet<i32>> {
-        let mut years = self
-            .readlines("log", ["--format=%ad", "--date=format:%Y"])?
+    pub fn commit_years(&self) -> anyhow::Result<HashSet<i32>> {
+        self.readlines("log", ["--format=%ad", "--date=format:%Y"])?
             .map(|s| s.parse())
             .collect::<Result<HashSet<i32>, _>>()
-            .context("Error parsing Git commit years")?;
-        if include_now {
-            years.insert(this_year());
-        }
-        Ok(years)
-    }
-
-    pub fn default_branch(&self) -> anyhow::Result<String> {
-        let branches: HashSet<_> = self
-            .readlines("branch", ["--format=%(refname:short)"])?
-            .collect();
-        if let Some(initdefault) = self.get_config("init.defaultBranch", None)? {
-            if branches.contains(&initdefault) {
-                return Ok(initdefault);
-            }
-        }
-        for guess in ["main", "master", "trunk", "draft"] {
-            if branches.contains(guess) {
-                return Ok(guess.into());
-            }
-        }
-        bail!("Could not determine default Git branch");
+            .context("Error parsing Git commit years")
     }
 
     pub fn latest_tag(&self) -> Result<Option<String>, CommandOutputError> {
         Ok(self.readlines("tag", ["-l", "--sort=-creatordate"])?.next())
-    }
-
-    pub fn get_config(
-        &self,
-        key: &str,
-        default: Option<&str>,
-    ) -> Result<Option<String>, CommandOutputError> {
-        let mut args = Vec::from(["--get"]);
-        if let Some(s) = default {
-            args.push("--default");
-            args.push(s);
-        }
-        args.push("--");
-        args.push(key);
-        match self.read("config", args) {
-            Ok(s) => Ok(Some(s)),
-            Err(CommandOutputError::Exit { rc, .. }) if rc.code() == Some(1) => Ok(None),
-            Err(e) => Err(e),
-        }
     }
 
     pub fn current_branch(&self) -> Result<Option<String>, CommandOutputError> {
@@ -135,5 +93,29 @@ impl<'a> Git<'a> {
         Ok(s.split_terminator('\0')
             .map(PathBuf::from)
             .collect::<Vec<_>>())
+    }
+
+    pub fn tag_exists(&self, tag: &str) -> Result<bool, CommandError> {
+        match self
+            .command()
+            .arg("show-ref")
+            .arg("--verify")
+            .arg("--quiet")
+            .arg(format!("refs/tags/{tag}"))
+            .status()
+        {
+            Ok(()) => Ok(true),
+            Err(CommandError::Exit { rc, .. }) if rc.code() == Some(1) => Ok(false),
+            Err(e) => Err(e),
+        }
+    }
+
+    pub fn toplevel(&self) -> Result<PathBuf, CommandOutputError> {
+        let mut s = self.read("rev-parse", ["--show-toplevel"])?;
+        if s.ends_with('\n') {
+            // TODO: Should CR be popped?  What if the path ends in a CR?
+            s.pop();
+        }
+        Ok(PathBuf::from(s))
     }
 }

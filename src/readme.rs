@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+use ghrepo::GHRepo;
 use nom::bytes::complete::{is_not, tag};
 use nom::character::complete::{alpha1, char, line_ending};
 use nom::combinator::{all_consuming, map_res, rest};
@@ -40,7 +40,7 @@ impl Readme {
     }
 
     // Returns `true` if changed
-    pub fn ensure_crates_links(&mut self, project: &str) -> bool {
+    pub fn ensure_crates_links(&mut self, project: &str, docs: bool) -> bool {
         let mut changed = false;
         let github_index = self
             .links
@@ -61,7 +61,7 @@ impl Readme {
                 github_index + 1
             }
         };
-        if !self.links.iter().any(|lnk| lnk.text == "Documentation") {
+        if docs && !self.links.iter().any(|lnk| lnk.text == "Documentation") {
             self.links.insert(
                 crates_index + 1,
                 Link {
@@ -72,6 +72,19 @@ impl Readme {
             changed = true;
         }
         changed
+    }
+
+    // Returns `true` if changed
+    pub fn ensure_changelog_link(&mut self, repo: &GHRepo) -> bool {
+        if self.links.iter().any(|lnk| lnk.text == "Changelog") {
+            false
+        } else {
+            self.links.push(Link {
+                url: format!("https://github.com/{repo}/blob/master/CHANGELOG.md"),
+                text: "Changelog".into(),
+            });
+            true
+        }
     }
 }
 
@@ -354,9 +367,9 @@ mod tests {
             .parse::<Readme>()
             .unwrap();
         let expected = include_str!("testdata/readme/with-crates.md");
-        assert!(readme.ensure_crates_links("foobar"));
+        assert!(readme.ensure_crates_links("foobar", true));
         assert_eq!(readme.to_string(), expected);
-        assert!(!readme.ensure_crates_links("foobar"));
+        assert!(!readme.ensure_crates_links("foobar", true));
         assert_eq!(readme.to_string(), expected);
     }
 
