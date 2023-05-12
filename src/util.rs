@@ -235,30 +235,41 @@ pub fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtreeIntoE
                 stack.push(DirWithEntries::new(&entry)?);
             }
             Some((entry, _)) => {
-                let relpath = entry.strip_prefix(src).map_err(|source| Relpath {
-                    source,
-                    path: entry.clone(),
-                    base: src.into(),
-                })?;
+                let relpath = match entry.strip_prefix(src) {
+                    Ok(relpath) => relpath,
+                    Err(source) => {
+                        return Err(Relpath {
+                            source,
+                            path: entry,
+                            base: src.into(),
+                        })
+                    }
+                };
                 let target = dest.join(relpath);
                 if let Some(p) = target.parent() {
-                    create_dir_all(p).map_err(|source| Mkdir {
-                        source,
-                        path: p.into(),
-                    })?;
+                    if let Err(source) = create_dir_all(p) {
+                        return Err(Mkdir {
+                            source,
+                            path: p.into(),
+                        });
+                    }
                 }
-                rename_exclusive(&entry, &target).map_err(|source| Rename {
-                    source,
-                    src: entry.clone(),
-                    dest: target.clone(),
-                })?;
+                if let Err(source) = rename_exclusive(&entry, &target) {
+                    return Err(Rename {
+                        source,
+                        src: entry,
+                        dest: target,
+                    });
+                }
                 entries.pop_front();
             }
             None => {
-                remove_dir(&entries.dirpath).map_err(|source| Rmdir {
-                    source,
-                    path: entries.dirpath.clone(),
-                })?;
+                if let Err(source) = remove_dir(&entries.dirpath) {
+                    return Err(Rmdir {
+                        source,
+                        path: entries.dirpath.clone(),
+                    });
+                }
                 stack.pop();
             }
         }
