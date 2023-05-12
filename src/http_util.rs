@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use indent_write::indentable::Indentable;
 use mime::{Mime, JSON};
 use serde_json::{to_string_pretty, value::Value};
@@ -49,17 +48,6 @@ impl std::fmt::Display for StatusError {
 }
 
 impl std::error::Error for StatusError {}
-
-/// Return the `rel="next"` URL, if any, from the response's "Link" header
-pub fn get_next_link(r: &Response) -> Option<String> {
-    Some(
-        parse_link_header::parse_with_rel(r.header("Link")?)
-            .ok()?
-            .get("next")?
-            .raw_uri
-            .clone(),
-    )
-}
 
 /// Returns `true` iff the response's Content-Type header indicates the body is
 /// JSON
