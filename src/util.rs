@@ -524,6 +524,7 @@ mod tests {
     #[test]
     fn test_move_dirtree_into() {
         let src = TempDir::new().unwrap();
+        src.child("orange.txt").write_str("Orange\n").unwrap();
         src.child("foo").create_dir_all().unwrap();
         src.child("foo")
             .child("apple.txt")
@@ -541,6 +542,17 @@ mod tests {
             .write_str("Coconut\n")
             .unwrap();
         src.child("foo").child("empty").create_dir_all().unwrap();
+        src.child("foo")
+            .child("quux")
+            .child("glarch")
+            .create_dir_all()
+            .unwrap();
+        src.child("foo")
+            .child("quux")
+            .child("glarch")
+            .child("lemon.txt")
+            .write_str("Lemon\n")
+            .unwrap();
         src.child("gnusto").create_dir_all().unwrap();
         src.child("gnusto")
             .child("pear.txt")
@@ -558,6 +570,7 @@ mod tests {
             .write_str("Mango.txt\n")
             .unwrap();
         move_dirtree_into(&src, &dest).unwrap();
+        dest.child("orange.txt").assert("Orange\n");
         dest.child("foo").child("apple.txt").assert("Apple\n");
         dest.child("foo")
             .child("bar")
@@ -573,6 +586,11 @@ mod tests {
         dest.child("foo")
             .child("empty")
             .assert(predicate::path::missing());
+        dest.child("foo")
+            .child("quux")
+            .child("glarch")
+            .child("lemon.txt")
+            .assert("Lemon\n");
         dest.child("gnusto").child("pear.txt").assert("Pear\n");
         dest.child("cleesh")
             .child("mango.txt")
