@@ -19,6 +19,10 @@ pub struct New {
     #[clap(long)]
     bin: bool,
 
+    /// Copyright year(s) to put in the LICENSE; defaults to the current year
+    #[clap(long, value_name = "STRING")]
+    copyright_year: Option<String>,
+
     /// Template a library crate
     ///
     /// This is the default if neither `--bin` nor `--lib` is given.
@@ -36,10 +40,6 @@ pub struct New {
     /// GitHub repository name; defaults to the project name
     #[clap(long, value_name = "NAME")]
     repo_name: Option<String>,
-
-    /// Copyright year(s) to put in the LICENSE; defaults to the current year
-    #[clap(long, value_name = "STRING")]
-    copyright_year: Option<String>,
 
     /// Directory to create & populate
     #[clap(value_name = "PATH")]
