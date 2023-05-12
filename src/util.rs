@@ -247,11 +247,13 @@ pub fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtreeIntoE
                 };
                 let target = dest.join(relpath);
                 if let Some(p) = target.parent() {
-                    if let Err(source) = create_dir_all(p) {
-                        return Err(Mkdir {
-                            source,
-                            path: p.into(),
-                        });
+                    if p != Path::new("") {
+                        if let Err(source) = create_dir_all(p) {
+                            return Err(Mkdir {
+                                source,
+                                path: p.into(),
+                            });
+                        }
                     }
                 }
                 if let Err(source) = rename_exclusive(&entry, &target) {
