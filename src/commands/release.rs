@@ -102,8 +102,10 @@ impl Release {
             bail!("Project lacks README.md");
         };
         let mut changed = false;
-        let activated = if readme.repostatus() == Some(Repostatus::Wip) {
-            log::info!("Setting repostatus to Active ...");
+        let activated = if new_version.pre.is_empty()
+            && readme.repostatus() == Some(Repostatus::Wip)
+        {
+            log::info!("Setting repostatus in README.md to Active ...");
             readme.set_repostatus_badge(Badge {
                 alt: "Project Status: Active – The project has reached a stable, usable state and is being actively developed.".into(),
                 url: "https://www.repostatus.org/badges/latest/active.svg".into(),
@@ -114,7 +116,7 @@ impl Release {
         } else {
             false
         };
-        if readme.ensure_crates_links(&metadata.name, is_lib) {
+        if publish && readme.ensure_crates_links(&metadata.name, is_lib) {
             log::info!("Adding crates.io links to README.md ...");
             changed = true;
         }
