@@ -85,3 +85,14 @@ fn init_logging(log_level: LevelFilter) {
         .apply()
         .unwrap();
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::CommandFactory;
+
+    #[test]
+    fn validate_cli() {
+        Arguments::command().debug_assert()
+    }
+}
