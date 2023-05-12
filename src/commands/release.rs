@@ -9,7 +9,7 @@ use anyhow::{bail, Context};
 use clap::Args;
 use ghrepo::LocalRepo;
 use renamore::rename_exclusive;
-use semver::Version;
+use semver::{Prerelease, Version};
 use std::collections::HashSet;
 use std::fs::create_dir_all;
 use std::io::{self, Write};
@@ -239,6 +239,12 @@ impl Release {
 
         log::info!("Preparing for work on next version ...");
         let next_version = bump_version(new_version.clone(), Bump::Minor);
+        let mut dev_next = next_version.clone();
+        dev_next.pre = Prerelease::new("dev").unwrap();
+
+        // Update version in Cargo.toml
+        log::info!("Setting next version in Cargo.toml ...");
+        project.set_cargo_version(dev_next)?;
 
         // Ensure CHANGELOG is present and contains section for upcoming
         // version
@@ -246,7 +252,7 @@ impl Release {
         let mut chlog = project.changelog()?.unwrap_or_else(|| Changelog {
             sections: vec![ChangelogSection {
                 header: ChangelogHeader::Released {
-                    version: new_version.clone(),
+                    version: new_version,
                     date: release_date,
                 },
                 content: "Initial release".into(),
@@ -256,16 +262,12 @@ impl Release {
             0,
             ChangelogSection {
                 header: ChangelogHeader::InProgress {
-                    version: next_version.clone(),
+                    version: next_version,
                 },
                 content: String::new(),
             },
         );
         project.set_changelog(chlog)?;
-
-        // Update version in Cargo.toml
-        log::info!("Setting next version in Cargo.toml ...");
-        project.set_cargo_version(next_version)?;
 
         // Ensure "Changelog" link is in README
         let Some(mut readme) = project.readme()? else {
