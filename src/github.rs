@@ -84,7 +84,7 @@ impl GitHub {
         let (create_repo_body, set_topics_body) = config.into_payloads();
         let r: Repository = self.post("/user/repos", create_repo_body)?;
         if !set_topics_body.is_empty() {
-            let _: SetTopicsBody = self.put(&format!("{}/topics", r.url), set_topics_body)?;
+            let _: TopicsPayload = self.put(&format!("{}/topics", r.url), set_topics_body)?;
         }
         Ok(r)
     }
@@ -102,14 +102,19 @@ impl GitHub {
         self.get(&format!("{}/releases/latest", repo.api_url()))
     }
 
+    pub fn get_topics(&self, repo: &GHRepo) -> anyhow::Result<Vec<Topic>> {
+        let payload = self.get::<TopicsPayload>(&format!("{}/topics", repo.api_url()))?;
+        Ok(payload.names)
+    }
+
     pub fn set_topics<I>(&self, repo: &GHRepo, topics: I) -> anyhow::Result<()>
     where
         I: IntoIterator<Item = Topic>,
     {
-        let body = SetTopicsBody {
+        let body = TopicsPayload {
             names: topics.into_iter().collect(),
         };
-        let _: SetTopicsBody = self.put(&format!("{}/topics", repo.api_url()), body)?;
+        let _: TopicsPayload = self.put(&format!("{}/topics", repo.api_url()), body)?;
         Ok(())
     }
 }
@@ -164,11 +169,11 @@ impl Repository {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-struct SetTopicsBody {
+struct TopicsPayload {
     names: Vec<Topic>,
 }
 
-impl SetTopicsBody {
+impl TopicsPayload {
     fn is_empty(&self) -> bool {
         self.names.is_empty()
     }
@@ -207,7 +212,7 @@ impl NewRepoConfig {
         self
     }
 
-    fn into_payloads(self) -> (CreateRepoBody, SetTopicsBody) {
+    fn into_payloads(self) -> (CreateRepoBody, TopicsPayload) {
         (
             CreateRepoBody {
                 name: self.name,
@@ -215,7 +220,7 @@ impl NewRepoConfig {
                 private: self.private,
                 delete_branch_on_merge: Some(true),
             },
-            SetTopicsBody { names: self.topics },
+            TopicsPayload { names: self.topics },
         )
     }
 }
