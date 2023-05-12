@@ -84,7 +84,7 @@ impl GitHub {
         let (create_repo_body, set_topics_body) = config.into_payloads();
         let r: Repository = self.post("/user/repos", create_repo_body)?;
         if !set_topics_body.is_empty() {
-            let _: SetTopicsBody = self.put(&r.url, set_topics_body)?;
+            let _: SetTopicsBody = self.put(&format!("{}/topics", r.url), set_topics_body)?;
         }
         Ok(r)
     }
@@ -101,6 +101,17 @@ impl GitHub {
     pub fn latest_release(&self, repo: &GHRepo) -> anyhow::Result<Release> {
         self.get(&format!("{}/releases/latest", repo.api_url()))
     }
+
+    pub fn set_topics<I>(&self, repo: &GHRepo, topics: I) -> anyhow::Result<()>
+    where
+        I: IntoIterator<Item = Topic>,
+    {
+        let body = SetTopicsBody {
+            names: topics.into_iter().collect(),
+        };
+        let _: SetTopicsBody = self.put(&format!("{}/topics", repo.api_url()), body)?;
+        Ok(())
+    }
 }
 
 impl Default for GitHub {
@@ -113,7 +124,7 @@ fn mkurl(path: &str) -> anyhow::Result<Url> {
     Url::parse(API_ENDPOINT)
         .context("Failed to construct a Url for the GitHub API endpoint")?
         .join(path)
-        .with_context(|| format!("Failed to construct a URL with path {path:?}"))
+        .with_context(|| format!("Failed to construct a GitHub API URL with path {path:?}"))
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
