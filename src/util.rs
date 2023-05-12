@@ -14,7 +14,7 @@ use serde::ser::Serializer;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::fmt;
-use std::fs::{read_dir, remove_dir, FileType};
+use std::fs::{create_dir_all, read_dir, remove_dir, FileType};
 use std::io;
 use std::iter::FusedIterator;
 use std::ops::RangeInclusive;
@@ -241,6 +241,12 @@ pub fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtreeIntoE
                     base: src.into(),
                 })?;
                 let target = dest.join(relpath);
+                if let Some(p) = target.parent() {
+                    create_dir_all(p).map_err(|source| Mkdir {
+                        source,
+                        path: p.into(),
+                    })?;
+                }
                 rename_exclusive(&entry, &target).map_err(|source| Rename {
                     source,
                     src: entry.clone(),
@@ -268,6 +274,8 @@ pub enum MoveDirtreeIntoError {
     Opendir { source: io::Error, path: PathBuf },
     #[error("could not fetch entry from directory: {}: {source}", .path.display())]
     Readdir { source: io::Error, path: PathBuf },
+    #[error("could not create directory: {}: {source}", .path.display())]
+    Mkdir { source: io::Error, path: PathBuf },
     #[error("could not remove directory: {}: {source}", .path.display())]
     Rmdir { source: io::Error, path: PathBuf },
     #[error("path {} beneath {} was not relative to it", .path.display(), .base.display())]
