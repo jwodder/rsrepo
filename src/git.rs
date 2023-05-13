@@ -119,3 +119,18 @@ impl<'a> Git<'a> {
         Ok(PathBuf::from(s))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn toplevel() {
+        // Assumes Git is installed and the package code is located in the root
+        // of a Git repository
+        let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let srcdir = manifest_dir.join("src");
+        let git = Git::new(&srcdir);
+        assert_eq!(git.toplevel().unwrap(), manifest_dir);
+    }
+}
