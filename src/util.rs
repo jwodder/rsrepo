@@ -1,7 +1,7 @@
 use chrono::Datelike;
 use nom::bytes::complete::tag;
 use nom::character::complete::{char, i32 as nom_i32, space0, space1, u32 as nom_u32};
-use nom::combinator::{all_consuming, opt, rest};
+use nom::combinator::{all_consuming, opt, recognize, rest};
 use nom::multi::separated_list1;
 use nom::sequence::{preceded, tuple};
 use nom::{Finish, IResult};
@@ -156,6 +156,7 @@ pub fn bump_version(v: Version, level: Bump) -> Version {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CopyrightLine {
+    prefix: String,
     years: RangeInclusiveSet<i32>,
     authors: String,
 }
@@ -179,7 +180,7 @@ impl FromStr for CopyrightLine {
 
 impl fmt::Display for CopyrightLine {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Copyright (c) ")?;
+        write!(f, "{}", self.prefix)?;
         let mut first = true;
         for rng in self.years.iter() {
             if !std::mem::replace(&mut first, false) {
@@ -201,13 +202,19 @@ impl fmt::Display for CopyrightLine {
 pub struct ParseCopyrightError;
 
 fn copyright(input: &str) -> IResult<&str, CopyrightLine> {
-    let (input, _) = tuple((tag("Copyright"), space1, tag("(c)"), space1))(input)?;
+    let (input, prefix) = recognize(tuple((
+        space0,
+        tag("Copyright"),
+        space1,
+        opt(tuple((tag("(c)"), space1))),
+    )))(input)?;
     let (input, ranges) = separated_list1(tuple((space0, char(','), space0)), year_range)(input)?;
     let (input, _) = space1(input)?;
     let (input, authors) = rest(input)?;
     Ok((
         input,
         CopyrightLine {
+            prefix: prefix.into(),
             years: ranges.into_iter().collect(),
             authors: authors.into(),
         },
@@ -451,6 +458,7 @@ mod tests {
         assert_eq!(
             crl,
             CopyrightLine {
+                prefix: "Copyright (c) ".into(),
                 years,
                 authors: "John T. Wodder II".into()
             }
@@ -468,6 +476,7 @@ mod tests {
         assert_eq!(
             crl,
             CopyrightLine {
+                prefix: "Copyright (c) ".into(),
                 years,
                 authors: "John T. Wodder II".into()
             }
@@ -487,11 +496,15 @@ mod tests {
         assert_eq!(
             crl,
             CopyrightLine {
+                prefix: "Copyright  (c)\t".into(),
                 years,
                 authors: "John T. Wodder II".into()
             }
         );
-        assert_eq!(crl.to_string(), "Copyright (c) 2023-2024 John T. Wodder II");
+        assert_eq!(
+            crl.to_string(),
+            "Copyright  (c)\t2023-2024 John T. Wodder II"
+        );
     }
 
     #[test]
@@ -503,6 +516,7 @@ mod tests {
         assert_eq!(
             crl,
             CopyrightLine {
+                prefix: "Copyright (c) ".into(),
                 years,
                 authors: "John T. Wodder II".into()
             }
@@ -520,6 +534,24 @@ mod tests {
         assert_eq!(
             crl,
             CopyrightLine {
+                prefix: "Copyright (c) ".into(),
+                years,
+                authors: "John T. Wodder II".into()
+            }
+        );
+        assert_eq!(crl.to_string(), s);
+    }
+
+    #[test]
+    fn test_copyright_line_variant_prefix() {
+        let s = "\tCopyright  2023 John T. Wodder II";
+        let crl = s.parse::<CopyrightLine>().unwrap();
+        let mut years = RangeInclusiveSet::new();
+        years.insert(2023..=2023);
+        assert_eq!(
+            crl,
+            CopyrightLine {
+                prefix: "\tCopyright  ".into(),
                 years,
                 authors: "John T. Wodder II".into()
             }

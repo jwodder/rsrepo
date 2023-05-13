@@ -200,9 +200,10 @@ This command performs the following operations in order:
 - The copyright years in the first copyright line in `LICENSE` are updated to
   include all years in which commits were made to the repository, including the
   current year.  A line is treated as a copyright line if it is of the form
-  "Copyright (c) YEARS AUTHOR", where the "YEARS" component consists of year
-  numbers, dashes, commas, and/or spaces.  It is an error if `LICENSE` does not
-  contain a copyright line.
+  "Copyright YEARS AUTHOR" or "Copyright (c) YEARS AUTHOR" (optional leading
+  whitespace allowed for both forms), where the "YEARS" component consists of
+  year numbers, dashes, commas, and/or spaces.  It is an error if `LICENSE`
+  does not contain a copyright line.
 
 - All changes made to tracked files in the repository are committed; the text
   of the most recent `CHANGELOG.md` section is included in the commit message
