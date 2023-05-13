@@ -15,6 +15,7 @@ use std::fs::create_dir_all;
 use std::io::{self, Write};
 use tempfile::NamedTempFile;
 
+/// Prepare & publish a new release for a package
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
 pub struct Release {
     #[command(flatten)]
@@ -282,7 +283,6 @@ impl Release {
     }
 }
 
-/// Prepare & publish a new release
 #[derive(Args, Clone, Debug, Default, Eq, PartialEq)]
 #[group(multiple = false, id = "bump")]
 pub struct Bumping {

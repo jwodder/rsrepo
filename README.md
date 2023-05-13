@@ -20,7 +20,7 @@ All `rsrepo` subcommands other than `rsrepo new` must be run inside a Cargo
 package directory & Git repository (after processing the `--chdir` option, if
 given).  Cargo workspaces are currently not supported.
 
-Certain commands automatically edit projects' `README.md` and/or `CHANGELOG.md`
+Certain commands automatically edit packages' `README.md` and/or `CHANGELOG.md`
 files; these files are expected to adhere to specific formats, documented in
 [`doc/readme-format.md`][readme] and [`doc/changelog-format.md`][changelog],
 respectively.
@@ -137,9 +137,9 @@ Create a new GitHub repository for the project, set the local repository's
 `origin` remote to point to the GitHub repository, and push all branches & tags
 to the remote.
 
-The project's description (if any) is used as the repository description.  The
-project's keywords are used as the repository's topics, along with the "`rust`"
-topic; in addition, if the project's `README.md` file has a "WIP"
+The package description (if any) is used as the repository description.  The
+package's keywords are used as the repository's topics, along with the "`rust`"
+topic; in addition, if the package's `README.md` file has a "WIP"
 [repostatus.org](https://www.repostatus.org) badge, the "`work-in-progress`"
 topic is added.  The custom labels used by the `dependabot.yml` file generated
 by `rsrepo new` are created in the repository as well.
@@ -163,7 +163,7 @@ organization is currently not supported.
 
     rsrepo [<global-options>] release [<options>] [<version>]
 
-Create & publish a new release for a project.
+Prepare & publish a new release for a package.
 
 The version of the release can be either specified explicitly on the command
 line or (if one of `--major`, `--minor`, or `--patch` is given) calculated by
@@ -180,7 +180,7 @@ leading `v`.
 This command performs the following operations in order:
 
 - The version key in `Cargo.toml` is set to the release version.  If the
-  project contains a binary crate, the version in `Cargo.lock` is set as well.
+  package contains a binary crate, the version in `Cargo.lock` is set as well.
 
 - If `CHANGELOG.md` exists, the header for the topmost section is edited to
   contain the release version and the current date.  It is an error if the
@@ -190,7 +190,7 @@ This command performs the following operations in order:
   repostatus.org "WIP" badge, the badge is changed to "Active."
 
 - If `publish` in `Cargo.toml` is not `false`, links to `crates.io` and (if the
-  project contains a library crate) `docs.rs` are added to `README.md`'s header
+  package contains a library crate) `docs.rs` are added to `README.md`'s header
   links.
 
 - The copyright years in the first copyright line in `LICENSE` are updated to
