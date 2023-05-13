@@ -404,6 +404,7 @@ mod tests {
         "https://img.shields.io/github/license/rs.test/foobar.svg",
         Some(BadgeKind::License)
     )]
+    #[case("https://docs.rs/rs.test/badge.svg", None)]
     fn badge_kind_for_url(#[case] url: &str, #[case] kind: Option<BadgeKind>) {
         assert_eq!(BadgeKind::for_url(url), kind);
     }
@@ -441,6 +442,7 @@ mod tests {
         "https://www.repostatus.org/badges/latest/wip.svg",
         Some(Repostatus::Wip)
     )]
+    #[case("https://img.shields.io/badge/MSRV-1.69-orange", None)]
     fn repostatus_for_url(#[case] url: &str, #[case] status: Option<Repostatus>) {
         assert_eq!(Repostatus::for_url(url), status);
     }
