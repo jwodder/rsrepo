@@ -119,8 +119,16 @@ impl<'a> Git<'a> {
             .arg("--show-toplevel")
             .check_output()?;
         if s.ends_with('\n') {
-            // TODO: Should CR be popped?  What if the path ends in a CR?
             s.pop();
+            #[cfg(windows)]
+            if s.ends_with('\r') {
+                // Although Git on Windows (at least under GitHub Actions)
+                // seems to use LF as the newline sequence in its output, we
+                // should still take care to strip final CR on Windows if it
+                // ever shows up.  As Windows doesn't allow CR in file names, a
+                // CR here will always be part of a line ending.
+                s.pop();
+            }
         }
         Ok(PathBuf::from(s))
     }
@@ -129,6 +137,8 @@ impl<'a> Git<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rstest::rstest;
+    use tempfile::tempdir;
 
     #[test]
     fn toplevel() {
@@ -138,5 +148,26 @@ mod tests {
         let srcdir = manifest_dir.join("src");
         let git = Git::new(&srcdir);
         assert_eq!(git.toplevel().unwrap(), manifest_dir);
+    }
+
+    // These are illegal filenames on Windows.
+    #[cfg(not(windows))]
+    #[rstest]
+    #[case("foobar\r")]
+    #[case("foobar\n")]
+    #[case("foobar ")]
+    fn toplevel_basename_endswith_space(#[case] fname: &str) {
+        let tmp_path = tempdir().unwrap();
+        let repo = tmp_path.path().join(fname);
+        LoggedCommand::new("git")
+            .arg("init")
+            .arg("-b")
+            .arg("main")
+            .arg("--")
+            .arg(&repo)
+            .status()
+            .unwrap();
+        let git = Git::new(&repo);
+        assert_eq!(git.toplevel().unwrap(), repo.canonicalize().unwrap());
     }
 }
