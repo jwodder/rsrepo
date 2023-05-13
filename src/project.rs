@@ -83,7 +83,7 @@ impl Project {
         let mut doc = src
             .parse::<Document>()
             .context("Failed to parse Cargo.toml")?;
-        doc["project"]["version"] = toml_edit::value(v.to_string());
+        doc["package"]["version"] = toml_edit::value(v.to_string());
         let mut fp = File::create(self.path().join("Cargo.toml"))
             .context("failed to open Cargo.toml for writing")?;
         write!(&mut fp, "{}", doc).context("failed writing to Cargo.toml")?;
@@ -103,7 +103,7 @@ impl Project {
             .packages
             .into_iter()
             .next()
-            .ok_or_else(|| anyhow::anyhow!("No projects listed in metadata"))
+            .ok_or_else(|| anyhow::anyhow!("No packages listed in metadata"))
     }
 
     pub fn readme(&self) -> anyhow::Result<Option<Readme>> {
@@ -195,7 +195,7 @@ mod tests {
         let manifest = tmpdir.child("Cargo.toml");
         manifest
             .write_str(concat!(
-                "[project]\n",
+                "[package]\n",
                 "name = \"foobar\"\n",
                 "version = \"0.1.0\"\n",
                 "edition = \"2021\"\n",
@@ -208,7 +208,7 @@ mod tests {
         };
         project.set_cargo_version(Version::new(1, 2, 3)).unwrap();
         manifest.assert(concat!(
-            "[project]\n",
+            "[package]\n",
             "name = \"foobar\"\n",
             "version = \"1.2.3\"\n",
             "edition = \"2021\"\n",
