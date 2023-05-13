@@ -145,7 +145,7 @@ The bare name of the repository to create (e.g. `hello-world`, not
 `octocat/hello-world` or `https://github.com/octocat/hello-world`) can
 optionally be specified as an argument on the command line; if not given, the
 repository name is determined by parsing the `repository` key in the
-`Cargo.toml` file.
+`Cargo.toml` file, falling back to the package name if there is no such key.
 
 The GitHub repository will be created under the account for the user associated
 with the GitHub API token stored by `gh`.  Creating a repository under an
