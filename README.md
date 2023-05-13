@@ -71,7 +71,7 @@ Configuration File
 ------------------
 
 The configuration file (located at `~/.config/rsrepo.toml` by default) is a
-[TOML](https://toml.io) file with the following keys:
+[TOML](https://toml.io) file with the following fields:
 
 - `author` — The author name to use when `rsrepo new` generates `Cargo.toml`
   and `LICENSE` files
@@ -112,7 +112,7 @@ The following files are created in the directory:
   `LICENSE` file; defaults to the current year
 
 - `-d <text>`, `--description <text>` — Specify a description for the new
-  package; if not specified, the `description` key in `Cargo.toml` will be
+  package; if not specified, the `description` field in `Cargo.toml` will be
   commented out.
 
 - `--lib` — Create a library crate.  This is the default if neither `--bin` nor
@@ -135,7 +135,7 @@ The following files are created in the directory:
 
 Create a new GitHub repository for the project, set the local repository's
 `origin` remote to point to the GitHub repository, and push all branches & tags
-to the remote.  In addition, if the `package.repository` key in the package's
+to the remote.  In addition, if the `package.repository` field in the package's
 `Cargo.toml` is unset, it is set to the web URL of the GitHub repository.
 
 The package description (if any) is used as the repository description.  The
@@ -148,8 +148,11 @@ by `rsrepo new` are created in the repository as well.
 The bare name of the repository to create (e.g. `hello-world`, not
 `octocat/hello-world` or `https://github.com/octocat/hello-world`) can
 optionally be specified as an argument on the command line; if not given, the
-repository name is determined by parsing the `package.repository` key in the
-`Cargo.toml` file, falling back to the package name if there is no such key.
+repository name is determined by parsing the `package.repository` field in the
+`Cargo.toml` file, falling back to the package name if there is no such field.
+When parsing the `package.repository` field, it is an error if the repository
+owner given in the URL differs from the `github-user` field in the
+configuration file.
 
 The GitHub repository will be created under the account for the user associated
 with the GitHub API token stored by `gh`.  Creating a repository under an
@@ -180,7 +183,7 @@ leading `v`.
 
 This command performs the following operations in order:
 
-- The version key in `Cargo.toml` is set to the release version.  If the
+- The version field in `Cargo.toml` is set to the release version.  If the
   package contains a binary crate, the version in `Cargo.lock` is set as well.
 
 - If `CHANGELOG.md` exists, the header for the topmost section is edited to
@@ -241,7 +244,7 @@ This command performs the following operations in order:
 
 - Development on the next version is started:
 
-    - The version key in `Cargo.toml` is set to the next minor version after
+    - The version field in `Cargo.toml` is set to the next minor version after
       the just-released version, plus a "-dev" prerelease segment.
 
     - If a `CHANGELOG.md` file does not exist, one is created with a section

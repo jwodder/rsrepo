@@ -22,14 +22,21 @@ pub struct Mkgithub {
 }
 
 impl Mkgithub {
-    pub fn run(self, _: Config) -> anyhow::Result<()> {
+    pub fn run(self, config: Config) -> anyhow::Result<()> {
         let package = Package::locate()?;
         let metadata = package.metadata()?;
         let name = if let Some(s) = self.repo_name {
             s
         } else {
             match metadata.repository.map(|s| s.parse::<GHRepo>()) {
-                Some(Ok(r)) => r.name().to_string(),
+                Some(Ok(r)) => {
+                    if r.owner() != config.github_user {
+                        bail!(
+                            "Package repository URL does not belong to github-user set in config"
+                        );
+                    }
+                    r.name().to_string()
+                }
                 Some(Err(_)) => bail!("Package repository URL does not point to GitHub"),
                 None => metadata.name,
             }
