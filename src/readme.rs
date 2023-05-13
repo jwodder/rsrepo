@@ -323,6 +323,19 @@ mod tests {
         assert_eq!(readme, expected);
         assert_eq!(readme.to_string(), src);
         assert_eq!(readme.repostatus(), Some(Repostatus::Wip));
+        let mut iter = readme.badges.into_iter();
+        assert_eq!(
+            iter.next().and_then(|b| b.kind()),
+            Some(BadgeKind::Repostatus(Repostatus::Wip))
+        );
+        assert_eq!(
+            iter.next().and_then(|b| b.kind()),
+            Some(BadgeKind::GitHubActions)
+        );
+        assert_eq!(iter.next().and_then(|b| b.kind()), Some(BadgeKind::Codecov));
+        assert_eq!(iter.next().and_then(|b| b.kind()), Some(BadgeKind::Msrv));
+        assert_eq!(iter.next().and_then(|b| b.kind()), Some(BadgeKind::License));
+        assert_eq!(iter.next(), None);
     }
 
     #[test]
