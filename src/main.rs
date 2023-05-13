@@ -89,10 +89,93 @@ fn init_logging(log_level: LevelFilter) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::util::Bump;
+    use clap::error::ErrorKind;
     use clap::CommandFactory;
 
     #[test]
     fn validate_cli() {
         Arguments::command().debug_assert()
+    }
+
+    #[test]
+    fn new_implicit_lib() {
+        let args = Arguments::try_parse_from(["arg0", "new", "dirpath"]).unwrap();
+        let Command::New(new) = args.command else {
+            panic!("`new` subcommand did not yield `New` variant");
+        };
+        assert!(new.lib());
+        assert!(!new.bin());
+    }
+
+    #[test]
+    fn new_explicit_lib() {
+        let args = Arguments::try_parse_from(["arg0", "new", "--lib", "dirpath"]).unwrap();
+        let Command::New(new) = args.command else {
+            panic!("`new` subcommand did not yield `New` variant");
+        };
+        assert!(new.lib());
+        assert!(!new.bin());
+    }
+
+    #[test]
+    fn new_bin() {
+        let args = Arguments::try_parse_from(["arg0", "new", "--bin", "dirpath"]).unwrap();
+        let Command::New(new) = args.command else {
+            panic!("`new` subcommand did not yield `New` variant");
+        };
+        assert!(!new.lib());
+        assert!(new.bin());
+    }
+
+    #[test]
+    fn new_bin_lib() {
+        let args = Arguments::try_parse_from(["arg0", "new", "--bin", "--lib", "dirpath"]).unwrap();
+        let Command::New(new) = args.command else {
+            panic!("`new` subcommand did not yield `New` variant");
+        };
+        assert!(new.lib());
+        assert!(new.bin());
+    }
+
+    #[test]
+    fn release_bump_version() {
+        let args = Arguments::try_parse_from(["arg0", "release", "--minor", "v0.2.0"]);
+        assert!(args.is_err());
+        assert_eq!(args.unwrap_err().kind(), ErrorKind::ArgumentConflict);
+    }
+
+    #[test]
+    fn release_multi_bump() {
+        let args = Arguments::try_parse_from(["arg0", "release", "--minor", "--patch"]);
+        assert!(args.is_err());
+        assert_eq!(args.unwrap_err().kind(), ErrorKind::ArgumentConflict);
+    }
+
+    #[test]
+    fn release_major() {
+        let args = Arguments::try_parse_from(["arg0", "release", "--major"]).unwrap();
+        let Command::Release(rel) = args.command else {
+            panic!("`release` subcommand did not yield `Release` variant");
+        };
+        assert_eq!(rel.bumping.level(), Some(Bump::Major));
+    }
+
+    #[test]
+    fn release_minor() {
+        let args = Arguments::try_parse_from(["arg0", "release", "--minor"]).unwrap();
+        let Command::Release(rel) = args.command else {
+            panic!("`release` subcommand did not yield `Release` variant");
+        };
+        assert_eq!(rel.bumping.level(), Some(Bump::Minor));
+    }
+
+    #[test]
+    fn release_patch() {
+        let args = Arguments::try_parse_from(["arg0", "release", "--patch"]).unwrap();
+        let Command::Release(rel) = args.command else {
+            panic!("`release` subcommand did not yield `Release` variant");
+        };
+        assert_eq!(rel.bumping.level(), Some(Bump::Patch));
     }
 }

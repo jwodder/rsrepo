@@ -19,7 +19,7 @@ use tempfile::NamedTempFile;
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
 pub struct Release {
     #[command(flatten)]
-    bumping: Bumping,
+    pub(crate) bumping: Bumping,
 
     /// The version to release.  If neither this argument nor a bump option is
     /// specified, the Cargo.toml version is used without a prerelease or
@@ -331,7 +331,7 @@ impl Bumping {
         }
     }
 
-    fn level(&self) -> Option<Bump> {
+    pub(crate) fn level(&self) -> Option<Bump> {
         if self.major {
             Some(Bump::Major)
         } else if self.minor {
