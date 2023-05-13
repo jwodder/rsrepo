@@ -28,7 +28,7 @@ impl Mkgithub {
         let name = if let Some(s) = self.repo_name {
             s
         } else {
-            match metadata.repository.map(|s| s.parse::<GHRepo>()) {
+            match metadata.repository.as_ref().map(|s| s.parse::<GHRepo>()) {
                 Some(Ok(r)) => {
                     if r.owner() != config.github_user {
                         bail!(
@@ -95,15 +95,17 @@ impl Mkgithub {
             ),
         )?;
 
-        let manifest = package.manifest();
-        if let Some(mut doc) = manifest.get()? {
-            if let Some(pkg) = doc.get_mut("package").and_then(|it| it.as_table_like_mut()) {
-                if !pkg.contains_key("repository") {
-                    log::info!("Setting 'package.repository' key in Cargo.toml ...");
-                    pkg.insert("repository", toml_edit::value(r.html_url));
-                    manifest.set(doc)?;
-                }
-            }
+        if metadata.repository.is_none() {
+            log::info!("Setting 'package.repository' key in Cargo.toml ...");
+            let manifest = package.manifest();
+            let Some(mut doc) = manifest.get()? else {
+                bail!("Cargo.toml suddenly disappeared!");
+            };
+            let Some(pkg) = doc.get_mut("package").and_then(|it| it.as_table_like_mut()) else {
+                bail!("No [package] table in Cargo.toml");
+            };
+            pkg.insert("repository", toml_edit::value(r.html_url));
+            manifest.set(doc)?;
         }
 
         Ok(())
