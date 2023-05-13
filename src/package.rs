@@ -123,7 +123,11 @@ impl Package {
         let Some(mut doc) = manifest.get()? else {
             bail!("Package lacks Cargo.toml");
         };
-        doc["package"]["version"] = toml_edit::value(v.to_string());
+        if let Some(pkg) = doc.get_mut("package").and_then(|it| it.as_table_like_mut()) {
+            pkg.insert("version", toml_edit::value(v.to_string()));
+        } else {
+            bail!("No [package] table in Cargo.toml");
+        }
         manifest.set(doc)?;
         Ok(())
     }
@@ -243,6 +247,71 @@ mod tests {
             "\n",
             "[dependencies]\n",
         ));
+    }
+
+    #[test]
+    fn set_cargo_version_inline() {
+        let tmpdir = TempDir::new().unwrap();
+        let manifest = tmpdir.child("Cargo.toml");
+        manifest
+            .write_str("package = { name = \"foobar\", version = \"0.1.0\", edition = \"2021\" }\ndependencies = {}\n")
+            .unwrap();
+        let package = Package {
+            manifest_path: manifest.path().into(),
+        };
+        package.set_cargo_version(Version::new(1, 2, 3)).unwrap();
+        manifest.assert("package = { name = \"foobar\", version = \"1.2.3\", edition = \"2021\" }\ndependencies = {}\n");
+    }
+
+    #[test]
+    fn set_cargo_version_unset() {
+        let tmpdir = TempDir::new().unwrap();
+        let manifest = tmpdir.child("Cargo.toml");
+        manifest
+            .write_str(concat!(
+                "[package]\n",
+                "name = \"foobar\"\n",
+                "edition = \"2021\"\n",
+                "\n",
+                "[dependencies]\n",
+            ))
+            .unwrap();
+        let package = Package {
+            manifest_path: manifest.path().into(),
+        };
+        package.set_cargo_version(Version::new(1, 2, 3)).unwrap();
+        manifest.assert(concat!(
+            "[package]\n",
+            "name = \"foobar\"\n",
+            "edition = \"2021\"\n",
+            "version = \"1.2.3\"\n",
+            "\n",
+            "[dependencies]\n",
+        ));
+    }
+
+    #[test]
+    fn set_cargo_version_no_package() {
+        let tmpdir = TempDir::new().unwrap();
+        let manifest = tmpdir.child("Cargo.toml");
+        manifest.write_str("[dependencies]\n").unwrap();
+        let package = Package {
+            manifest_path: manifest.path().into(),
+        };
+        assert!(package.set_cargo_version(Version::new(1, 2, 3)).is_err());
+        manifest.assert("[dependencies]\n");
+    }
+
+    #[test]
+    fn set_cargo_version_package_not_table() {
+        let tmpdir = TempDir::new().unwrap();
+        let manifest = tmpdir.child("Cargo.toml");
+        manifest.write_str("package = 42\n").unwrap();
+        let package = Package {
+            manifest_path: manifest.path().into(),
+        };
+        assert!(package.set_cargo_version(Version::new(1, 2, 3)).is_err());
+        manifest.assert("package = 42\n");
     }
 
     #[test]

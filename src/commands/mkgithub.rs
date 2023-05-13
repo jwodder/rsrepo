@@ -90,10 +90,12 @@ impl Mkgithub {
 
         let manifest = package.manifest();
         if let Some(mut doc) = manifest.get()? {
-            if doc["package"]["repository"].is_none() {
-                doc["package"]["repository"] = toml_edit::value(r.html_url);
-                log::info!("Setting 'package.repository' key in Cargo.toml ...");
-                manifest.set(doc)?;
+            if let Some(pkg) = doc.get_mut("package").and_then(|it| it.as_table_like_mut()) {
+                if !pkg.contains_key("repository") {
+                    log::info!("Setting 'package.repository' key in Cargo.toml ...");
+                    pkg.insert("repository", toml_edit::value(r.html_url));
+                    manifest.set(doc)?;
+                }
             }
         }
 
