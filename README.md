@@ -77,9 +77,8 @@ The configuration file (located at `~/.config/rsrepo.toml` by default) is a
   and `LICENSE` files
 
 - `author-email` — The author e-mail to use when `rsrepo new` generates a
-  `Cargo.toml` file; this may contain a placeholder of the form
-  `{project_name}`, which will be replaced with the name of the project being
-  initialized.
+  `Cargo.toml` file; this may contain a placeholder of the form `{package}`,
+  which will be replaced with the name of the package being initialized.
 
 - `github-user` — The GitHub username to use when `rsrepo new` generates
   `Cargo.toml` and `README.md` files
@@ -119,11 +118,11 @@ The following files are created in the directory:
   the new project; defaults to the latest stable rustc version.  The version
   must be given as either two or three dot-separated integers.
 
-- `-p <name>`, `--project-name <name>` — Specify the name of the project to
-  declare in the `Cargo.toml` file; defaults to the basename of the directory
+- `--name <name>` — Specify the package name to declare in the `Cargo.toml`
+  file; defaults to the basename of the directory
 
 - `--repo-name <name>` — Specify the GitHub repository name (sans owner) to use
-  in URLs in generated files; defaults to the project name
+  in URLs in generated files; defaults to the package name
 
 `rsrepo mkgithub`
 -----------------

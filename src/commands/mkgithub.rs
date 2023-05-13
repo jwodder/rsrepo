@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::github::{GitHub, Label, NewRepoConfig, Topic};
-use crate::project::Project;
+use crate::package::Package;
 use crate::readme::Repostatus;
 use anyhow::bail;
 use clap::Args;
@@ -16,21 +16,21 @@ pub struct Mkgithub {
     /// Name for the repository
     ///
     /// If not specified, defaults to the name used in the `repository` URL in
-    /// the Cargo metadata, or to the name of the project.
+    /// the Cargo metadata, or to the name of the package.
     #[clap(value_name = "NAME")]
     repo_name: Option<String>,
 }
 
 impl Mkgithub {
     pub fn run(self, _: Config) -> anyhow::Result<()> {
-        let project = Project::locate()?;
-        let metadata = project.metadata()?;
+        let package = Package::locate()?;
+        let metadata = package.metadata()?;
         let name = if let Some(s) = self.repo_name {
             s
         } else {
             match metadata.repository.map(|s| s.parse::<GHRepo>()) {
                 Some(Ok(r)) => r.name().to_string(),
-                Some(Err(_)) => bail!("Project repository URL does not point to GitHub"),
+                Some(Err(_)) => bail!("Package repository URL does not point to GitHub"),
                 None => metadata.name,
             }
         };
@@ -43,7 +43,7 @@ impl Mkgithub {
             }
             topics.push(tp);
         }
-        if project.readme()?.and_then(|r| r.repostatus()) == Some(Repostatus::Wip) {
+        if package.readme()?.and_then(|r| r.repostatus()) == Some(Repostatus::Wip) {
             topics.push(Topic::new("work-in-progress"));
         }
 
@@ -58,7 +58,7 @@ impl Mkgithub {
         log::info!("Created GitHub repository {}", r.html_url);
 
         log::info!("Setting remote and pushing");
-        let git = project.git();
+        let git = package.git();
         if git.remotes()?.contains("origin") {
             git.rm_remote("origin")?;
         }

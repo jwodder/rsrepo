@@ -2,7 +2,7 @@ use crate::changelog::{Changelog, ChangelogHeader, ChangelogSection};
 use crate::cmd::LoggedCommand;
 use crate::config::Config;
 use crate::github::{CreateRelease, GitHub, Topic};
-use crate::project::Project;
+use crate::package::Package;
 use crate::readme::{Badge, Repostatus};
 use crate::util::{bump_version, move_dirtree_into, this_year, Bump};
 use anyhow::{bail, Context};
@@ -29,17 +29,17 @@ pub struct Release {
 
 impl Release {
     pub fn run(self, _: Config) -> anyhow::Result<()> {
-        let project = Project::locate()?;
-        let git = project.git();
+        let package = Package::locate()?;
+        let git = package.git();
         let github = GitHub::authed()?;
 
-        let metadata = project.metadata()?;
+        let metadata = package.metadata()?;
         let old_version = metadata.version;
-        let ghrepo = LocalRepo::new(project.path())
+        let ghrepo = LocalRepo::new(package.path())
             .github_remote("origin")
             .context("Could not determine GitHub repository for local repository")?;
-        let is_bin = project.is_bin()?;
-        let is_lib = project.is_lib()?;
+        let is_bin = package.is_bin()?;
+        let is_lib = package.is_lib()?;
         let publish = metadata.publish.as_deref() != Some(&[]);
 
         // Determine new version
@@ -47,7 +47,7 @@ impl Release {
             v // Skips the checks from the other branch
         } else {
             self.bumping
-                .bump(project.latest_tag_version()?, &old_version)?
+                .bump(package.latest_tag_version()?, &old_version)?
         };
         if git.tag_exists(&new_version.to_string())?
             || git.tag_exists(&format!("v{new_version}"))?
@@ -59,10 +59,10 @@ impl Release {
 
         if new_version != old_version {
             log::info!("Setting version in Cargo.toml ...");
-            project.set_cargo_version(new_version.clone())?;
+            package.set_cargo_version(new_version.clone())?;
         }
 
-        if is_bin && project.path().join("Cargo.lock").exists() {
+        if is_bin && package.path().join("Cargo.lock").exists() {
             log::info!("Setting version in Cargo.lock ...");
             LoggedCommand::new("cargo")
                 .arg("update")
@@ -71,13 +71,13 @@ impl Release {
                 .arg("--precise")
                 .arg(new_version.to_string())
                 .arg("--offline")
-                .current_dir(project.path())
+                .current_dir(package.path())
                 .status()?;
         }
 
         let release_date = chrono::Local::now().date_naive();
         let chlog_content;
-        if let Some(mut chlog) = project.changelog()? {
+        if let Some(mut chlog) = package.changelog()? {
             log::info!("Updating CHANGELOG.md ...");
             if let Some(most_recent) = chlog.sections.iter_mut().next() {
                 match most_recent.header {
@@ -93,13 +93,13 @@ impl Release {
             } else {
                 bail!("No changelog section to update");
             }
-            project.set_changelog(chlog)?;
+            package.set_changelog(chlog)?;
         } else {
             chlog_content = None;
         };
 
-        let Some(mut readme) = project.readme()? else {
-            bail!("Project lacks README.md");
+        let Some(mut readme) = package.readme()? else {
+            bail!("Package lacks README.md");
         };
         let mut changed = false;
         let activated = if new_version.pre.is_empty()
@@ -121,13 +121,13 @@ impl Release {
             changed = true;
         }
         if changed {
-            project.set_readme(readme)?;
+            package.set_readme(readme)?;
         }
 
         log::info!("Updating copyright years in LICENSE ...");
         let mut years = git.commit_years()?;
         years.insert(this_year());
-        project.update_license_years(years)?;
+        package.update_license_years(years)?;
 
         log::info!("Committing ...");
         {
@@ -185,7 +185,7 @@ impl Release {
             LoggedCommand::new("cargo")
                 .arg("publish")
                 .arg("--manifest-path")
-                .arg(project.manifest_path())
+                .arg(package.manifest_path())
                 .status()?;
 
             if stash_dir.exists() {
@@ -244,12 +244,12 @@ impl Release {
 
         // Update version in Cargo.toml
         log::info!("Setting next version in Cargo.toml ...");
-        project.set_cargo_version(dev_next)?;
+        package.set_cargo_version(dev_next)?;
 
         // Ensure CHANGELOG is present and contains section for upcoming
         // version
         log::info!("Adding next section to CHANGELOG.md ...");
-        let mut chlog = project.changelog()?.unwrap_or_else(|| Changelog {
+        let mut chlog = package.changelog()?.unwrap_or_else(|| Changelog {
             sections: vec![ChangelogSection {
                 header: ChangelogHeader::Released {
                     version: new_version,
@@ -267,15 +267,15 @@ impl Release {
                 content: String::new(),
             },
         );
-        project.set_changelog(chlog)?;
+        package.set_changelog(chlog)?;
 
         // Ensure "Changelog" link is in README
-        let Some(mut readme) = project.readme()? else {
+        let Some(mut readme) = package.readme()? else {
             bail!("README.md suddenly disappeared!");
         };
         if readme.ensure_changelog_link(&ghrepo) {
             log::info!("Adding Changelog link to README.md ...");
-            project.set_readme(readme)?;
+            package.set_readme(readme)?;
         }
 
         Ok(())

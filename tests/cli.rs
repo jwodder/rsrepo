@@ -127,7 +127,7 @@ fn new_custom_project_name() {
         .arg("--lib")
         .arg("--copyright-year=2525")
         .arg("--msrv=1.69")
-        .arg("--project-name=quux")
+        .arg("--name=quux")
         .arg(&repo)
         .assert()
         .success();
@@ -189,7 +189,7 @@ fn new_custom_project_repo_name() {
         .arg("--lib")
         .arg("--copyright-year=2525")
         .arg("--msrv=1.69")
-        .arg("--project-name=gnusto")
+        .arg("--name=gnusto")
         .arg("--repo-name=cleesh")
         .arg(&repo)
         .assert()

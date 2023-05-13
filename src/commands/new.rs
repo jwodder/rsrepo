@@ -33,11 +33,11 @@ pub struct New {
     #[clap(long)]
     msrv: Option<RustVersion>,
 
-    /// Name of project; defaults to the directory basename
-    #[clap(short = 'p', long, value_name = "NAME")]
-    project_name: Option<String>,
+    /// Name of package; defaults to the directory basename
+    #[clap(long, value_name = "NAME")]
+    name: Option<String>,
 
-    /// GitHub repository name; defaults to the project name
+    /// GitHub repository name; defaults to the package name
     #[clap(long, value_name = "NAME")]
     repo_name: Option<String>,
 
@@ -49,12 +49,12 @@ pub struct New {
 impl New {
     pub fn run(self, config: Config) -> anyhow::Result<()> {
         let mut templater = Templater::load()?;
-        let project_name = self.project_name()?;
+        let name = self.name()?;
         let author_email = templater
             .render_str(
                 &config.author_email,
                 AuthorEmailContext {
-                    project_name: project_name.into(),
+                    package: name.into(),
                 },
             )
             .context("Failed to render author-email template")?;
@@ -86,7 +86,7 @@ impl New {
             author: config.author,
             author_email,
             copyright_year: self.copyright_year(),
-            project_name: project_name.into(),
+            name: name.into(),
             repo_name: self.repo_name()?.into(),
             default_branch,
             bin: self.bin(),
@@ -140,8 +140,8 @@ impl New {
         }
     }
 
-    fn project_name(&self) -> anyhow::Result<&str> {
-        if let Some(s) = self.project_name.as_ref() {
+    fn name(&self) -> anyhow::Result<&str> {
+        if let Some(s) = self.name.as_ref() {
             return Ok(s);
         }
         if let Some(s) = self.dirpath.file_name().and_then(OsStr::to_str) {
@@ -158,7 +158,7 @@ impl New {
         if let Some(s) = self.repo_name.as_ref() {
             Ok(s)
         } else {
-            self.project_name()
+            self.name()
         }
     }
 }
@@ -169,7 +169,7 @@ struct NewContext {
     author: String,
     author_email: String,
     copyright_year: String,
-    project_name: String,
+    name: String,
     repo_name: String,
     default_branch: String,
     bin: bool,
@@ -179,5 +179,5 @@ struct NewContext {
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 struct AuthorEmailContext {
-    project_name: String,
+    package: String,
 }

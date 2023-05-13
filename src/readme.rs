@@ -40,7 +40,7 @@ impl Readme {
     }
 
     // Returns `true` if changed
-    pub fn ensure_crates_links(&mut self, project: &str, docs: bool) -> bool {
+    pub fn ensure_crates_links(&mut self, package: &str, docs: bool) -> bool {
         let mut changed = false;
         let github_index = self
             .links
@@ -53,7 +53,7 @@ impl Readme {
                 self.links.insert(
                     github_index + 1,
                     Link {
-                        url: format!("https://crates.io/crates/{project}"),
+                        url: format!("https://crates.io/crates/{package}"),
                         text: "crates.io".into(),
                     },
                 );
@@ -65,7 +65,7 @@ impl Readme {
             self.links.insert(
                 crates_index + 1,
                 Link {
-                    url: format!("https://docs.rs/{project}"),
+                    url: format!("https://docs.rs/{package}"),
                     text: "Documentation".into(),
                 },
             );

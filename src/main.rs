@@ -5,7 +5,7 @@ mod config;
 mod git;
 mod github;
 mod http_util;
-mod project;
+mod package;
 mod readme;
 mod tmpltr;
 mod util;

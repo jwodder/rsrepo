@@ -4,7 +4,7 @@ use crate::git::Git;
 use crate::readme::Readme;
 use crate::util::CopyrightLine;
 use anyhow::{bail, Context};
-use cargo_metadata::{MetadataCommand, Package};
+use cargo_metadata::{MetadataCommand, Package as CargoPackage};
 use semver::Version;
 use serde::Deserialize;
 use std::borrow::Cow;
@@ -15,25 +15,25 @@ use thiserror::Error;
 use toml_edit::Document;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Project {
+pub struct Package {
     manifest_path: PathBuf,
 }
 
-impl Project {
-    pub fn locate() -> Result<Project, LocateProjectError> {
+impl Package {
+    pub fn locate() -> Result<Package, LocatePackageError> {
         let output = LoggedCommand::new("cargo")
             .arg("locate-project")
             .check_output()?;
         let location = serde_json::from_str::<LocateProject<'_>>(&output)?;
         if !location.root.is_absolute() {
-            return Err(LocateProjectError::InvalidPath(location.root.into()));
+            return Err(LocatePackageError::InvalidPath(location.root.into()));
         }
         if location.root.parent().is_some() {
-            Ok(Project {
+            Ok(Package {
                 manifest_path: location.root.into(),
             })
         } else {
-            Err(LocateProjectError::InvalidPath(location.root.into()))
+            Err(LocatePackageError::InvalidPath(location.root.into()))
         }
     }
 
@@ -94,7 +94,7 @@ impl Project {
         Git::new(self.path())
     }
 
-    pub fn metadata(&self) -> anyhow::Result<Package> {
+    pub fn metadata(&self) -> anyhow::Result<CargoPackage> {
         MetadataCommand::new()
             .manifest_path(self.manifest_path())
             .no_deps()
@@ -174,7 +174,7 @@ struct LocateProject<'a> {
 }
 
 #[derive(Debug, Error)]
-pub enum LocateProjectError {
+pub enum LocatePackageError {
     #[error("could not get project root from cargo")]
     Command(#[from] CommandOutputError),
     #[error("could not deserialize `cargo locate-project` output")]
@@ -203,10 +203,10 @@ mod tests {
                 "[dependencies]\n",
             ))
             .unwrap();
-        let project = Project {
+        let package = Package {
             manifest_path: manifest.path().into(),
         };
-        project.set_cargo_version(Version::new(1, 2, 3)).unwrap();
+        package.set_cargo_version(Version::new(1, 2, 3)).unwrap();
         manifest.assert(concat!(
             "[package]\n",
             "name = \"foobar\"\n",
@@ -232,10 +232,10 @@ mod tests {
                 "Permission is not granted.\n",
             ))
             .unwrap();
-        let project = Project {
+        let package = Package {
             manifest_path: manifest.path().into(),
         };
-        project.update_license_years([2023]).unwrap();
+        package.update_license_years([2023]).unwrap();
         license.assert(concat!(
             "The Foobar License\n",
             "\n",
