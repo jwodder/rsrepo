@@ -80,7 +80,8 @@ fn init_logging(log_level: LevelFilter) {
                 style.render_reset(),
             ))
         })
-        .level(log_level)
+        .level(LevelFilter::Info)
+        .level_for("rsrepo", log_level)
         .chain(stderr)
         .apply()
         .unwrap();
