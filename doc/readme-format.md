@@ -18,7 +18,7 @@ Readme Format
 
 - A blank line
 
-- A line consisting one or or more *header links*, each one of which is a
+- A line consisting of one or more *header links*, each one of which is a
   Markdown link of the form `[Text](url)`.  Adjacent links are separated by
   whitespace, a vertical bar (`|`), and whitespace.
 

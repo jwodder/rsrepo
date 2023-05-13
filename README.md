@@ -20,10 +20,10 @@ All `rsrepo` subcommands other than `rsrepo new` must be run inside a Cargo
 package directory & Git repository (after processing the `--chdir` option, if
 given).  Cargo workspaces are currently not supported.
 
-Certain commands automatically edit the projects' `README.md` and/or
-`CHANGELOG.md` files; these are expected to adhere to specific formats,
-documented in [`doc/readme-format.md`][readme] and
-[`doc/changelog-format.md`][changelog], respectively.
+Certain commands automatically edit projects' `README.md` and/or `CHANGELOG.md`
+files; these files are expected to adhere to specific formats, documented in
+[`doc/readme-format.md`][readme] and [`doc/changelog-format.md`][changelog],
+respectively.
 
 [readme]: https://github.com/jwodder/rsrepo/blob/master/doc/readme-format.md
 [changelog]: https://github.com/jwodder/rsrepo/blob/master/doc/changelog-format.md
@@ -56,8 +56,8 @@ configurations:
 
 - [Cargo](https://docs.rs/cargo) — required by the `release` subcommand
 
-    - If using `release` to publish a package, a registry API token must have
-      been saved with Cargo.
+    - If using `rsrepo release` to publish a package, a Cargo registry API
+      token must have been saved with Cargo.
 
 - A GitHub API token must have been saved with
   [`gh`](https://github.com/cli/cli) in order for the `mkgithub` and `release`
@@ -65,6 +65,7 @@ configurations:
 
 - The `release` subcommand creates a signed Git tag, and so `gpg` (or another
   program specified via Git's `gpg.program` config variable) must be installed
+  and usable
 
 Configuration File
 ------------------
@@ -72,15 +73,15 @@ Configuration File
 The configuration file (located at `~/.config/rsrepo.toml` by default) is a
 [TOML](https://toml.io) file with the following keys:
 
-- `author` — The author name to use when `rsrepo new` creates `Cargo.toml` and
-  `LICENSE` files
+- `author` — The author name to use when `rsrepo new` generates `Cargo.toml`
+  and `LICENSE` files
 
-- `author-email` — The author e-mail to use when `rsrepo new` creates
-  a `Cargo.toml` file; this may contain a placeholder of the form
+- `author-email` — The author e-mail to use when `rsrepo new` generates a
+  `Cargo.toml` file; this may contain a placeholder of the form
   `{project_name}`, which will be replaced with the name of the project being
   initialized.
 
-- `github-user` — The GitHub username to use when `rsrepo new` creates
+- `github-user` — The GitHub username to use when `rsrepo new` generates
   `Cargo.toml` and `README.md` files
 
 `rsrepo new`
@@ -167,34 +168,37 @@ bumping the version extracted from the most recently-created Git tag; in the
 latter case, the metadata identifier (if any) is discarded from the version,
 and it is an error if the bumped version is a prerelease.  If no version or
 bump option is given on the command line, the version declared in the
-`Cargo.toml` file is used with any prerelease & metadata components removed; it
-is an error if this version is less than or equal to the version of the latest
-Git tag.  Except when an explicit version argument is given, it is an error for
-the latest Git tag to not be a Cargo semver version with optional leading `v`.
+`Cargo.toml` file is used after stripping any prerelease & metadata components;
+it is an error if this version is less than or equal to the version of the
+latest Git tag.  Except when an explicit version argument is given, it is an
+error for the latest Git tag to not be a Cargo semver version with optional
+leading `v`.
 
 This command performs the following operations in order:
 
 - The version key in `Cargo.toml` is set to the release version.  If the
   project contains a binary crate, the version in `Cargo.lock` is set as well.
 
-- If `CHANGELOG.md` exists, the header for the topmost section is set to
-  give the release version and the current date.  It is an error if the topmost
-  section already has a date set.
+- If `CHANGELOG.md` exists, the header for the topmost section is edited to
+  contain the release version and the current date.  It is an error if the
+  topmost section header already contains a date.
 
 - If the release version is not a prerelease and the `README.md` has a
   repostatus.org "WIP" badge, the badge is changed to "Active."
 
 - If `publish` in `Cargo.toml` is not `false`, links to `crates.io` and (if the
-  project contains a library crate) `docs.rs` are added to the header links.
+  project contains a library crate) `docs.rs` are added to `README.md`'s header
+  links.
 
 - The copyright years in the first copyright line in `LICENSE` are updated to
   include all years in which commits were made to the repository, including the
   current year.  A line is treated as a copyright line if it is of the form
   "Copyright (c) YEARS AUTHOR", where the "YEARS" component consists of year
-  numbers, dashes, commas, and/or spaces.
+  numbers, dashes, commas, and/or spaces.  It is an error if `LICENSE` does not
+  contain a copyright line.
 
-- Commit all changes made to tracked files in the repository; the text of the
-  most recent `CHANGELOG.md` section is included in the commit message
+- All changes made to tracked files in the repository are committed; the text
+  of the most recent `CHANGELOG.md` section is included in the commit message
   template.
 
     - The release can be cancelled at this point by either leaving the commit
@@ -227,14 +231,14 @@ This command performs the following operations in order:
       local Git repository's `origin` remote.
 
 - If the repostatus.org badge in `README.md` was set to "Active" earlier, then
-  any "work-in-progress" topic is removed from the GitHub repository's topics,
-  and if `publish` in `Cargo.toml` is additionally not `false`, the
-  "available-on-crates-io" topic is added.
+  any "`work-in-progress`" topic is removed from the GitHub repository's
+  topics, and if `publish` in `Cargo.toml` is additionally not `false`, the
+  "`available-on-crates-io`" topic is added.
 
-- Prepare for development on the next version:
+- Development on the next version is started:
 
-    - Set the version key in `Cargo.toml` to the next minor version after the
-      just-released version, plus a "-dev" prerelease segment.
+    - The version key in `Cargo.toml` is set to the next minor version after
+      the just-released version, plus a "-dev" prerelease segment.
 
     - If a `CHANGELOG.md` file does not exist, one is created with a section
       for the release that was just made (with text set to "Initial release").
@@ -244,8 +248,11 @@ This command performs the following operations in order:
 
 ### Options
 
-- `--major` — Set the release's version to the next major version
+- `--major` — Set the release's version to the next major version after the
+  most recent Git tag
 
-- `--minor` — Set the release's version to the next minor version
+- `--minor` — Set the release's version to the next minor version after the
+  most recent Git tag
 
-- `--micro` — Set the release's version to the next micro version
+- `--patch` — Set the release's version to the next micro version after the
+  most recent Git tag
