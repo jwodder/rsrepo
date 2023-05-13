@@ -135,7 +135,8 @@ The following files are created in the directory:
 
 Create a new GitHub repository for the project, set the local repository's
 `origin` remote to point to the GitHub repository, and push all branches & tags
-to the remote.
+to the remote.  In addition, if the `package.repository` key in the package's
+`Cargo.toml` is unset, it is set to the web URL of the GitHub repository.
 
 The package description (if any) is used as the repository description.  The
 package's keywords are used as the repository's topics, along with the "`rust`"
@@ -147,7 +148,7 @@ by `rsrepo new` are created in the repository as well.
 The bare name of the repository to create (e.g. `hello-world`, not
 `octocat/hello-world` or `https://github.com/octocat/hello-world`) can
 optionally be specified as an argument on the command line; if not given, the
-repository name is determined by parsing the `repository` key in the
+repository name is determined by parsing the `package.repository` key in the
 `Cargo.toml` file, falling back to the package name if there is no such key.
 
 The GitHub repository will be created under the account for the user associated

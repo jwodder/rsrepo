@@ -87,6 +87,16 @@ impl Mkgithub {
                 "Update a GitHub Actions action dependency",
             ),
         )?;
+
+        let manifest = package.manifest();
+        if let Some(mut doc) = manifest.get()? {
+            if doc["package"]["repository"].is_none() {
+                doc["package"]["repository"] = toml_edit::value(r.html_url);
+                log::info!("Setting 'package.repository' key in Cargo.toml ...");
+                manifest.set(doc)?;
+            }
+        }
+
         Ok(())
     }
 }
