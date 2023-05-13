@@ -3,7 +3,11 @@ name = "{name}"
 version = "0.1.0-dev"
 edition = "2021"
 rust-version = "{msrv}"
+{{ if description -}}
+description = "{description|toml_escape}"
+{{ else -}}
 #description = ???
+{{ endif -}}
 authors = ["{author|toml_escape} <{author_email}>"]
 repository = "https://github.com/{github_user}/{repo_name}"
 {{ if not lib -}}

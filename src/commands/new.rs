@@ -23,6 +23,10 @@ pub struct New {
     #[clap(long, value_name = "STRING")]
     copyright_year: Option<String>,
 
+    /// Package description
+    #[clap(short = 'd', long)]
+    description: Option<String>,
+
     /// Template a library crate
     ///
     /// This is the default if neither `--bin` nor `--lib` is given.
@@ -78,6 +82,8 @@ impl New {
             .status()
             .context("Failed to init Git repository")?;
 
+        let bin = self.bin();
+        let lib = self.lib();
         let default_branch = Git::new(&self.dirpath)
             .current_branch()?
             .ok_or_else(|| anyhow::anyhow!("No branch set in new repository"))?;
@@ -89,9 +95,10 @@ impl New {
             name: name.into(),
             repo_name: self.repo_name()?.into(),
             default_branch,
-            bin: self.bin(),
-            lib: self.lib(),
+            bin,
+            lib,
             msrv,
+            description: self.description,
         };
 
         for template in [
@@ -106,11 +113,11 @@ impl New {
             log::info!("Rendering {template} ...");
             templater.render_file(&self.dirpath, template, &context)?;
         }
-        if self.bin() {
+        if bin {
             log::info!("Rendering src/main.rs ...");
             templater.render_file(&self.dirpath, "src/main.rs", &context)?;
         }
-        if self.lib() {
+        if lib {
             log::info!("Rendering src/lib.rs ...");
             templater.render_file(&self.dirpath, "src/lib.rs", &context)?;
         }
@@ -175,6 +182,7 @@ struct NewContext {
     bin: bool,
     lib: bool,
     msrv: RustVersion,
+    description: Option<String>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]

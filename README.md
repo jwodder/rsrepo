@@ -111,11 +111,15 @@ The following files are created in the directory:
 - `--copyright-year <string>` — Specify the copyright year(s) to put in the
   `LICENSE` file; defaults to the current year
 
+- `-d <text>`, `--description <text>` — Specify a description for the new
+  package; if not specified, the `description` key in `Cargo.toml` will be
+  commented out.
+
 - `--lib` — Create a library crate.  This is the default if neither `--bin` nor
   `--lib` is given.
 
 - `--msrv VERSION` — Specify the minimum supported Rust version to declare for
-  the new project; defaults to the latest stable rustc version.  The version
+  the new package; defaults to the latest stable rustc version.  The version
   must be given as either two or three dot-separated integers.
 
 - `--name <name>` — Specify the package name to declare in the `Cargo.toml`

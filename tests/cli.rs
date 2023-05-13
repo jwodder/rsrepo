@@ -209,3 +209,31 @@ fn new_custom_project_repo_name() {
     .exclude([".git"])
     .assert_eq();
 }
+
+#[test]
+fn description() {
+    let tmp_path = tempdir().unwrap();
+    let repo = tmp_path.path().join("foobar");
+    Command::cargo_bin("rsrepo")
+        .unwrap()
+        .arg("--log-level=TRACE")
+        .arg("--config")
+        .arg(Path::new(DATA_DIR).join("config.toml"))
+        .arg("new")
+        .arg("--copyright-year=2525")
+        .arg("--msrv=1.69")
+        .arg("-d")
+        .arg("A library for foo'ing bars")
+        .arg(&repo)
+        .assert()
+        .success();
+    Command::new("git")
+        .arg("rev-parse")
+        .arg("--git-dir")
+        .current_dir(&repo)
+        .assert()
+        .success();
+    CmpDirtrees::new(&Path::new(DATA_DIR).join("new").join("description"), &repo)
+        .exclude([".git"])
+        .assert_eq();
+}
