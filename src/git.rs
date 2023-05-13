@@ -111,7 +111,13 @@ impl<'a> Git<'a> {
     }
 
     pub fn toplevel(&self) -> Result<PathBuf, CommandOutputError> {
-        let mut s = self.read("rev-parse", ["--show-toplevel"])?;
+        // Don't use `Git::read()`, as that can strip off too much if the
+        // directory name ends in whitespace.
+        let mut s = self
+            .command()
+            .arg("rev-parse")
+            .arg("--show-toplevel")
+            .check_output()?;
         if s.ends_with('\n') {
             // TODO: Should CR be popped?  What if the path ends in a CR?
             s.pop();
