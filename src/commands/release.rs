@@ -33,6 +33,8 @@ impl Release {
         let package = Package::locate()?;
         let git = package.git();
         let github = GitHub::authed()?;
+        let readme_file = package.readme();
+        let chlog_file = package.changelog();
 
         let metadata = package.metadata()?;
         let old_version = metadata.version;
@@ -78,7 +80,7 @@ impl Release {
 
         let release_date = chrono::Local::now().date_naive();
         let chlog_content;
-        if let Some(mut chlog) = package.changelog()? {
+        if let Some(mut chlog) = chlog_file.get()? {
             log::info!("Updating CHANGELOG.md ...");
             if let Some(most_recent) = chlog.sections.iter_mut().next() {
                 match most_recent.header {
@@ -94,12 +96,12 @@ impl Release {
             } else {
                 bail!("No changelog section to update");
             }
-            package.set_changelog(chlog)?;
+            chlog_file.set(chlog)?;
         } else {
             chlog_content = None;
         };
 
-        let Some(mut readme) = package.readme()? else {
+        let Some(mut readme) = readme_file.get()? else {
             bail!("Package lacks README.md");
         };
         let mut changed = false;
@@ -122,7 +124,7 @@ impl Release {
             changed = true;
         }
         if changed {
-            package.set_readme(readme)?;
+            readme_file.set(readme)?;
         }
 
         log::info!("Updating copyright years in LICENSE ...");
@@ -250,7 +252,7 @@ impl Release {
         // Ensure CHANGELOG is present and contains section for upcoming
         // version
         log::info!("Adding next section to CHANGELOG.md ...");
-        let mut chlog = package.changelog()?.unwrap_or_else(|| Changelog {
+        let mut chlog = chlog_file.get()?.unwrap_or_else(|| Changelog {
             sections: vec![ChangelogSection {
                 header: ChangelogHeader::Released {
                     version: new_version,
@@ -268,15 +270,15 @@ impl Release {
                 content: String::new(),
             },
         );
-        package.set_changelog(chlog)?;
+        chlog_file.set(chlog)?;
 
         // Ensure "Changelog" link is in README
-        let Some(mut readme) = package.readme()? else {
+        let Some(mut readme) = readme_file.get()? else {
             bail!("README.md suddenly disappeared!");
         };
         if readme.ensure_changelog_link(&ghrepo) {
             log::info!("Adding Changelog link to README.md ...");
-            package.set_readme(readme)?;
+            readme_file.set(readme)?;
         }
 
         Ok(())

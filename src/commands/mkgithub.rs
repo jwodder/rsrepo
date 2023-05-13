@@ -43,7 +43,7 @@ impl Mkgithub {
             }
             topics.push(tp);
         }
-        if package.readme()?.and_then(|r| r.repostatus()) == Some(Repostatus::Wip) {
+        if package.readme().get()?.and_then(|r| r.repostatus()) == Some(Repostatus::Wip) {
             topics.push(Topic::new("work-in-progress"));
         }
 

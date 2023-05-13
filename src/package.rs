@@ -10,6 +10,7 @@ use serde::Deserialize;
 use std::borrow::Cow;
 use std::fs::{read_to_string, File};
 use std::io::{ErrorKind, Write};
+use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 use toml_edit::Document;
@@ -77,19 +78,6 @@ impl Package {
         }
     }
 
-    pub fn set_cargo_version(&self, v: Version) -> anyhow::Result<()> {
-        let src =
-            read_to_string(self.path().join("Cargo.toml")).context("Failed to read Cargo.toml")?;
-        let mut doc = src
-            .parse::<Document>()
-            .context("Failed to parse Cargo.toml")?;
-        doc["package"]["version"] = toml_edit::value(v.to_string());
-        let mut fp = File::create(self.path().join("Cargo.toml"))
-            .context("failed to open Cargo.toml for writing")?;
-        write!(&mut fp, "{}", doc).context("failed writing to Cargo.toml")?;
-        Ok(())
-    }
-
     pub fn git(&self) -> Git<'_> {
         Git::new(self.path())
     }
@@ -106,33 +94,37 @@ impl Package {
             .ok_or_else(|| anyhow::anyhow!("No packages listed in metadata"))
     }
 
-    pub fn readme(&self) -> anyhow::Result<Option<Readme>> {
-        match read_to_string(self.path().join("README.md")) {
-            Ok(s) => Ok(Some(s.parse::<Readme>()?)),
-            Err(e) if e.kind() == ErrorKind::NotFound => Ok(None),
-            Err(e) => Err(e).context("failed to read README.md"),
+    pub fn readme(&self) -> TextFile<'_, Readme> {
+        TextFile {
+            dirpath: self.path(),
+            filename: "README.md",
+            _type: PhantomData,
         }
     }
 
-    pub fn set_readme(&self, readme: Readme) -> anyhow::Result<()> {
-        let mut fp = File::create(self.path().join("README.md"))
-            .context("failed to open README.md for writing")?;
-        write!(&mut fp, "{}", readme).context("failed writing to README.md")?;
-        Ok(())
-    }
-
-    pub fn changelog(&self) -> anyhow::Result<Option<Changelog>> {
-        match read_to_string(self.path().join("CHANGELOG.md")) {
-            Ok(s) => Ok(Some(s.parse::<Changelog>()?)),
-            Err(e) if e.kind() == ErrorKind::NotFound => Ok(None),
-            Err(e) => Err(e).context("failed to read CHANGELOG.md"),
+    pub fn changelog(&self) -> TextFile<'_, Changelog> {
+        TextFile {
+            dirpath: self.path(),
+            filename: "CHANGELOG.md",
+            _type: PhantomData,
         }
     }
 
-    pub fn set_changelog(&self, changelog: Changelog) -> anyhow::Result<()> {
-        let mut fp = File::create(self.path().join("CHANGELOG.md"))
-            .context("failed to open CHANGELOG.md for writing")?;
-        write!(&mut fp, "{}", changelog).context("failed writing to CHANGELOG.md")?;
+    pub fn manifest(&self) -> TextFile<'_, Document> {
+        TextFile {
+            dirpath: self.path(),
+            filename: "Cargo.toml",
+            _type: PhantomData,
+        }
+    }
+
+    pub fn set_cargo_version(&self, v: Version) -> anyhow::Result<()> {
+        let manifest = self.manifest();
+        let Some(mut doc) = manifest.get()? else {
+            bail!("Package lacks Cargo.toml");
+        };
+        doc["package"]["version"] = toml_edit::value(v.to_string());
+        manifest.set(doc)?;
         Ok(())
     }
 
@@ -181,6 +173,42 @@ pub enum LocatePackageError {
     Deserialize(#[from] serde_json::Error),
     #[error("manifest path is absolute or parentless: {}", .0.display())]
     InvalidPath(PathBuf),
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct TextFile<'a, T> {
+    dirpath: &'a Path,
+    filename: &'static str,
+    _type: PhantomData<T>,
+}
+
+impl<'a, T> TextFile<'a, T> {
+    pub fn get(&self) -> anyhow::Result<Option<T>>
+    where
+        T: std::str::FromStr,
+        <T as std::str::FromStr>::Err: std::error::Error + Send + Sync + 'static,
+    {
+        match read_to_string(self.dirpath.join(self.filename)) {
+            Ok(s) => {
+                Ok(Some(s.parse::<T>().with_context(|| {
+                    format!("failed to parse {}", self.filename)
+                })?))
+            }
+            Err(e) if e.kind() == ErrorKind::NotFound => Ok(None),
+            Err(e) => Err(e).with_context(|| format!("failed to read {}", self.filename))?,
+        }
+    }
+
+    pub fn set(&self, content: T) -> anyhow::Result<()>
+    where
+        T: std::fmt::Display,
+    {
+        let mut fp = File::create(self.dirpath.join(self.filename))
+            .with_context(|| format!("failed to open {} for writing", self.filename))?;
+        write!(&mut fp, "{}", content)
+            .with_context(|| format!("failed writing to {}", self.filename))?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
