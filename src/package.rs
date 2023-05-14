@@ -118,18 +118,25 @@ impl Package {
         }
     }
 
-    pub fn set_cargo_version(&self, v: Version) -> anyhow::Result<()> {
+    pub fn set_package_field<V: Into<toml_edit::Value>>(
+        &self,
+        key: &str,
+        value: V,
+    ) -> anyhow::Result<()> {
         let manifest = self.manifest();
         let Some(mut doc) = manifest.get()? else {
             bail!("Package lacks Cargo.toml");
         };
-        if let Some(pkg) = doc.get_mut("package").and_then(|it| it.as_table_like_mut()) {
-            pkg.insert("version", toml_edit::value(v.to_string()));
-        } else {
+        let Some(pkg) = doc.get_mut("package").and_then(|it| it.as_table_like_mut()) else {
             bail!("No [package] table in Cargo.toml");
-        }
+        };
+        pkg.insert(key, toml_edit::value(value));
         manifest.set(doc)?;
         Ok(())
+    }
+
+    pub fn set_cargo_version(&self, v: Version) -> anyhow::Result<()> {
+        self.set_package_field("version", v.to_string())
     }
 
     pub fn update_license_years<I>(&self, years: I) -> anyhow::Result<()>

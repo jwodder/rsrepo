@@ -97,15 +97,7 @@ impl Mkgithub {
 
         if metadata.repository.is_none() {
             log::info!("Setting 'package.repository' key in Cargo.toml ...");
-            let manifest = package.manifest();
-            let Some(mut doc) = manifest.get()? else {
-                bail!("Cargo.toml suddenly disappeared!");
-            };
-            let Some(pkg) = doc.get_mut("package").and_then(|it| it.as_table_like_mut()) else {
-                bail!("No [package] table in Cargo.toml");
-            };
-            pkg.insert("repository", toml_edit::value(r.html_url));
-            manifest.set(doc)?;
+            package.set_package_field("repository", r.html_url)?;
         }
 
         Ok(())
