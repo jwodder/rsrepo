@@ -59,7 +59,8 @@ configurations:
     - If using `rsrepo release` to publish a package, a Cargo registry API
       token must have been saved with Cargo.
 
-- A GitHub API token must have been saved with
+- A GitHub API token must either be set via the `GH_TOKEN` or `GITHUB_TOKEN`
+  environment variable or else have been saved with
   [`gh`](https://github.com/cli/cli) in order for the `mkgithub` and `release`
   subcommands to work
 
