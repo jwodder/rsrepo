@@ -1,5 +1,3 @@
-# Don't dosify line endings in unit test files:
+/src/templates/** eol=lf
 /src/testdata/** eol=lf
-# (Do dosify templates and their rendered tests, as templates should use the
-# native line ending.)
-/tests/data/set-msrv/** eol=lf
+/tests/data/** eol=lf
