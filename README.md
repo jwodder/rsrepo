@@ -265,3 +265,12 @@ This command performs the following operations in order:
 
 - `--patch` — Set the release's version to the next micro version after the
   most recent Git tag
+
+`rsrepo set-msrv`
+-----------------
+
+    rsrepo [<global-options>] set-msrv <version>
+
+Set the package's MSRV as declared in `Cargo.toml` and a `README.md` badge to
+the given rustc version.  A basic attempt at updating `CHANGELOG.md` to mention
+the change is also performed.

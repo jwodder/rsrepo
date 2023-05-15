@@ -1,3 +1,4 @@
+use crate::util::RustVersion;
 use ghrepo::GHRepo;
 use nom::bytes::complete::{is_not, tag};
 use nom::character::complete::{alpha1, char, line_ending, space1};
@@ -36,6 +37,32 @@ impl Readme {
         {
             Some(i) => self.badges[i] = badge,
             None => self.badges.insert(0, badge),
+        }
+    }
+
+    pub fn set_msrv(&mut self, msrv: RustVersion) {
+        let url = format!("https://img.shields.io/badge/MSRV-{msrv}-orange");
+        match self
+            .badges
+            .iter()
+            .position(|badge| badge.kind() == Some(BadgeKind::Msrv))
+        {
+            Some(i) => self.badges[i].url = url,
+            None => {
+                let pos = self
+                    .badges
+                    .iter()
+                    .position(|badge| badge.kind() == Some(BadgeKind::License))
+                    .unwrap_or(self.badges.len());
+                self.badges.insert(
+                    pos,
+                    Badge {
+                        url,
+                        alt: "Minimum Supported Rust Version".into(),
+                        target: "https://www.rust-lang.org".into(),
+                    },
+                );
+            }
         }
     }
 

@@ -3,7 +3,7 @@ use similar::udiff::unified_diff;
 use similar::Algorithm;
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
-use std::fs::{read_dir, read_to_string, FileType};
+use std::fs::{copy, create_dir_all, read_dir, read_to_string, FileType};
 use std::path::Path;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -141,4 +141,20 @@ impl<'a> CmpDirtrees<'a> {
         }
         Ok(entries)
     }
+}
+
+pub fn copytree<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dest: Q) -> std::io::Result<()> {
+    let src = src.as_ref();
+    let dest = dest.as_ref();
+    create_dir_all(dest)?;
+    for entry in read_dir(src)? {
+        let entry = entry?;
+        let filetype = entry.file_type()?;
+        if filetype.is_dir() {
+            copytree(entry.path(), dest.join(entry.file_name()))?;
+        } else {
+            copy(entry.path(), dest.join(entry.file_name()))?;
+        }
+    }
+    Ok(())
 }

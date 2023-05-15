@@ -12,9 +12,7 @@ Readme Format
         - `https://www.repostatus.org/badges/latest/{status}.svg` — A
           [repostatus.org](https://www.repostatus.org) badge
 
-        <!--
         - `https://img.shields.io/badge/MSRV-{version}-{color}` — An MSRV badge
-        -->
 
 - A blank line
 

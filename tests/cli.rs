@@ -1,6 +1,7 @@
 mod util;
-use crate::util::CmpDirtrees;
+use crate::util::{copytree, CmpDirtrees};
 use assert_cmd::Command;
+use rstest::rstest;
 use std::path::Path;
 use tempfile::tempdir;
 
@@ -211,7 +212,7 @@ fn new_custom_project_repo_name() {
 }
 
 #[test]
-fn description() {
+fn new_description() {
     let tmp_path = tempdir().unwrap();
     let repo = tmp_path.path().join("foobar");
     Command::cargo_bin("rsrepo")
@@ -236,4 +237,37 @@ fn description() {
     CmpDirtrees::new(&Path::new(DATA_DIR).join("new").join("description"), &repo)
         .exclude([".git"])
         .assert_eq();
+}
+
+#[rstest]
+#[case("plain")]
+#[case("no-entry")]
+#[case("big-chlog")]
+#[case("newly-set")]
+fn set_msrv_plain(#[case] case: &str) {
+    let tmp_path = tempdir().unwrap();
+    copytree(
+        Path::new(DATA_DIR)
+            .join("set-msrv")
+            .join(format!("{case}-before")),
+        tmp_path.path(),
+    )
+    .unwrap();
+    Command::cargo_bin("rsrepo")
+        .unwrap()
+        .arg("--log-level=TRACE")
+        .arg("--config")
+        .arg(Path::new(DATA_DIR).join("config.toml"))
+        .arg("set-msrv")
+        .arg("1.66")
+        .current_dir(tmp_path.path())
+        .assert()
+        .success();
+    CmpDirtrees::new(
+        &Path::new(DATA_DIR)
+            .join("set-msrv")
+            .join(format!("{case}-after")),
+        tmp_path.path(),
+    )
+    .assert_eq();
 }
