@@ -271,6 +271,6 @@ This command performs the following operations in order:
 
     rsrepo [<global-options>] set-msrv <version>
 
-Set the package's MSRV as declared in `Cargo.toml` and a `README.md` badge to
+Set the package's MSRV as declared in `Cargo.toml` and `README.md`'s badges to
 the given rustc version.  A basic attempt at updating `CHANGELOG.md` to mention
 the change is also performed.
