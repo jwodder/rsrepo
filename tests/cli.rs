@@ -28,7 +28,7 @@ fn new_implicit_lib() {
         .current_dir(&repo)
         .assert()
         .success();
-    CmpDirtrees::new(&Path::new(DATA_DIR).join("new").join("lib"), &repo)
+    CmpDirtrees::new(Path::new(DATA_DIR).join("new").join("lib"), repo)
         .exclude([".git"])
         .assert_eq();
 }
@@ -55,7 +55,7 @@ fn new_explicit_lib() {
         .current_dir(&repo)
         .assert()
         .success();
-    CmpDirtrees::new(&Path::new(DATA_DIR).join("new").join("lib"), &repo)
+    CmpDirtrees::new(Path::new(DATA_DIR).join("new").join("lib"), repo)
         .exclude([".git"])
         .assert_eq();
 }
@@ -82,7 +82,7 @@ fn new_bin() {
         .current_dir(&repo)
         .assert()
         .success();
-    CmpDirtrees::new(&Path::new(DATA_DIR).join("new").join("bin"), &repo)
+    CmpDirtrees::new(Path::new(DATA_DIR).join("new").join("bin"), repo)
         .exclude([".git"])
         .assert_eq();
 }
@@ -110,7 +110,7 @@ fn new_bin_lib() {
         .current_dir(&repo)
         .assert()
         .success();
-    CmpDirtrees::new(&Path::new(DATA_DIR).join("new").join("bin-lib"), &repo)
+    CmpDirtrees::new(Path::new(DATA_DIR).join("new").join("bin-lib"), repo)
         .exclude([".git"])
         .assert_eq();
 }
@@ -139,8 +139,8 @@ fn new_custom_project_name() {
         .assert()
         .success();
     CmpDirtrees::new(
-        &Path::new(DATA_DIR).join("new").join("custom-project-name"),
-        &repo,
+        Path::new(DATA_DIR).join("new").join("custom-project-name"),
+        repo,
     )
     .exclude([".git"])
     .assert_eq();
@@ -170,8 +170,8 @@ fn new_custom_repo_name() {
         .assert()
         .success();
     CmpDirtrees::new(
-        &Path::new(DATA_DIR).join("new").join("custom-repo-name"),
-        &repo,
+        Path::new(DATA_DIR).join("new").join("custom-repo-name"),
+        repo,
     )
     .exclude([".git"])
     .assert_eq();
@@ -202,10 +202,10 @@ fn new_custom_project_repo_name() {
         .assert()
         .success();
     CmpDirtrees::new(
-        &Path::new(DATA_DIR)
+        Path::new(DATA_DIR)
             .join("new")
             .join("custom-project-repo-name"),
-        &repo,
+        repo,
     )
     .exclude([".git"])
     .assert_eq();
@@ -234,7 +234,7 @@ fn new_description() {
         .current_dir(&repo)
         .assert()
         .success();
-    CmpDirtrees::new(&Path::new(DATA_DIR).join("new").join("description"), &repo)
+    CmpDirtrees::new(Path::new(DATA_DIR).join("new").join("description"), repo)
         .exclude([".git"])
         .assert_eq();
 }
@@ -244,7 +244,7 @@ fn new_description() {
 #[case("no-entry")]
 #[case("big-chlog")]
 #[case("newly-set")]
-fn set_msrv_plain(#[case] case: &str) {
+fn set_msrv(#[case] case: &str) {
     let tmp_path = tempdir().unwrap();
     copytree(
         Path::new(DATA_DIR)
@@ -264,7 +264,7 @@ fn set_msrv_plain(#[case] case: &str) {
         .assert()
         .success();
     CmpDirtrees::new(
-        &Path::new(DATA_DIR)
+        Path::new(DATA_DIR)
             .join("set-msrv")
             .join(format!("{case}-after")),
         tmp_path.path(),

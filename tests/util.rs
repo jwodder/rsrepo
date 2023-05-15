@@ -4,20 +4,20 @@ use similar::Algorithm;
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
 use std::fs::{copy, create_dir_all, read_dir, read_to_string, FileType};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct CmpDirtrees<'a> {
-    left: &'a Path,
-    right: &'a Path,
+pub struct CmpDirtrees {
+    left: PathBuf,
+    right: PathBuf,
     exclude: HashSet<OsString>,
 }
 
-impl<'a> CmpDirtrees<'a> {
-    pub fn new(left: &'a Path, right: &'a Path) -> Self {
+impl CmpDirtrees {
+    pub fn new<P: AsRef<Path>, Q: AsRef<Path>>(left: P, right: Q) -> Self {
         CmpDirtrees {
-            left,
-            right,
+            left: left.as_ref().into(),
+            right: right.as_ref().into(),
             exclude: HashSet::new(),
         }
     }
@@ -32,7 +32,7 @@ impl<'a> CmpDirtrees<'a> {
     }
 
     pub fn assert_eq(self) {
-        if !self.check(self.left, self.right).unwrap() {
+        if !self.check(&self.left, &self.right).unwrap() {
             panic!(
                 "Directory trees {} and {} differ!",
                 self.left.display(),
@@ -42,14 +42,14 @@ impl<'a> CmpDirtrees<'a> {
     }
 
     fn left_pathname(&self, path: &Path) -> String {
-        match path.strip_prefix(self.left) {
+        match path.strip_prefix(&self.left) {
             Ok(p) => Path::new("left").join(p).to_string_lossy().into_owned(),
             Err(_) => path.to_string_lossy().into_owned(),
         }
     }
 
     fn right_pathname(&self, path: &Path) -> String {
-        match path.strip_prefix(self.right) {
+        match path.strip_prefix(&self.right) {
             Ok(p) => Path::new("right").join(p).to_string_lossy().into_owned(),
             Err(_) => path.to_string_lossy().into_owned(),
         }
