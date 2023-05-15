@@ -53,3 +53,6 @@ tempfile = "3.5.0"
 [profile.release]
 lto = true
 strip = true
+
+[build-dependencies]
+anyhow = "1.0.71"

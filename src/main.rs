@@ -22,7 +22,7 @@ use std::path::PathBuf;
 
 /// Manage Cargo project boilerplate
 #[derive(Debug, Eq, Parser, PartialEq)]
-#[clap(version)]
+#[clap(version = env!("VERSION_WITH_GIT"))]
 struct Arguments {
     /// Change to the given directory before doing anything else
     #[clap(short = 'C', long, value_name = "DIRECTORY")]
