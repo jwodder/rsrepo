@@ -137,7 +137,8 @@ The following files are created in the directory:
 Create a new GitHub repository for the project, set the local repository's
 `origin` remote to point to the GitHub repository, and push all branches & tags
 to the remote.  In addition, if the `package.repository` field in the package's
-`Cargo.toml` is unset, it is set to the web URL of the GitHub repository.
+`Cargo.toml` is unset, it is set to the web URL of the GitHub repository; if
+instead the field differs from the web URL, a warning is emitted.
 
 The package description (if any) is used as the repository description.  The
 package's keywords are used as the repository's topics, along with the "`rust`"

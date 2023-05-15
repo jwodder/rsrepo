@@ -96,8 +96,12 @@ impl Mkgithub {
         )?;
 
         if metadata.repository.is_none() {
-            log::info!("Setting 'package.repository' key in Cargo.toml ...");
+            log::info!("Setting 'package.repository' field in Cargo.toml ...");
             package.set_package_field("repository", r.html_url)?;
+        } else if metadata.repository != Some(r.html_url) {
+            log::warn!(
+                "'package.repository' field in Cargo.toml differs from GitHub repository URL"
+            );
         }
 
         Ok(())
