@@ -51,7 +51,8 @@ pub struct New {
 }
 
 impl New {
-    pub fn run(self, config: Config) -> anyhow::Result<()> {
+    pub fn run(self, config_path: Option<PathBuf>) -> anyhow::Result<()> {
+        let config = Config::load(config_path.as_deref())?;
         let mut templater = Templater::load()?;
         let name = self.name()?;
         let author_email = templater

@@ -10,7 +10,6 @@ mod readme;
 mod tmpltr;
 mod util;
 use crate::commands::Command;
-use crate::config::Config;
 use anstream::AutoStream;
 use anstyle::{AnsiColor, Style};
 use anyhow::Context;
@@ -51,8 +50,7 @@ impl Arguments {
         if let Some(dir) = self.chdir {
             set_current_dir(dir).context("Failed to change directory")?;
         }
-        let config = Config::load(self.config.as_deref())?;
-        self.command.run(config)
+        self.command.run(self.config)
     }
 }
 

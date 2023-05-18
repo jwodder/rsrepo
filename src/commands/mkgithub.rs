@@ -5,6 +5,7 @@ use crate::readme::Repostatus;
 use anyhow::bail;
 use clap::Args;
 use ghrepo::GHRepo;
+use std::path::PathBuf;
 
 /// Create a GitHub repository for the project and push
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
@@ -22,7 +23,8 @@ pub struct Mkgithub {
 }
 
 impl Mkgithub {
-    pub fn run(self, config: Config) -> anyhow::Result<()> {
+    pub fn run(self, config_path: Option<PathBuf>) -> anyhow::Result<()> {
+        let config = Config::load(config_path.as_deref())?;
         let package = Package::locate()?;
         let metadata = package.metadata()?;
         let name = if let Some(s) = self.repo_name {

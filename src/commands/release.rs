@@ -1,6 +1,5 @@
 use crate::changelog::{Changelog, ChangelogHeader, ChangelogSection};
 use crate::cmd::LoggedCommand;
-use crate::config::Config;
 use crate::github::{CreateRelease, GitHub, Topic};
 use crate::package::Package;
 use crate::readme::{Badge, Repostatus};
@@ -13,6 +12,7 @@ use semver::{Prerelease, Version};
 use std::collections::HashSet;
 use std::fs::create_dir_all;
 use std::io::{self, Write};
+use std::path::PathBuf;
 use tempfile::NamedTempFile;
 
 /// Prepare & publish a new release for a package
@@ -29,7 +29,7 @@ pub struct Release {
 }
 
 impl Release {
-    pub fn run(self, _: Config) -> anyhow::Result<()> {
+    pub fn run(self, _: Option<PathBuf>) -> anyhow::Result<()> {
         let package = Package::locate()?;
         let git = package.git();
         let github = GitHub::authed()?;
