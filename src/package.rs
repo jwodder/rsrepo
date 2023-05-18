@@ -5,11 +5,12 @@ use crate::readme::Readme;
 use crate::util::CopyrightLine;
 use anyhow::{bail, Context};
 use cargo_metadata::{MetadataCommand, Package as CargoPackage};
+use in_place::InPlace;
 use semver::Version;
 use serde::Deserialize;
 use std::borrow::Cow;
 use std::fs::{read_to_string, File};
-use std::io::{ErrorKind, Write};
+use std::io::{BufRead, BufReader, ErrorKind, Write};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
@@ -144,12 +145,14 @@ impl Package {
         I: IntoIterator<Item = i32>,
     {
         let mut years = Some(years);
-        let license =
-            read_to_string(self.path().join("LICENSE")).context("failed to read LICENSE file")?;
+        let inp = InPlace::new(self.path().join("LICENSE"))
+            .open()
+            .context("failed to open LICENSE file for in-place editing")?;
+        let reader = BufReader::new(inp.reader());
+        let mut writer = inp.writer();
         let mut found = false;
-        let mut fp = File::create(self.path().join("LICENSE"))
-            .context("failed to open LICENSE for writing")?;
-        for line in license.lines() {
+        for line in reader.lines() {
+            let line = line.context("failed to read lines from LICENSE")?;
             match (found, line.parse::<CopyrightLine>()) {
                 (false, Ok(mut crl)) => {
                     found = true;
@@ -158,14 +161,15 @@ impl Package {
                             crl.add_year(y);
                         }
                     }
-                    writeln!(fp, "{crl}").context("error writing to LICENSE")?;
+                    writeln!(writer, "{crl}").context("error writing to LICENSE")?;
                 }
-                _ => writeln!(fp, "{line}").context("error writing to LICENSE")?,
+                _ => writeln!(writer, "{line}").context("error writing to LICENSE")?,
             }
         }
         if !found {
-            bail!("Copyright line not found in LICENSE");
+            bail!("copyright line not found in LICENSE");
         }
+        inp.save().context("failed to save changed to LICENSE")?;
         Ok(())
     }
 }

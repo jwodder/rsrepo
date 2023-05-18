@@ -478,6 +478,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "in-place"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "093c809e5c605d9855632021d543839c908cc433a60efd2a230799adcd5ff646"
+dependencies = [
+ "tempfile",
+]
+
+[[package]]
 name = "include_dir"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -788,6 +797,7 @@ dependencies = [
  "gh-token",
  "ghrepo",
  "home",
+ "in-place",
  "include_dir",
  "indent_write",
  "log",
