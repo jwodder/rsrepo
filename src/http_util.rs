@@ -1,6 +1,7 @@
-use indent_write::indentable::Indentable;
+use indenter::indented;
 use mime::{Mime, JSON};
 use serde_json::{to_string_pretty, value::Value};
+use std::fmt::{self, Write};
 use ureq::Response;
 
 /// Error raised for a 4xx or 5xx HTTP response that includes the response body
@@ -33,15 +34,15 @@ impl StatusError {
     }
 }
 
-impl std::fmt::Display for StatusError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl fmt::Display for StatusError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
             "{} request to {} returned {}",
             self.method, self.url, self.status
         )?;
         if let Some(text) = &self.body {
-            write!(f, "\n\n{}\n", text.indented("    "))?;
+            write!(indented(f).with_str("    "), "\n\n{text}\n")?;
         }
         Ok(())
     }
