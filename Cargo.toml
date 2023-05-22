@@ -37,7 +37,7 @@ shell-words = "1.1.0"
 tempfile = "3.5.0"
 thiserror = "1.0.40"
 tinytemplate = "1.2.1"
-toml = { version = "0.7.3", default-features = false, features = ["parse"] }
+toml = { version = "0.7.4", default-features = false, features = ["parse"] }
 toml_edit = "0.19.9"
 ureq = { version = "2.6.2", features = ["json"] }
 url = "2.3.1"
