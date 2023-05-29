@@ -16,7 +16,7 @@ anstream = "0.3.2"
 anstyle = "1.0.0"
 anyhow = "1.0.71"
 cargo_metadata = "0.15.4"
-chrono = { version = "0.4.24", default-features = false, features = ["clock", "serde"] }
+chrono = { version = "0.4.25", default-features = false, features = ["clock", "serde"] }
 clap = { version = "4.3.0", default-features = false, features = ["derive", "error-context", "help", "std", "suggestions", "usage", "wrap_help"] }
 fern = "0.6.2"
 gh-token = "0.1.2"
