@@ -67,6 +67,7 @@ impl Release {
 
         if is_bin && package.path().join("Cargo.lock").exists() {
             log::info!("Setting version in Cargo.lock ...");
+            // TODO: Merge this into Package::set_cargo_version()?
             LoggedCommand::new("cargo")
                 .arg("update")
                 .arg("-p")
@@ -317,10 +318,8 @@ impl Bumping {
                 bail!("No Git tag to bump");
             }
         } else {
-            if let Some(tag_version) = tag_version.as_ref() {
-                if tag_version >= manifest_version {
-                    bail!("Latest Git-tagged version exceeds manifest version");
-                }
+            if tag_version.is_some_and(|v| v >= *manifest_version) {
+                bail!("Latest Git-tagged version exceeds manifest version");
             }
             // Strip any pre-release segment
             Ok(Version::new(
