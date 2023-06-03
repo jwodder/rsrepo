@@ -204,24 +204,32 @@ impl Release {
         log::info!("Pushing tag to GitHub ...");
         git.command().arg("push").arg("--follow-tags").status()?;
 
-        // TODO: Skip this step if using cargo-dist/a `release.yml`
-        // workflow:
-        log::info!("Creating GitHub release ...");
-        let text = git
-            .command()
-            .arg("show")
-            .arg("-s")
-            .arg("--format=%s%x00%b")
-            .arg(format!("{tag_name}^{{commit}}"))
-            .check_output()?;
-        let (subject, body) = text.split_once('\0').ok_or_else(|| {
-            anyhow::anyhow!("`git show` was asked to output a NUL, but it didn't!")
-        })?;
-        let release_details = CreateRelease::new(tag_name)
-            .name(subject)
-            .body(body.trim())
-            .prerelease(!new_version.pre.is_empty());
-        github.create_release(&ghrepo, release_details)?;
+        if package
+            .path()
+            .join(".github")
+            .join("workflows")
+            .join("release.yml")
+            .exists()
+        {
+            log::info!("release.yml workflow exists; expecting it to create GitHub release");
+        } else {
+            log::info!("Creating GitHub release ...");
+            let text = git
+                .command()
+                .arg("show")
+                .arg("-s")
+                .arg("--format=%s%x00%b")
+                .arg(format!("{tag_name}^{{commit}}"))
+                .check_output()?;
+            let (subject, body) = text.split_once('\0').ok_or_else(|| {
+                anyhow::anyhow!("`git show` was asked to output a NUL, but it didn't!")
+            })?;
+            let release_details = CreateRelease::new(tag_name)
+                .name(subject)
+                .body(body.trim())
+                .prerelease(!new_version.pre.is_empty());
+            github.create_release(&ghrepo, release_details)?;
+        }
 
         if activated {
             let mut topics = github

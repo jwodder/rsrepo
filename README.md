@@ -231,11 +231,12 @@ This command performs the following operations in order:
 
 - The commit & tag are pushed; it is assumed that they are pushed to GitHub.
 
-- A GitHub release pointing to the new tag is created in the project's GitHub
-  repository.  The name of the release is the first line of the tagged commit's
-  commit message, and its body is the rest of the commit message.  If the new
-  version is a prerelease, the GitHub release is marked as a prerelease as
-  well.
+- If the repository does not contain a `.github/workflows/release.yml`
+  workflow, then a GitHub release pointing to the new tag is created in the
+  project's GitHub repository.  The name of the release is the first line of
+  the tagged commit's commit message, and its body is the rest of the commit
+  message.  If the new version is a prerelease, the GitHub release is marked as
+  a prerelease as well.
 
     - The project's GitHub repository is identified by parsing the URL for the
       local Git repository's `origin` remote.
