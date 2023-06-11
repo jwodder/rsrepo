@@ -1,7 +1,7 @@
 use crate::http_util::StatusError;
 use anyhow::Context;
 use ghrepo::GHRepo;
-use serde::{de::DeserializeOwned, Deserialize, Deserializer, Serialize, Serializer};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::borrow::Cow;
 use std::fmt;
 use ureq::{Agent, AgentBuilder};
@@ -224,7 +224,8 @@ impl NewRepoConfig {
     }
 }
 
-#[derive(Clone, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Deserialize, Hash, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(transparent)]
 pub struct Topic(String);
 
 impl Topic {
@@ -253,21 +254,6 @@ impl<S: AsRef<str>> PartialEq<S> for Topic {
 impl fmt::Display for Topic {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.0)
-    }
-}
-
-impl Serialize for Topic {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        self.0.serialize(serializer)
-    }
-}
-
-impl<'de> Deserialize<'de> for Topic {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        String::deserialize(deserializer).map(Topic)
     }
 }
 
