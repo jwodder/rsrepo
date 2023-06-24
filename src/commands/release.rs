@@ -267,7 +267,7 @@ impl Release {
                     version: new_version,
                     date: release_date,
                 },
-                content: "Initial release".into(),
+                content: "Initial release\n".into(),
             }],
         });
         chlog.sections.insert(
