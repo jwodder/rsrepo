@@ -14,7 +14,7 @@ publish = false
 [dependencies]
 anstream = "0.3.2"
 anstyle = "1.0.1"
-anyhow = "1.0.71"
+anyhow = "1.0.75"
 cargo_metadata = "0.15.4"
 chrono = { version = "0.4.26", default-features = false, features = ["clock", "serde"] }
 clap = { version = "4.3.11", default-features = false, features = ["derive", "error-context", "help", "std", "suggestions", "usage", "wrap_help"] }
@@ -56,4 +56,4 @@ lto = true
 strip = true
 
 [build-dependencies]
-anyhow = "1.0.71"
+anyhow = "1.0.75"
