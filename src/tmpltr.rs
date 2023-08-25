@@ -76,7 +76,9 @@ impl<'a> Templater<'a> {
 
 fn toml_escape(value: &Value, out: &mut String) -> Result<(), Error> {
     let Value::String(s) = value else {
-        return Err(Error::GenericError {msg: "toml_escape can only escape strings".into()});
+        return Err(Error::GenericError {
+            msg: "toml_escape can only escape strings".into(),
+        });
     };
     for ch in s.chars() {
         match ch {
@@ -84,11 +86,11 @@ fn toml_escape(value: &Value, out: &mut String) -> Result<(), Error> {
                 out.push('\\');
                 out.push(ch);
             }
-            '\x08' => out.push_str(r#"\b"#),
-            '\t' => out.push_str(r#"\t"#),
-            '\n' => out.push_str(r#"\n"#),
-            '\x0C' => out.push_str(r#"\f"#),
-            '\r' => out.push_str(r#"\r"#),
+            '\x08' => out.push_str(r"\b"),
+            '\t' => out.push_str(r"\t"),
+            '\n' => out.push_str(r"\n"),
+            '\x0C' => out.push_str(r"\f"),
+            '\r' => out.push_str(r"\r"),
             '\x00'..='\x1F' | '\x7F' => out.push_str(&format!("\\u{:04}", ch as u32)),
             _ => out.push(ch),
         }
