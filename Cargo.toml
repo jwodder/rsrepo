@@ -17,7 +17,7 @@ anstyle = "1.0.1"
 anyhow = "1.0.71"
 cargo_metadata = "0.15.4"
 chrono = { version = "0.4.26", default-features = false, features = ["clock", "serde"] }
-clap = { version = "4.3.11", default-features = false, features = ["derive", "error-context", "help", "std", "suggestions", "usage", "wrap_help"] }
+clap = { version = "4.4.1", default-features = false, features = ["derive", "error-context", "help", "std", "suggestions", "usage", "wrap_help"] }
 fern = "0.6.2"
 gh-token = "0.1.2"
 ghrepo = { version = "0.5.0", default-features = false }
