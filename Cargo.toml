@@ -12,48 +12,48 @@ exclude = ["/.*"]
 publish = false
 
 [dependencies]
-anstream = "0.3.2"
-anstyle = "1.0.1"
-anyhow = "1.0.71"
-cargo_metadata = "0.15.4"
-chrono = { version = "0.4.26", default-features = false, features = ["clock", "serde"] }
-clap = { version = "4.3.11", default-features = false, features = ["derive", "error-context", "help", "std", "suggestions", "usage", "wrap_help"] }
+anstream = "0.5.0"
+anstyle = "1.0.2"
+anyhow = "1.0.75"
+cargo_metadata = "0.17.0"
+chrono = { version = "0.4.27", default-features = false, features = ["clock", "serde"] }
+clap = { version = "4.4.1", default-features = false, features = ["derive", "error-context", "help", "std", "suggestions", "usage", "wrap_help"] }
 fern = "0.6.2"
-gh-token = "0.1.2"
+gh-token = "0.1.4"
 ghrepo = { version = "0.5.0", default-features = false }
 home = "0.5.5"
 in-place = "0.1.0"
 include_dir = "0.7.3"
 indenter = "0.3.3"
-log = "0.4.19"
+log = "0.4.20"
 mime = "0.3.17"
 nom = "7.1.3"
 rangemap = "1.3.0"
-renamore = "0.3.1"
-semver = "1.0.17"
-serde = { version = "1.0.165", features = ["derive"] }
-serde_json = "1.0.100"
+renamore = "0.3.2"
+semver = "1.0.18"
+serde = { version = "1.0.188", features = ["derive"] }
+serde_json = "1.0.105"
 shell-words = "1.1.0"
-tempfile = "3.6.0"
-thiserror = "1.0.40"
+tempfile = "3.8.0"
+thiserror = "1.0.47"
 tinytemplate = "1.2.1"
 toml = { version = "0.7.6", default-features = false, features = ["parse"] }
-toml_edit = "0.19.11"
+toml_edit = "0.19.14"
 ureq = { version = "2.7.1", features = ["json"] }
-url = "2.4.0"
+url = "2.4.1"
 which = "4.4.0"
 
 [dev-dependencies]
-assert_cmd = "2.0.11"
+assert_cmd = "2.0.12"
 assert_fs = "1.0.13"
 predicates = { version = "3.0.3", default-features = false }
-rstest = { version = "0.18.1", default-features = false }
+rstest = { version = "0.18.2", default-features = false }
 similar = "2.2.1"
-tempfile = "3.6.0"
+tempfile = "3.8.0"
 
 [profile.release]
 lto = true
 strip = true
 
 [build-dependencies]
-anyhow = "1.0.71"
+anyhow = "1.0.75"
