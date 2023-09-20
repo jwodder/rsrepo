@@ -236,19 +236,19 @@ pub fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtreeIntoE
     use MoveDirtreeIntoError::*;
     let mut stack = vec![DirWithEntries::new(src)?];
     while let Some(entries) = stack.last_mut() {
-        match entries.pop_front() {
-            Some((entry, ftype)) if ftype.is_dir() => {
-                let relpath = match entry.strip_prefix(src) {
-                    Ok(relpath) => relpath,
-                    Err(source) => {
-                        return Err(Relpath {
-                            source,
-                            path: entry,
-                            base: src.into(),
-                        })
-                    }
-                };
-                let target = dest.join(relpath);
+        if let Some((entry, ftype)) = entries.pop_front() {
+            let relpath = match entry.strip_prefix(src) {
+                Ok(relpath) => relpath,
+                Err(source) => {
+                    return Err(Relpath {
+                        source,
+                        path: entry,
+                        base: src.into(),
+                    })
+                }
+            };
+            let target = dest.join(relpath);
+            if ftype.is_dir() {
                 if let Err(source) = create_dir_all(&target) {
                     return Err(Mkdir {
                         source,
@@ -256,36 +256,21 @@ pub fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtreeIntoE
                     });
                 }
                 stack.push(DirWithEntries::new(&entry)?);
+            } else if let Err(source) = rename_exclusive(&entry, &target) {
+                return Err(Rename {
+                    source,
+                    src: entry,
+                    dest: target,
+                });
             }
-            Some((entry, _)) => {
-                let relpath = match entry.strip_prefix(src) {
-                    Ok(relpath) => relpath,
-                    Err(source) => {
-                        return Err(Relpath {
-                            source,
-                            path: entry,
-                            base: src.into(),
-                        })
-                    }
-                };
-                let target = dest.join(relpath);
-                if let Err(source) = rename_exclusive(&entry, &target) {
-                    return Err(Rename {
-                        source,
-                        src: entry,
-                        dest: target,
-                    });
-                }
+        } else {
+            if let Err(source) = remove_dir(&entries.dirpath) {
+                return Err(Rmdir {
+                    source,
+                    path: entries.dirpath.clone(),
+                });
             }
-            None => {
-                if let Err(source) = remove_dir(&entries.dirpath) {
-                    return Err(Rmdir {
-                        source,
-                        path: entries.dirpath.clone(),
-                    });
-                }
-                stack.pop();
-            }
+            stack.pop();
         }
     }
     Ok(())
