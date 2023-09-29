@@ -3,7 +3,7 @@
 [![codecov.io](https://codecov.io/gh/jwodder/rsrepo/branch/master/graph/badge.svg)](https://codecov.io/gh/jwodder/rsrepo)
 [![MIT License](https://img.shields.io/github/license/jwodder/rsrepo.svg)](https://opensource.org/licenses/MIT)
 
-[GitHub](https://github.com/jwodder/rsrepo) | [Issues](https://github.com/jwodder/rsrepo/issues)
+[GitHub](https://github.com/jwodder/rsrepo) | [Issues](https://github.com/jwodder/rsrepo/issues) | [Changelog](https://github.com/jwodder/rsrepo/blob/master/CHANGELOG.md)
 
 `rsrepo` is my personal command-line program for managing my Rust project
 repositories, including generating packaging boilerplate and performing
