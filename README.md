@@ -120,8 +120,9 @@ The following files are created in the directory:
   `--lib` is given.
 
 - `--msrv VERSION` — Specify the minimum supported Rust version to declare for
-  the new package; defaults to the latest stable rustc version.  The version
-  must be given as either two or three dot-separated integers.
+  the new package; defaults to the latest stable rustc version with the patch
+  component removed.  The version must be given as either two or three
+  dot-separated integers.
 
 - `--name <name>` — Specify the package name to declare in the `Cargo.toml`
   file; defaults to the basename of the directory

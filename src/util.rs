@@ -64,6 +64,13 @@ pub struct RustVersion {
     patch: Option<u32>,
 }
 
+impl RustVersion {
+    pub fn without_patch(mut self) -> RustVersion {
+        self.patch = None;
+        self
+    }
+}
+
 impl FromStr for RustVersion {
     type Err = ParseRustVersionError;
 
@@ -421,6 +428,34 @@ mod tests {
             }
         );
         assert_eq!(rv.to_string(), "1.69.0");
+    }
+
+    #[test]
+    fn three_part_rust_version_without_patch() {
+        let rv = RustVersion {
+            major: 1,
+            minor: 69,
+            patch: Some(0),
+        };
+        let rv = rv.without_patch();
+        assert_eq!(
+            rv,
+            RustVersion {
+                major: 1,
+                minor: 69,
+                patch: None,
+            }
+        );
+    }
+
+    #[test]
+    fn two_part_rust_version_without_patch() {
+        let rv = RustVersion {
+            major: 1,
+            minor: 69,
+            patch: None,
+        };
+        assert_eq!(rv, rv.without_patch());
     }
 
     #[rstest]

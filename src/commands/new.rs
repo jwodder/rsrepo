@@ -67,12 +67,14 @@ impl New {
         let msrv = if let Some(rv) = self.msrv {
             rv
         } else {
-            let rustrepo = GHRepo::new("rust-lang", "rust").unwrap();
+            let rustrepo = GHRepo::new("rust-lang", "rust")
+                .expect("\"rust-lang/rust\" should be valid ghrepo specifier");
             let stable = GitHub::default().latest_release(&rustrepo)?;
             stable
                 .tag_name
                 .parse::<RustVersion>()
                 .context("Failed to parse latest stable rustc version")?
+                .without_patch()
         };
 
         log::info!("Creating Git repository ...");
