@@ -79,36 +79,44 @@ impl GitHub {
         self.request::<T, U>("PUT", path, Some(body))
     }
 
-    pub fn create_repository(&self, config: NewRepoConfig) -> anyhow::Result<Repository> {
-        let (create_repo_body, set_topics_body) = config.into_payloads();
-        let r: Repository = self.post("/user/repos", create_repo_body)?;
-        if !set_topics_body.is_empty() {
-            let _: TopicsPayload = self.put(&format!("{}/topics", r.url), set_topics_body)?;
-        }
-        Ok(r)
+    pub fn create_repository(&self, config: CreateRepoBody) -> anyhow::Result<Repository> {
+        self.post("/user/repos", config)
     }
 
-    pub fn create_label(&self, repo: &GHRepo, label: Label<'_>) -> anyhow::Result<()> {
+    pub fn create_label<R>(&self, repo: &R, label: Label<'_>) -> anyhow::Result<()>
+    where
+        for<'a> R: RepositoryEndpoint<'a>,
+    {
         let _: Label<'_> = self.post(&format!("{}/labels", repo.api_url()), label)?;
         Ok(())
     }
 
-    pub fn create_release(&self, repo: &GHRepo, release: CreateRelease) -> anyhow::Result<Release> {
+    pub fn create_release<R>(&self, repo: &R, release: CreateRelease) -> anyhow::Result<Release>
+    where
+        for<'a> R: RepositoryEndpoint<'a>,
+    {
         self.post(&format!("{}/releases", repo.api_url()), release)
     }
 
-    pub fn latest_release(&self, repo: &GHRepo) -> anyhow::Result<Release> {
+    pub fn latest_release<R>(&self, repo: &R) -> anyhow::Result<Release>
+    where
+        for<'a> R: RepositoryEndpoint<'a>,
+    {
         self.get(&format!("{}/releases/latest", repo.api_url()))
     }
 
-    pub fn get_topics(&self, repo: &GHRepo) -> anyhow::Result<Vec<Topic>> {
+    pub fn get_topics<R>(&self, repo: &R) -> anyhow::Result<Vec<Topic>>
+    where
+        for<'a> R: RepositoryEndpoint<'a>,
+    {
         let payload = self.get::<TopicsPayload>(&format!("{}/topics", repo.api_url()))?;
         Ok(payload.names)
     }
 
-    pub fn set_topics<I>(&self, repo: &GHRepo, topics: I) -> anyhow::Result<()>
+    pub fn set_topics<I, R>(&self, repo: &R, topics: I) -> anyhow::Result<()>
     where
         I: IntoIterator<Item = Topic>,
+        for<'a> R: RepositoryEndpoint<'a>,
     {
         let body = TopicsPayload {
             names: topics.into_iter().collect(),
@@ -132,14 +140,20 @@ fn mkurl(path: &str) -> anyhow::Result<Url> {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-struct CreateRepoBody {
-    name: String,
+pub struct CreateRepoBody {
+    pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    description: Option<String>,
+    pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    private: Option<bool>,
+    pub private: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    delete_branch_on_merge: Option<bool>,
+    pub delete_branch_on_merge: Option<bool>,
+}
+
+pub trait RepositoryEndpoint<'a> {
+    type Url: fmt::Display;
+
+    fn api_url(&'a self) -> Self::Url;
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -156,72 +170,25 @@ pub struct Repository {
     // owner?
 }
 
-impl Repository {
-    pub fn ghrepo(&self) -> anyhow::Result<GHRepo> {
-        self.full_name.parse().with_context(|| {
-            format!(
-                "ghrepo failed to parse repository fullname {:?}",
-                self.full_name
-            )
-        })
+impl<'a> RepositoryEndpoint<'a> for Repository {
+    type Url = &'a str;
+
+    fn api_url(&'a self) -> &'a str {
+        &self.url
+    }
+}
+
+impl<'a> RepositoryEndpoint<'a> for GHRepo {
+    type Url = String;
+
+    fn api_url(&'a self) -> String {
+        self.api_url()
     }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 struct TopicsPayload {
     names: Vec<Topic>,
-}
-
-impl TopicsPayload {
-    fn is_empty(&self) -> bool {
-        self.names.is_empty()
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct NewRepoConfig {
-    name: String,
-    description: Option<String>,
-    private: Option<bool>,
-    topics: Vec<Topic>,
-}
-
-impl NewRepoConfig {
-    pub fn new<S: Into<String>>(name: S) -> Self {
-        Self {
-            name: name.into(),
-            description: None,
-            private: None,
-            topics: Vec::new(),
-        }
-    }
-
-    pub fn description<S: Into<String>>(mut self, description: S) -> Self {
-        self.description = Some(description.into());
-        self
-    }
-
-    pub fn private(mut self, private: bool) -> Self {
-        self.private = Some(private);
-        self
-    }
-
-    pub fn topics<I: IntoIterator<Item = Topic>>(mut self, iter: I) -> Self {
-        self.topics = iter.into_iter().collect();
-        self
-    }
-
-    fn into_payloads(self) -> (CreateRepoBody, TopicsPayload) {
-        (
-            CreateRepoBody {
-                name: self.name,
-                description: self.description,
-                private: self.private,
-                delete_branch_on_merge: Some(true),
-            },
-            TopicsPayload { names: self.topics },
-        )
-    }
 }
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, Ord, PartialEq, PartialOrd, Serialize)]

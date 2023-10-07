@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::github::{GitHub, Label, NewRepoConfig, Topic};
+use crate::github::{CreateRepoBody, GitHub, Label, Topic};
 use crate::package::Package;
 use crate::readme::Repostatus;
 use anyhow::bail;
@@ -44,6 +44,28 @@ impl Mkgithub {
             }
         };
 
+        let mut new_repo = CreateRepoBody {
+            name,
+            description: None,
+            private: Some(self.private),
+            delete_branch_on_merge: Some(true),
+        };
+        if let d @ Some(_) = metadata.description {
+            new_repo.description = d;
+        }
+        let github = GitHub::authed()?;
+        let repo = github.create_repository(new_repo)?;
+        log::info!("Created GitHub repository {}", repo.html_url);
+
+        log::info!("Setting remote and pushing");
+        let git = package.git();
+        if git.remotes()?.contains("origin") {
+            git.rm_remote("origin")?;
+        }
+        git.add_remote("origin", &repo.ssh_url)?;
+        git.run("push", ["-u", "origin", "refs/heads/*", "refs/tags/*"])?;
+
+        log::info!("Setting repository topics ...");
         let mut topics = Vec::from([Topic::new("rust")]);
         for keyword in metadata.keywords {
             let tp = Topic::new(&keyword);
@@ -55,29 +77,11 @@ impl Mkgithub {
         if package.readme().get()?.and_then(|r| r.repostatus()) == Some(Repostatus::Wip) {
             topics.push(Topic::new("work-in-progress"));
         }
-
-        let mut repo_cfg = NewRepoConfig::new(name)
-            .private(self.private)
-            .topics(topics);
-        if let Some(s) = metadata.description {
-            repo_cfg = repo_cfg.description(s);
-        }
-        let github = GitHub::authed()?;
-        let r = github.create_repository(repo_cfg)?;
-        log::info!("Created GitHub repository {}", r.html_url);
-
-        log::info!("Setting remote and pushing");
-        let git = package.git();
-        if git.remotes()?.contains("origin") {
-            git.rm_remote("origin")?;
-        }
-        git.add_remote("origin", &r.ssh_url)?;
-        git.run("push", ["-u", "origin", "refs/heads/*", "refs/tags/*"])?;
+        github.set_topics(&repo, topics)?;
 
         log::info!("Creating Dependabot labels ...");
-        let ghrepo = r.ghrepo()?;
         github.create_label(
-            &ghrepo,
+            &repo,
             Label::new(
                 "dependencies",
                 "8732bc",
@@ -85,11 +89,11 @@ impl Mkgithub {
             ),
         )?;
         github.create_label(
-            &ghrepo,
+            &repo,
             Label::new("d:cargo", "dea584", "Update a Cargo (Rust) dependency"),
         )?;
         github.create_label(
-            &ghrepo,
+            &repo,
             Label::new(
                 "d:github-actions",
                 "74fa75",
@@ -99,8 +103,8 @@ impl Mkgithub {
 
         if metadata.repository.is_none() {
             log::info!("Setting 'package.repository' field in Cargo.toml ...");
-            package.set_package_field("repository", r.html_url)?;
-        } else if metadata.repository != Some(r.html_url) {
+            package.set_package_field("repository", repo.html_url)?;
+        } else if metadata.repository != Some(repo.html_url) {
             log::warn!(
                 "'package.repository' field in Cargo.toml differs from GitHub repository URL"
             );
