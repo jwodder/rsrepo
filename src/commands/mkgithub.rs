@@ -65,7 +65,6 @@ impl Mkgithub {
         git.add_remote("origin", &repo.ssh_url)?;
         git.run("push", ["-u", "origin", "refs/heads/*", "refs/tags/*"])?;
 
-        log::info!("Setting repository topics ...");
         let mut topics = Vec::from([Topic::new("rust")]);
         for keyword in metadata.keywords {
             let tp = Topic::new(&keyword);
@@ -77,6 +76,10 @@ impl Mkgithub {
         if package.readme().get()?.and_then(|r| r.repostatus()) == Some(Repostatus::Wip) {
             topics.push(Topic::new("work-in-progress"));
         }
+        log::info!(
+            "Setting repository topics to: {}",
+            itertools::join(&topics, " ")
+        );
         github.set_topics(&repo, topics)?;
 
         log::info!("Creating Dependabot labels ...");
