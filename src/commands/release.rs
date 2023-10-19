@@ -74,7 +74,6 @@ impl Release {
                 .arg(&metadata.name)
                 .arg("--precise")
                 .arg(new_version.to_string())
-                .arg("--offline")
                 .current_dir(package.path())
                 .status()?;
         }
