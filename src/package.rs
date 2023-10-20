@@ -137,7 +137,19 @@ impl Package {
     }
 
     pub fn set_cargo_version(&self, v: Version) -> anyhow::Result<()> {
-        self.set_package_field("version", v.to_string())
+        let vs = v.to_string();
+        self.set_package_field("version", &vs)?;
+        if self.is_bin()? && self.path().join("Cargo.lock").exists() {
+            LoggedCommand::new("cargo")
+                .arg("update")
+                .arg("-p")
+                .arg(self.metadata()?.name)
+                .arg("--precise")
+                .arg(vs)
+                .current_dir(self.path())
+                .status()?;
+        }
+        Ok(())
     }
 
     pub fn update_license_years<I>(&self, years: I) -> anyhow::Result<()>

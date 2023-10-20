@@ -249,8 +249,9 @@ This command performs the following operations in order:
 
 - Development on the next version is started:
 
-    - The version field in `Cargo.toml` is set to the next minor version after
-      the just-released version, plus a "-dev" prerelease segment.
+    - The version field in `Cargo.toml` (and `Cargo.lock`, if the package
+      contains a binary crate) is set to the next minor version after the
+      just-released version, plus a "-dev" prerelease segment.
 
     - If a `CHANGELOG.md` file does not exist, one is created with a section
       for the release that was just made (with text set to "Initial release").

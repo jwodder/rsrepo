@@ -41,7 +41,6 @@ impl Release {
         let ghrepo = LocalRepo::new(package.path())
             .github_remote("origin")
             .context("Could not determine GitHub repository for local repository")?;
-        let is_bin = package.is_bin()?;
         let is_lib = package.is_lib()?;
         let publish = metadata.publish.as_deref() != Some(&[]);
 
@@ -63,19 +62,6 @@ impl Release {
         if new_version != old_version {
             log::info!("Setting version in Cargo.toml ...");
             package.set_cargo_version(new_version.clone())?;
-        }
-
-        if is_bin && package.path().join("Cargo.lock").exists() {
-            log::info!("Setting version in Cargo.lock ...");
-            // TODO: Merge this into Package::set_cargo_version()?
-            LoggedCommand::new("cargo")
-                .arg("update")
-                .arg("-p")
-                .arg(&metadata.name)
-                .arg("--precise")
-                .arg(new_version.to_string())
-                .current_dir(package.path())
-                .status()?;
         }
 
         let release_date = chrono::Local::now().date_naive();
