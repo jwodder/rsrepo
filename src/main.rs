@@ -21,18 +21,18 @@ use std::path::PathBuf;
 
 /// Manage Cargo project boilerplate
 #[derive(Debug, Eq, Parser, PartialEq)]
-#[clap(version = env!("VERSION_WITH_GIT"))]
+#[command(version = env!("VERSION_WITH_GIT"))]
 struct Arguments {
     /// Change to the given directory before doing anything else
-    #[clap(short = 'C', long, value_name = "DIRECTORY")]
+    #[arg(short = 'C', long, value_name = "DIRECTORY")]
     chdir: Option<PathBuf>,
 
     /// Use the specified configuration file [default: ~/.config/rsrepo.toml]
-    #[clap(short = 'c', long, value_name = "FILE")]
+    #[arg(short = 'c', long, value_name = "FILE")]
     config: Option<PathBuf>,
 
     /// Set logging level
-    #[clap(
+    #[arg(
         short,
         long,
         default_value = "INFO",

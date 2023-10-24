@@ -11,14 +11,14 @@ use std::path::PathBuf;
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
 pub struct Mkgithub {
     /// Make the new repository private
-    #[clap(short = 'P', long)]
+    #[arg(short = 'P', long)]
     private: bool,
 
     /// Name for the repository
     ///
     /// If not specified, defaults to the name used in the `repository` URL in
     /// the Cargo metadata, or to the name of the package.
-    #[clap(value_name = "NAME")]
+    #[arg(value_name = "NAME")]
     repo_name: Option<String>,
 }
 

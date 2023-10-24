@@ -16,37 +16,37 @@ use which::which;
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
 pub struct New {
     /// Template a binary crate
-    #[clap(long)]
+    #[arg(long)]
     bin: bool,
 
     /// Copyright year(s) to put in the LICENSE; defaults to the current year
-    #[clap(long, value_name = "STRING")]
+    #[arg(long, value_name = "STRING")]
     copyright_year: Option<String>,
 
     /// Package description
-    #[clap(short = 'd', long)]
+    #[arg(short = 'd', long)]
     description: Option<String>,
 
     /// Template a library crate
     ///
     /// This is the default if neither `--bin` nor `--lib` is given.
-    #[clap(long)]
+    #[arg(long)]
     lib: bool,
 
     /// MSRV for the new crate.  Defaults to the latest stable rustc version.
-    #[clap(long)]
+    #[arg(long)]
     msrv: Option<RustVersion>,
 
     /// Name of package; defaults to the directory basename
-    #[clap(long, value_name = "NAME")]
+    #[arg(long, value_name = "NAME")]
     name: Option<String>,
 
     /// GitHub repository name; defaults to the package name
-    #[clap(long, value_name = "NAME")]
+    #[arg(long, value_name = "NAME")]
     repo_name: Option<String>,
 
     /// Directory to create & populate
-    #[clap(value_name = "PATH")]
+    #[arg(value_name = "PATH")]
     dirpath: PathBuf,
 }
 

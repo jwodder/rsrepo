@@ -24,7 +24,7 @@ pub struct Release {
     /// The version to release.  If neither this argument nor a bump option is
     /// specified, the Cargo.toml version is used without a prerelease or
     /// metadata.
-    #[clap(value_parser = parse_v_version, conflicts_with = "bump")]
+    #[arg(value_parser = parse_v_version, conflicts_with = "bump")]
     version: Option<Version>,
 }
 
@@ -283,15 +283,15 @@ impl Release {
 #[group(multiple = false, id = "bump")]
 pub struct Bumping {
     /// Release the next major version
-    #[clap(long)]
+    #[arg(long)]
     major: bool,
 
     /// Release the next minor version
-    #[clap(long)]
+    #[arg(long)]
     minor: bool,
 
     /// Release the next patch version
-    #[clap(long)]
+    #[arg(long)]
     patch: bool,
 }
 

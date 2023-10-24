@@ -8,7 +8,7 @@ use std::path::PathBuf;
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
 pub struct SetMsrv {
     /// New MSRV value
-    #[clap(value_name = "VERSION")]
+    #[arg(value_name = "VERSION")]
     msrv: RustVersion,
 }
 
