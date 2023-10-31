@@ -40,7 +40,9 @@ impl Package {
     }
 
     pub fn path(&self) -> &Path {
-        self.manifest_path.parent().unwrap()
+        self.manifest_path
+            .parent()
+            .expect("manifest_path was verified to have a parent on Package construction")
     }
 
     pub fn manifest_path(&self) -> &Path {

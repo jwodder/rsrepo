@@ -49,7 +49,7 @@ impl<'a> Templater<'a> {
         context: S,
     ) -> anyhow::Result<()> {
         let path = dirpath.join(template);
-        create_dir_all(path.parent().unwrap())
+        create_dir_all(path.parent().expect("path should have a parent directory"))
             .with_context(|| format!("Failed to create parent directory for {}", path.display()))?;
         let content = self
             .engine

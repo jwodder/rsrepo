@@ -36,7 +36,8 @@ impl SetMsrv {
                     if ln.starts_with("- Increased MSRV to ")
                         && !std::mem::replace(&mut found, true)
                     {
-                        writeln!(&mut content, "- Increased MSRV to {}", self.msrv).unwrap();
+                        writeln!(&mut content, "- Increased MSRV to {}", self.msrv)
+                            .expect("formatting a String should not fail");
                     } else {
                         content.push_str(ln);
                         content.push('\n');
@@ -48,7 +49,8 @@ impl SetMsrv {
                         content.pop();
                         nlqty += 1;
                     }
-                    writeln!(&mut content, "- Increased MSRV to {}", self.msrv).unwrap();
+                    writeln!(&mut content, "- Increased MSRV to {}", self.msrv)
+                        .expect("formatting a String should not fail");
                     content.push_str(&"\n".repeat(nlqty));
                 }
                 sect1.content = content;

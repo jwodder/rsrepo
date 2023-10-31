@@ -237,7 +237,8 @@ impl Release {
         log::info!("Preparing for work on next version ...");
         let next_version = bump_version(new_version.clone(), Bump::Minor);
         let mut dev_next = next_version.clone();
-        dev_next.pre = Prerelease::new("dev").unwrap();
+        dev_next.pre =
+            Prerelease::new("dev").expect("'dev' should be a valid prerelease identifier");
 
         // Update version in Cargo.toml
         log::info!("Setting next version in Cargo.toml ...");

@@ -19,9 +19,9 @@ impl StatusError {
         let status = format!("{} {}", r.status(), r.status_text());
         // If the response body is JSON, pretty-print it.
         let body = if is_json_response(&r) {
-            r.into_json::<Value>()
-                .ok()
-                .map(|v| to_string_pretty(&v).unwrap())
+            r.into_json::<Value>().ok().map(|v| {
+                to_string_pretty(&v).expect("Re-JSONifying a JSON response should not fail")
+            })
         } else {
             r.into_string().ok()
         };
