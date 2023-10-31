@@ -6,11 +6,11 @@ use crate::readme::{Badge, Repostatus};
 use crate::util::{bump_version, move_dirtree_into, this_year, Bump};
 use anyhow::{bail, Context};
 use clap::Args;
+use fs_err::create_dir_all;
 use ghrepo::LocalRepo;
 use renamore::rename_exclusive;
 use semver::{Prerelease, Version};
 use std::collections::HashSet;
-use std::fs::create_dir_all;
 use std::io::{self, Write};
 use std::path::PathBuf;
 use tempfile::NamedTempFile;
@@ -161,8 +161,7 @@ impl Release {
                     let src = toplevel.join(&path);
                     let dest = stash_dir.join(&path);
                     if let Some(p) = dest.parent() {
-                        create_dir_all(p)
-                            .with_context(|| format!("Failed to create directory {p:?}"))?;
+                        create_dir_all(p)?;
                     }
                     log::debug!("Moving {src:?} to {dest:?}");
                     rename_exclusive(&src, &dest)

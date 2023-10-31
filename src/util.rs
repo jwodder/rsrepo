@@ -1,4 +1,5 @@
 use chrono::Datelike;
+use fs_err::{create_dir_all, read_dir, remove_dir};
 use nom::bytes::complete::tag;
 use nom::character::complete::{char, i32 as nom_i32, space0, space1, u32 as nom_u32};
 use nom::combinator::{all_consuming, opt, recognize, rest};
@@ -13,8 +14,7 @@ use serde::ser::Serializer;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::fmt;
-use std::fs::{create_dir_all, read_dir, remove_dir, FileType};
-use std::io;
+use std::fs::FileType;
 use std::iter::FusedIterator;
 use std::ops::RangeInclusive;
 use std::path::{Path, PathBuf, StripPrefixError};
@@ -256,12 +256,7 @@ pub fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtreeIntoE
             };
             let target = dest.join(relpath);
             if ftype.is_dir() {
-                if let Err(source) = create_dir_all(&target) {
-                    return Err(Mkdir {
-                        source,
-                        path: target,
-                    });
-                }
+                create_dir_all(target)?;
                 stack.push(DirWithEntries::new(&entry)?);
             } else if let Err(source) = rename_exclusive(&entry, &target) {
                 return Err(Rename {
@@ -271,12 +266,7 @@ pub fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtreeIntoE
                 });
             }
         } else {
-            if let Err(source) = remove_dir(&entries.dirpath) {
-                return Err(Rmdir {
-                    source,
-                    path: entries.dirpath.clone(),
-                });
-            }
+            remove_dir(&entries.dirpath)?;
             stack.pop();
         }
     }
@@ -285,16 +275,8 @@ pub fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtreeIntoE
 
 #[derive(Debug, Error)]
 pub enum MoveDirtreeIntoError {
-    #[error("could not stat path: {}: {source}", .path.display())]
-    Stat { source: io::Error, path: PathBuf },
-    #[error("could not open directory for reading: {}: {source}", .path.display())]
-    Opendir { source: io::Error, path: PathBuf },
-    #[error("could not fetch entry from directory: {}: {source}", .path.display())]
-    Readdir { source: io::Error, path: PathBuf },
-    #[error("could not create directory: {}: {source}", .path.display())]
-    Mkdir { source: io::Error, path: PathBuf },
-    #[error("could not remove directory: {}: {source}", .path.display())]
-    Rmdir { source: io::Error, path: PathBuf },
+    #[error(transparent)]
+    IO(#[from] std::io::Error),
     #[error("path {} beneath {} was not relative to it", .path.display(), .base.display())]
     Relpath {
         source: StripPrefixError,
@@ -303,7 +285,7 @@ pub enum MoveDirtreeIntoError {
     },
     #[error("could not rename path {} to {}: {source}", .src.display(), .dest.display())]
     Rename {
-        source: io::Error,
+        source: std::io::Error,
         src: PathBuf,
         dest: PathBuf,
     },
@@ -317,20 +299,10 @@ struct DirWithEntries {
 
 impl DirWithEntries {
     fn new(dirpath: &Path) -> Result<DirWithEntries, MoveDirtreeIntoError> {
-        use MoveDirtreeIntoError::*;
         let mut entries = VecDeque::new();
-        for entry in read_dir(dirpath).map_err(|source| Opendir {
-            source,
-            path: dirpath.into(),
-        })? {
-            let entry = entry.map_err(|source| Readdir {
-                source,
-                path: dirpath.into(),
-            })?;
-            let ftype = entry.file_type().map_err(|source| Stat {
-                source,
-                path: entry.path(),
-            })?;
+        for entry in read_dir(dirpath)? {
+            let entry = entry?;
+            let ftype = entry.file_type()?;
             entries.push_back((entry.path(), ftype));
         }
         Ok(DirWithEntries {

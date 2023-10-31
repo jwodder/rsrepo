@@ -1,9 +1,9 @@
 use anyhow::{bail, Context as _};
+use fs_err::{create_dir_all, write};
 use include_dir::{include_dir, Dir, DirEntry};
 use serde::Serialize;
 use serde_json::Value;
 use std::collections::VecDeque;
-use std::fs::{create_dir_all, write};
 use std::path::Path;
 use tinytemplate::{error::Error, format_unescaped, TinyTemplate};
 
@@ -49,14 +49,12 @@ impl<'a> Templater<'a> {
         context: S,
     ) -> anyhow::Result<()> {
         let path = dirpath.join(template);
-        create_dir_all(path.parent().expect("path should have a parent directory"))
-            .with_context(|| format!("Failed to create parent directory for {}", path.display()))?;
+        create_dir_all(path.parent().expect("path should have a parent directory"))?;
         let content = self
             .engine
             .render(&format!("{template}.tt"), &context)
             .with_context(|| format!("Failed to render template {template:?}"))?;
-        write(&path, content)
-            .with_context(|| format!("Failed to write templated text to {}", path.display()))?;
+        write(path, content).with_context(|| format!("Failed to write template {template:?}"))?;
         Ok(())
     }
 

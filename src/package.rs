@@ -5,11 +5,11 @@ use crate::readme::Readme;
 use crate::util::CopyrightLine;
 use anyhow::{bail, Context};
 use cargo_metadata::{MetadataCommand, Package as CargoPackage};
+use fs_err::{read_to_string, File};
 use in_place::InPlace;
 use semver::Version;
 use serde::Deserialize;
 use std::borrow::Cow;
-use std::fs::{read_to_string, File};
 use std::io::{BufRead, BufReader, ErrorKind, Write};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
@@ -224,7 +224,7 @@ impl<'a, T> TextFile<'a, T> {
                 })?))
             }
             Err(e) if e.kind() == ErrorKind::NotFound => Ok(None),
-            Err(e) => Err(e).with_context(|| format!("failed to read {}", self.filename))?,
+            Err(e) => Err(e.into()),
         }
     }
 

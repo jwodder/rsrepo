@@ -1,7 +1,7 @@
 use anyhow::{bail, Context};
+use fs_err::read_to_string;
 use serde::Deserialize;
 use std::borrow::Cow;
-use std::fs::read_to_string;
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -18,8 +18,7 @@ impl Config {
             Some(p) => p.into(),
             None => Config::default_path()?.into(),
         };
-        let src = read_to_string(&path)
-            .with_context(|| format!("Failed to read config file at {}", path.display()))?;
+        let src = read_to_string(path)?;
         toml::from_str::<Config>(&src).context("Failed to deserialize config file")
     }
 
