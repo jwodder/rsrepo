@@ -3,7 +3,7 @@ name: Test
 on:
   push:
     branches:
-      - master
+      - {default_branch}
   pull_request:
   schedule:
     - cron: '0 12 * * *'
