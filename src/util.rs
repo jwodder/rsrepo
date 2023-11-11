@@ -94,7 +94,7 @@ impl fmt::Display for RustVersion {
 
 impl Serialize for RustVersion {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        self.to_string().serialize(serializer)
+        serializer.collect_str(self)
     }
 }
 
