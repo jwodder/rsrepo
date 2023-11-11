@@ -4,6 +4,7 @@ use std::process::Command;
 use std::process::{ExitStatus, Stdio};
 use thiserror::Error;
 
+#[derive(Debug)]
 pub struct LoggedCommand {
     cmdline: String,
     cmd: Command,
@@ -85,7 +86,7 @@ impl LoggedCommand {
 
 #[derive(Debug, Error)]
 pub enum CommandError {
-    #[error("failed to run `{cmdline}`: {source}")]
+    #[error("failed to run `{cmdline}`")]
     Startup {
         cmdline: String,
         source: std::io::Error,
@@ -96,14 +97,14 @@ pub enum CommandError {
 
 #[derive(Debug, Error)]
 pub enum CommandOutputError {
-    #[error("failed to run `{cmdline}`: {source}")]
+    #[error("failed to run `{cmdline}`")]
     Startup {
         cmdline: String,
         source: std::io::Error,
     },
     #[error("command `{cmdline}` failed: {rc}")]
     Exit { cmdline: String, rc: ExitStatus },
-    #[error("could not decode `{cmdline}` output: {source}")]
+    #[error("could not decode `{cmdline}` output")]
     Decode {
         cmdline: String,
         source: std::str::Utf8Error,

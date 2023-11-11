@@ -283,7 +283,7 @@ pub enum MoveDirtreeIntoError {
         path: PathBuf,
         base: PathBuf,
     },
-    #[error("could not rename path {} to {}: {source}", .src.display(), .dest.display())]
+    #[error("could not rename path {} to {}", .src.display(), .dest.display())]
     Rename {
         source: std::io::Error,
         src: PathBuf,
