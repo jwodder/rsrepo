@@ -83,7 +83,7 @@ impl FromStr for RustVersion {
 }
 
 impl fmt::Display for RustVersion {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}.{}", self.major, self.minor)?;
         if let Some(patch) = self.patch {
             write!(f, ".{patch}")?;
@@ -112,7 +112,7 @@ struct RustVersionVisitor;
 impl Visitor<'_> for RustVersionVisitor {
     type Value = RustVersion;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.write_str("a Rust version of the form X.Y or X.Y.Z")
     }
 
@@ -186,7 +186,7 @@ impl FromStr for CopyrightLine {
 }
 
 impl fmt::Display for CopyrightLine {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.prefix)?;
         let mut first = true;
         for rng in self.years.iter() {

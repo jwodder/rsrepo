@@ -29,7 +29,7 @@ impl GitHub {
         let client = AgentBuilder::new()
             .user_agent(USER_AGENT)
             .https_only(true)
-            .middleware(move |req: ureq::Request, next: ureq::MiddlewareNext| {
+            .middleware(move |req: ureq::Request, next: ureq::MiddlewareNext<'_>| {
                 next.handle(
                     req.set("Authorization", &auth)
                         .set("Accept", "application/vnd.github+json"),
@@ -229,7 +229,7 @@ impl<S: AsRef<str>> PartialEq<S> for Topic {
 }
 
 impl fmt::Display for Topic {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }

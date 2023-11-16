@@ -127,7 +127,7 @@ impl FromStr for Readme {
 }
 
 impl fmt::Display for Readme {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for badge in &self.badges {
             writeln!(f, "{badge}")?;
         }
@@ -166,7 +166,7 @@ impl Badge {
 }
 
 impl fmt::Display for Badge {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "[![{}]({})]({})", self.alt, self.url, self.target)
     }
 }
@@ -263,7 +263,7 @@ pub(crate) struct Link {
 }
 
 impl fmt::Display for Link {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "[{}]({})", self.text, self.url)
     }
 }

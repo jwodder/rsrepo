@@ -35,7 +35,7 @@ impl StatusError {
 }
 
 impl fmt::Display for StatusError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{} request to {} returned {}",
@@ -55,8 +55,7 @@ impl std::error::Error for StatusError {}
 pub(crate) fn is_json_response(r: &Response) -> bool {
     r.header("Content-Type")
         .and_then(|v| v.parse::<Mime>().ok())
-        .map(|ct| {
+        .is_some_and(|ct| {
             ct.type_() == "application" && (ct.subtype() == "json" || ct.suffix() == Some(JSON))
         })
-        .unwrap_or(false)
 }

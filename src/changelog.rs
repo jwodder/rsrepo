@@ -21,7 +21,7 @@ impl FromStr for Changelog {
 
     fn from_str(s: &str) -> Result<Changelog, ParseChangelogError> {
         let mut sections = Vec::new();
-        let mut current: Option<SectionBuilder> = None;
+        let mut current: Option<SectionBuilder<'_>> = None;
         let mut prev: Option<&str> = None;
         for line in s.lines() {
             if line.chars().all(|ch| ch == '-') && line.len() >= 3 {
@@ -29,7 +29,7 @@ impl FromStr for Changelog {
                     sections.push(sb.build());
                 }
                 if let Some(p) = prev.take() {
-                    current = Some(SectionBuilder::new(p.parse::<ChangelogHeader>()?));
+                    current = Some(SectionBuilder::<'_>::new(p.parse::<ChangelogHeader>()?));
                 } else {
                     return Err(ParseChangelogError::UnexpectedHrule);
                 }
@@ -56,7 +56,7 @@ impl FromStr for Changelog {
 }
 
 impl fmt::Display for Changelog {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let sections = self
             .sections
             .iter()
@@ -79,7 +79,7 @@ pub(crate) struct ChangelogSection {
 }
 
 impl fmt::Display for ChangelogSection {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let header = self.header.to_string();
         writeln!(f, "{header}")?;
         writeln!(f, "{}", "-".repeat(header.len()))?;
@@ -109,7 +109,7 @@ impl FromStr for ChangelogHeader {
 }
 
 impl fmt::Display for ChangelogHeader {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ChangelogHeader::Released { version, date } => write!(f, "v{version} ({date})"),
             ChangelogHeader::InProgress { version } => write!(f, "v{version} (in development)"),
