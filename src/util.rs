@@ -21,17 +21,17 @@ use std::path::{Path, PathBuf, StripPrefixError};
 use std::str::FromStr;
 use thiserror::Error;
 
-pub fn this_year() -> i32 {
+pub(crate) fn this_year() -> i32 {
     chrono::Local::now().year()
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct StringLines {
+pub(crate) struct StringLines {
     content: String,
 }
 
 impl StringLines {
-    pub fn new(content: String) -> StringLines {
+    pub(crate) fn new(content: String) -> StringLines {
         StringLines { content }
     }
 }
@@ -58,14 +58,14 @@ impl Iterator for StringLines {
 impl FusedIterator for StringLines {}
 
 #[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct RustVersion {
+pub(crate) struct RustVersion {
     major: u32,
     minor: u32,
     patch: Option<u32>,
 }
 
 impl RustVersion {
-    pub fn without_patch(mut self) -> RustVersion {
+    pub(crate) fn without_patch(mut self) -> RustVersion {
         self.patch = None;
         self
     }
@@ -128,7 +128,7 @@ impl Visitor<'_> for RustVersionVisitor {
 
 #[derive(Copy, Clone, Debug, Error, Eq, PartialEq)]
 #[error("invalid Rust version/MSRV")]
-pub struct ParseRustVersionError;
+pub(crate) struct ParseRustVersionError;
 
 fn rust_version(input: &str) -> IResult<&str, RustVersion> {
     let (input, _) = opt(char('v'))(input)?;
@@ -147,13 +147,13 @@ fn rust_version(input: &str) -> IResult<&str, RustVersion> {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum Bump {
+pub(crate) enum Bump {
     Major,
     Minor,
     Patch,
 }
 
-pub fn bump_version(v: Version, level: Bump) -> Version {
+pub(crate) fn bump_version(v: Version, level: Bump) -> Version {
     match level {
         Bump::Major => Version::new(v.major + 1, 0, 0),
         Bump::Minor => Version::new(v.major, v.minor + 1, 0),
@@ -162,14 +162,14 @@ pub fn bump_version(v: Version, level: Bump) -> Version {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct CopyrightLine {
+pub(crate) struct CopyrightLine {
     prefix: String,
     years: RangeInclusiveSet<i32>,
     authors: String,
 }
 
 impl CopyrightLine {
-    pub fn add_year(&mut self, year: i32) {
+    pub(crate) fn add_year(&mut self, year: i32) {
         self.years.insert(year..=year);
     }
 }
@@ -206,7 +206,7 @@ impl fmt::Display for CopyrightLine {
 
 #[derive(Copy, Clone, Debug, Error, Eq, PartialEq)]
 #[error("invalid copyright line")]
-pub struct ParseCopyrightError;
+pub(crate) struct ParseCopyrightError;
 
 fn copyright(input: &str) -> IResult<&str, CopyrightLine> {
     let (input, prefix) = recognize(tuple((
@@ -239,7 +239,7 @@ fn year_range(input: &str) -> IResult<&str, RangeInclusive<i32>> {
     Ok((input, rng))
 }
 
-pub fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtreeIntoError> {
+pub(crate) fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtreeIntoError> {
     use MoveDirtreeIntoError::*;
     let mut stack = vec![DirWithEntries::new(src)?];
     while let Some(entries) = stack.last_mut() {
@@ -274,7 +274,7 @@ pub fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtreeIntoE
 }
 
 #[derive(Debug, Error)]
-pub enum MoveDirtreeIntoError {
+pub(crate) enum MoveDirtreeIntoError {
     #[error(transparent)]
     IO(#[from] std::io::Error),
     #[error("path {} beneath {} was not relative to it", .path.display(), .base.display())]

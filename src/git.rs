@@ -6,22 +6,22 @@ use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct Git<'a> {
+pub(crate) struct Git<'a> {
     path: &'a Path,
 }
 
 impl<'a> Git<'a> {
-    pub fn new(path: &'a Path) -> Self {
+    pub(crate) fn new(path: &'a Path) -> Self {
         Git { path }
     }
 
-    pub fn command(&self) -> LoggedCommand {
+    pub(crate) fn command(&self) -> LoggedCommand {
         let mut cmd = LoggedCommand::new("git");
         cmd.current_dir(self.path);
         cmd
     }
 
-    pub fn run<I, S>(&self, cmd: &str, args: I) -> Result<(), CommandError>
+    pub(crate) fn run<I, S>(&self, cmd: &str, args: I) -> Result<(), CommandError>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
@@ -29,7 +29,7 @@ impl<'a> Git<'a> {
         self.command().arg(cmd).args(args).status()
     }
 
-    pub fn read<I, S>(&self, cmd: &str, args: I) -> Result<String, CommandOutputError>
+    pub(crate) fn read<I, S>(&self, cmd: &str, args: I) -> Result<String, CommandOutputError>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
@@ -41,7 +41,11 @@ impl<'a> Git<'a> {
             .map(|s| s.trim().to_string())
     }
 
-    pub fn readlines<I, S>(&self, cmd: &str, args: I) -> Result<StringLines, CommandOutputError>
+    pub(crate) fn readlines<I, S>(
+        &self,
+        cmd: &str,
+        args: I,
+    ) -> Result<StringLines, CommandOutputError>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
@@ -53,31 +57,31 @@ impl<'a> Git<'a> {
             .map(StringLines::new)
     }
 
-    pub fn remotes(&self) -> Result<HashSet<String>, CommandOutputError> {
+    pub(crate) fn remotes(&self) -> Result<HashSet<String>, CommandOutputError> {
         self.readlines::<[&str; 0], _>("remote", [])
             .map(Iterator::collect)
     }
 
-    pub fn rm_remote(&self, remote: &str) -> Result<(), CommandError> {
+    pub(crate) fn rm_remote(&self, remote: &str) -> Result<(), CommandError> {
         self.run("remote", ["rm", remote])
     }
 
-    pub fn add_remote(&self, remote: &str, url: &str) -> Result<(), CommandError> {
+    pub(crate) fn add_remote(&self, remote: &str, url: &str) -> Result<(), CommandError> {
         self.run("remote", ["add", remote, url])
     }
 
-    pub fn commit_years(&self) -> anyhow::Result<HashSet<i32>> {
+    pub(crate) fn commit_years(&self) -> anyhow::Result<HashSet<i32>> {
         self.readlines("log", ["--format=%ad", "--date=format:%Y"])?
             .map(|s| s.parse())
             .collect::<Result<HashSet<i32>, _>>()
             .context("Error parsing Git commit years")
     }
 
-    pub fn latest_tag(&self) -> Result<Option<String>, CommandOutputError> {
+    pub(crate) fn latest_tag(&self) -> Result<Option<String>, CommandOutputError> {
         Ok(self.readlines("tag", ["-l", "--sort=-creatordate"])?.next())
     }
 
-    pub fn current_branch(&self) -> Result<Option<String>, CommandOutputError> {
+    pub(crate) fn current_branch(&self) -> Result<Option<String>, CommandOutputError> {
         match self.read("symbolic-ref", ["--short", "-q", "HEAD"]) {
             Ok(branch) => Ok(Some(branch)),
             Err(CommandOutputError::Exit { rc, .. }) if rc.code() == Some(1) => Ok(None),
@@ -85,7 +89,7 @@ impl<'a> Git<'a> {
         }
     }
 
-    pub fn untracked_files(&self) -> Result<Vec<PathBuf>, CommandOutputError> {
+    pub(crate) fn untracked_files(&self) -> Result<Vec<PathBuf>, CommandOutputError> {
         let s = self.read(
             "ls-files",
             ["-z", "-o", "--exclude-standard", "--directory"],
@@ -95,7 +99,7 @@ impl<'a> Git<'a> {
             .collect::<Vec<_>>())
     }
 
-    pub fn tag_exists(&self, tag: &str) -> Result<bool, CommandError> {
+    pub(crate) fn tag_exists(&self, tag: &str) -> Result<bool, CommandError> {
         match self
             .command()
             .arg("show-ref")
@@ -110,7 +114,7 @@ impl<'a> Git<'a> {
         }
     }
 
-    pub fn toplevel(&self) -> Result<PathBuf, CommandOutputError> {
+    pub(crate) fn toplevel(&self) -> Result<PathBuf, CommandOutputError> {
         // Don't use `Git::read()`, as that can strip off too much if the
         // directory name ends in whitespace.
         let mut s = self

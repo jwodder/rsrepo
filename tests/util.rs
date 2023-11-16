@@ -8,14 +8,14 @@ use std::fs::FileType;
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct CmpDirtrees {
+pub(crate) struct CmpDirtrees {
     left: PathBuf,
     right: PathBuf,
     exclude: HashSet<OsString>,
 }
 
 impl CmpDirtrees {
-    pub fn new<P: AsRef<Path>, Q: AsRef<Path>>(left: P, right: Q) -> Self {
+    pub(crate) fn new<P: AsRef<Path>, Q: AsRef<Path>>(left: P, right: Q) -> Self {
         CmpDirtrees {
             left: left.as_ref().into(),
             right: right.as_ref().into(),
@@ -23,7 +23,7 @@ impl CmpDirtrees {
         }
     }
 
-    pub fn exclude<I, S>(mut self, iter: I) -> Self
+    pub(crate) fn exclude<I, S>(mut self, iter: I) -> Self
     where
         I: IntoIterator<Item = S>,
         S: Into<OsString>,
@@ -32,7 +32,7 @@ impl CmpDirtrees {
         self
     }
 
-    pub fn assert_eq(self) {
+    pub(crate) fn assert_eq(self) {
         assert!(
             !self.check(&self.left, &self.right).unwrap(),
             "Directory trees {} and {} differ!",
@@ -133,7 +133,7 @@ impl CmpDirtrees {
     }
 }
 
-pub fn copytree<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dest: Q) -> std::io::Result<()> {
+pub(crate) fn copytree<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dest: Q) -> std::io::Result<()> {
     let src = src.as_ref();
     let dest = dest.as_ref();
     create_dir_all(dest)?;

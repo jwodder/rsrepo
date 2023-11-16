@@ -10,12 +10,12 @@ use tinytemplate::{error::Error, format_unescaped, TinyTemplate};
 
 static TEMPLATE_DATA: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/src/templates");
 
-pub struct Templater<'a> {
+pub(crate) struct Templater<'a> {
     engine: TinyTemplate<'a>,
 }
 
 impl<'a> Templater<'a> {
-    pub fn load() -> anyhow::Result<Self> {
+    pub(crate) fn load() -> anyhow::Result<Self> {
         let mut engine = TinyTemplate::new();
         log::debug!("Loading templates");
         let mut dirs = VecDeque::from([&TEMPLATE_DATA]);
@@ -43,7 +43,7 @@ impl<'a> Templater<'a> {
         Ok(Templater { engine })
     }
 
-    pub fn render_file<S: Serialize>(
+    pub(crate) fn render_file<S: Serialize>(
         &self,
         dirpath: &Path,
         template: &str,
@@ -59,7 +59,7 @@ impl<'a> Templater<'a> {
         Ok(())
     }
 
-    pub fn render_str<S: Serialize>(
+    pub(crate) fn render_str<S: Serialize>(
         &mut self,
         template_content: &'a str,
         context: S,

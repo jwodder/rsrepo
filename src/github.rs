@@ -19,12 +19,12 @@ static USER_AGENT: &str = concat!(
 static API_ENDPOINT: &str = "https://api.github.com";
 
 #[derive(Clone, Debug)]
-pub struct GitHub {
+pub(crate) struct GitHub {
     client: Agent,
 }
 
 impl GitHub {
-    pub fn new(token: &str) -> GitHub {
+    pub(crate) fn new(token: &str) -> GitHub {
         let auth = format!("Bearer {token}");
         let client = AgentBuilder::new()
             .user_agent(USER_AGENT)
@@ -39,7 +39,7 @@ impl GitHub {
         GitHub { client }
     }
 
-    pub fn authed() -> anyhow::Result<GitHub> {
+    pub(crate) fn authed() -> anyhow::Result<GitHub> {
         let token = gh_token::get().context("Failed to retrieve GitHub token")?;
         Ok(GitHub::new(&token))
     }
@@ -79,18 +79,18 @@ impl GitHub {
         self.request::<T, U>("PUT", path, Some(body))
     }
 
-    pub fn whoami(&self) -> anyhow::Result<String> {
+    pub(crate) fn whoami(&self) -> anyhow::Result<String> {
         Ok(self
             .get::<User>("/user")
             .context("failed to fetch authenticated GitHub user's login name")?
             .login)
     }
 
-    pub fn create_repository(&self, config: CreateRepoBody) -> anyhow::Result<Repository> {
+    pub(crate) fn create_repository(&self, config: CreateRepoBody) -> anyhow::Result<Repository> {
         self.post("/user/repos", config)
     }
 
-    pub fn create_label<R>(&self, repo: &R, label: Label<'_>) -> anyhow::Result<()>
+    pub(crate) fn create_label<R>(&self, repo: &R, label: Label<'_>) -> anyhow::Result<()>
     where
         for<'a> R: RepositoryEndpoint<'a>,
     {
@@ -98,21 +98,25 @@ impl GitHub {
         Ok(())
     }
 
-    pub fn create_release<R>(&self, repo: &R, release: CreateRelease) -> anyhow::Result<Release>
+    pub(crate) fn create_release<R>(
+        &self,
+        repo: &R,
+        release: CreateRelease,
+    ) -> anyhow::Result<Release>
     where
         for<'a> R: RepositoryEndpoint<'a>,
     {
         self.post(&format!("{}/releases", repo.api_url()), release)
     }
 
-    pub fn latest_release<R>(&self, repo: &R) -> anyhow::Result<Release>
+    pub(crate) fn latest_release<R>(&self, repo: &R) -> anyhow::Result<Release>
     where
         for<'a> R: RepositoryEndpoint<'a>,
     {
         self.get(&format!("{}/releases/latest", repo.api_url()))
     }
 
-    pub fn get_topics<R>(&self, repo: &R) -> anyhow::Result<Vec<Topic>>
+    pub(crate) fn get_topics<R>(&self, repo: &R) -> anyhow::Result<Vec<Topic>>
     where
         for<'a> R: RepositoryEndpoint<'a>,
     {
@@ -120,7 +124,7 @@ impl GitHub {
         Ok(payload.names)
     }
 
-    pub fn set_topics<I, R>(&self, repo: &R, topics: I) -> anyhow::Result<()>
+    pub(crate) fn set_topics<I, R>(&self, repo: &R, topics: I) -> anyhow::Result<()>
     where
         I: IntoIterator<Item = Topic>,
         for<'a> R: RepositoryEndpoint<'a>,
@@ -146,33 +150,33 @@ struct User {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-pub struct CreateRepoBody {
-    pub name: String,
+pub(crate) struct CreateRepoBody {
+    pub(crate) name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
+    pub(crate) description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub private: Option<bool>,
+    pub(crate) private: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub delete_branch_on_merge: Option<bool>,
+    pub(crate) delete_branch_on_merge: Option<bool>,
 }
 
-pub trait RepositoryEndpoint<'a> {
+pub(crate) trait RepositoryEndpoint<'a> {
     type Url: fmt::Display;
 
     fn api_url(&'a self) -> Self::Url;
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
-pub struct Repository {
-    pub id: u64,
-    pub name: String,
-    pub full_name: String,
-    pub private: bool,
-    pub html_url: String,
-    pub description: String,
-    pub url: String,
-    pub ssh_url: String,
-    pub topics: Vec<String>,
+pub(crate) struct Repository {
+    pub(crate) id: u64,
+    pub(crate) name: String,
+    pub(crate) full_name: String,
+    pub(crate) private: bool,
+    pub(crate) html_url: String,
+    pub(crate) description: String,
+    pub(crate) url: String,
+    pub(crate) ssh_url: String,
+    pub(crate) topics: Vec<String>,
     // owner?
 }
 
@@ -199,10 +203,10 @@ struct TopicsPayload {
 
 #[derive(Clone, Debug, Deserialize, Hash, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(transparent)]
-pub struct Topic(String);
+pub(crate) struct Topic(String);
 
 impl Topic {
-    pub fn new(s: &str) -> Topic {
+    pub(crate) fn new(s: &str) -> Topic {
         Topic(
             s.chars()
                 .map(|ch| {
@@ -231,14 +235,14 @@ impl fmt::Display for Topic {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-pub struct Label<'a> {
+pub(crate) struct Label<'a> {
     name: Cow<'a, str>,
     color: Cow<'a, str>,
     description: Cow<'a, str>,
 }
 
 impl<'a> Label<'a> {
-    pub fn new(name: &'a str, color: &'a str, description: &'a str) -> Self {
+    pub(crate) fn new(name: &'a str, color: &'a str, description: &'a str) -> Self {
         Label {
             name: name.into(),
             color: color.into(),
@@ -248,7 +252,7 @@ impl<'a> Label<'a> {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-pub struct CreateRelease {
+pub(crate) struct CreateRelease {
     tag_name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     name: Option<String>,
@@ -259,7 +263,7 @@ pub struct CreateRelease {
 }
 
 impl CreateRelease {
-    pub fn new<S: Into<String>>(tag_name: S) -> CreateRelease {
+    pub(crate) fn new<S: Into<String>>(tag_name: S) -> CreateRelease {
         CreateRelease {
             tag_name: tag_name.into(),
             name: None,
@@ -268,42 +272,42 @@ impl CreateRelease {
         }
     }
 
-    pub fn name<S: Into<String>>(mut self, name: S) -> Self {
+    pub(crate) fn name<S: Into<String>>(mut self, name: S) -> Self {
         self.name = Some(name.into());
         self
     }
 
-    pub fn body<S: Into<String>>(mut self, body: S) -> Self {
+    pub(crate) fn body<S: Into<String>>(mut self, body: S) -> Self {
         self.body = Some(body.into());
         self
     }
 
-    pub fn prerelease(mut self, prerelease: bool) -> Self {
+    pub(crate) fn prerelease(mut self, prerelease: bool) -> Self {
         self.prerelease = Some(prerelease);
         self
     }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
-pub struct Release {
-    pub url: String,
-    pub html_url: String,
-    pub assets_url: String,
-    pub upload_url: String,
-    pub tarball_url: String,
-    pub zipball_url: String,
-    pub id: u64,
-    pub tag_name: String,
-    pub target_commitish: String,
-    pub name: String,
+pub(crate) struct Release {
+    pub(crate) url: String,
+    pub(crate) html_url: String,
+    pub(crate) assets_url: String,
+    pub(crate) upload_url: String,
+    pub(crate) tarball_url: String,
+    pub(crate) zipball_url: String,
+    pub(crate) id: u64,
+    pub(crate) tag_name: String,
+    pub(crate) target_commitish: String,
+    pub(crate) name: String,
     #[serde(default)]
-    pub body: Option<String>,
-    pub draft: bool,
-    pub prerelease: bool,
-    //pub created_at: DateTime<FixedOffset>,
-    //pub published_at: DateTime<FixedOffset>,
-    //pub author: SimpleUser,
-    //pub assets: Vec<ReleaseAsset>,
+    pub(crate) body: Option<String>,
+    pub(crate) draft: bool,
+    pub(crate) prerelease: bool,
+    //pub(crate) created_at: DateTime<FixedOffset>,
+    //pub(crate) published_at: DateTime<FixedOffset>,
+    //pub(crate) author: SimpleUser,
+    //pub(crate) assets: Vec<ReleaseAsset>,
 }
 
 #[cfg(test)]

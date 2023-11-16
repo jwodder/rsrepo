@@ -17,12 +17,12 @@ use thiserror::Error;
 use toml_edit::Document;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Package {
+pub(crate) struct Package {
     manifest_path: PathBuf,
 }
 
 impl Package {
-    pub fn locate() -> Result<Package, LocatePackageError> {
+    pub(crate) fn locate() -> Result<Package, LocatePackageError> {
         let output = LoggedCommand::new("cargo")
             .arg("locate-project")
             .check_output()?;
@@ -39,17 +39,17 @@ impl Package {
         }
     }
 
-    pub fn path(&self) -> &Path {
+    pub(crate) fn path(&self) -> &Path {
         self.manifest_path
             .parent()
             .expect("manifest_path was verified to have a parent on Package construction")
     }
 
-    pub fn manifest_path(&self) -> &Path {
+    pub(crate) fn manifest_path(&self) -> &Path {
         &self.manifest_path
     }
 
-    pub fn is_bin(&self) -> anyhow::Result<bool> {
+    pub(crate) fn is_bin(&self) -> anyhow::Result<bool> {
         let srcdir = self.path().join("src");
         Ok(srcdir
             .join("main.rs")
@@ -61,7 +61,7 @@ impl Package {
                 .context("could not determine whether src/bin/ exists")?)
     }
 
-    pub fn is_lib(&self) -> anyhow::Result<bool> {
+    pub(crate) fn is_lib(&self) -> anyhow::Result<bool> {
         let srcdir = self.path().join("src");
         srcdir
             .join("lib.rs")
@@ -69,7 +69,7 @@ impl Package {
             .context("could not determine whether src/main.rs exists")
     }
 
-    pub fn latest_tag_version(&self) -> anyhow::Result<Option<Version>> {
+    pub(crate) fn latest_tag_version(&self) -> anyhow::Result<Option<Version>> {
         if let Some(tag) = self.git().latest_tag()? {
             tag.strip_prefix('v')
                 .unwrap_or(&tag)
@@ -81,11 +81,11 @@ impl Package {
         }
     }
 
-    pub fn git(&self) -> Git<'_> {
+    pub(crate) fn git(&self) -> Git<'_> {
         Git::new(self.path())
     }
 
-    pub fn metadata(&self) -> anyhow::Result<CargoPackage> {
+    pub(crate) fn metadata(&self) -> anyhow::Result<CargoPackage> {
         MetadataCommand::new()
             .manifest_path(self.manifest_path())
             .no_deps()
@@ -97,7 +97,7 @@ impl Package {
             .ok_or_else(|| anyhow::anyhow!("No packages listed in metadata"))
     }
 
-    pub fn readme(&self) -> TextFile<'_, Readme> {
+    pub(crate) fn readme(&self) -> TextFile<'_, Readme> {
         TextFile {
             dirpath: self.path(),
             filename: "README.md",
@@ -105,7 +105,7 @@ impl Package {
         }
     }
 
-    pub fn changelog(&self) -> TextFile<'_, Changelog> {
+    pub(crate) fn changelog(&self) -> TextFile<'_, Changelog> {
         TextFile {
             dirpath: self.path(),
             filename: "CHANGELOG.md",
@@ -113,7 +113,7 @@ impl Package {
         }
     }
 
-    pub fn manifest(&self) -> TextFile<'_, Document> {
+    pub(crate) fn manifest(&self) -> TextFile<'_, Document> {
         TextFile {
             dirpath: self.path(),
             filename: "Cargo.toml",
@@ -121,7 +121,7 @@ impl Package {
         }
     }
 
-    pub fn set_package_field<V: Into<toml_edit::Value>>(
+    pub(crate) fn set_package_field<V: Into<toml_edit::Value>>(
         &self,
         key: &str,
         value: V,
@@ -138,7 +138,7 @@ impl Package {
         Ok(())
     }
 
-    pub fn set_cargo_version(&self, v: Version) -> anyhow::Result<()> {
+    pub(crate) fn set_cargo_version(&self, v: Version) -> anyhow::Result<()> {
         let vs = v.to_string();
         self.set_package_field("version", &vs)?;
         if self.is_bin()? && self.path().join("Cargo.lock").exists() {
@@ -154,7 +154,7 @@ impl Package {
         Ok(())
     }
 
-    pub fn update_license_years<I>(&self, years: I) -> anyhow::Result<()>
+    pub(crate) fn update_license_years<I>(&self, years: I) -> anyhow::Result<()>
     where
         I: IntoIterator<Item = i32>,
     {
@@ -195,7 +195,7 @@ struct LocateProject<'a> {
 }
 
 #[derive(Debug, Error)]
-pub enum LocatePackageError {
+pub(crate) enum LocatePackageError {
     #[error("could not get project root from cargo")]
     Command(#[from] CommandOutputError),
     #[error("could not deserialize `cargo locate-project` output")]
@@ -205,14 +205,14 @@ pub enum LocatePackageError {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct TextFile<'a, T> {
+pub(crate) struct TextFile<'a, T> {
     dirpath: &'a Path,
     filename: &'static str,
     _type: PhantomData<T>,
 }
 
 impl<T> TextFile<'_, T> {
-    pub fn get(&self) -> anyhow::Result<Option<T>>
+    pub(crate) fn get(&self) -> anyhow::Result<Option<T>>
     where
         T: std::str::FromStr,
         <T as std::str::FromStr>::Err: std::error::Error + Send + Sync + 'static,
@@ -228,7 +228,7 @@ impl<T> TextFile<'_, T> {
         }
     }
 
-    pub fn set(&self, content: T) -> anyhow::Result<()>
+    pub(crate) fn set(&self, content: T) -> anyhow::Result<()>
     where
         T: std::fmt::Display,
     {

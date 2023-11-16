@@ -6,14 +6,14 @@ use std::fmt::Write;
 
 /// Update package's MSRV
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
-pub struct SetMsrv {
+pub(crate) struct SetMsrv {
     /// New MSRV value
     #[arg(value_name = "VERSION")]
     msrv: RustVersion,
 }
 
 impl SetMsrv {
-    pub fn run(self, _provider: Provider) -> anyhow::Result<()> {
+    pub(crate) fn run(self, _provider: Provider) -> anyhow::Result<()> {
         let package = Package::locate()?;
 
         log::info!("Updating Cargo.toml ...");

@@ -9,7 +9,7 @@ use std::borrow::Cow;
 
 /// Create a GitHub repository for the project and push
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
-pub struct Mkgithub {
+pub(crate) struct Mkgithub {
     /// Make the new repository private
     #[arg(short = 'P', long)]
     private: bool,
@@ -23,7 +23,7 @@ pub struct Mkgithub {
 }
 
 impl Mkgithub {
-    pub fn run(self, provider: Provider) -> anyhow::Result<()> {
+    pub(crate) fn run(self, provider: Provider) -> anyhow::Result<()> {
         let github = provider.github()?;
         let package = Package::locate()?;
         let metadata = package.metadata()?;

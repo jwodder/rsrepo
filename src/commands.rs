@@ -10,7 +10,7 @@ use crate::provider::Provider;
 use clap::Subcommand;
 
 #[derive(Clone, Debug, Eq, PartialEq, Subcommand)]
-pub enum Command {
+pub(crate) enum Command {
     New(New),
     Mkgithub(Mkgithub),
     Release(Release),
@@ -18,7 +18,7 @@ pub enum Command {
 }
 
 impl Command {
-    pub fn run(self, provider: Provider) -> anyhow::Result<()> {
+    pub(crate) fn run(self, provider: Provider) -> anyhow::Result<()> {
         match self {
             Command::New(new) => new.run(provider),
             Command::Mkgithub(mg) => mg.run(provider),

@@ -17,7 +17,7 @@ use tempfile::NamedTempFile;
 
 /// Prepare & publish a new release for a package
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
-pub struct Release {
+pub(crate) struct Release {
     #[command(flatten)]
     pub(crate) bumping: Bumping,
 
@@ -29,7 +29,7 @@ pub struct Release {
 }
 
 impl Release {
-    pub fn run(self, provider: Provider) -> anyhow::Result<()> {
+    pub(crate) fn run(self, provider: Provider) -> anyhow::Result<()> {
         let github = provider.github()?;
         let package = Package::locate()?;
         let git = package.git();
@@ -281,7 +281,7 @@ impl Release {
 
 #[derive(Args, Clone, Debug, Default, Eq, PartialEq)]
 #[group(multiple = false, id = "bump")]
-pub struct Bumping {
+pub(crate) struct Bumping {
     /// Release the next major version
     #[arg(long)]
     major: bool,

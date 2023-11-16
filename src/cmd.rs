@@ -5,13 +5,13 @@ use std::process::{ExitStatus, Stdio};
 use thiserror::Error;
 
 #[derive(Debug)]
-pub struct LoggedCommand {
+pub(crate) struct LoggedCommand {
     cmdline: String,
     cmd: Command,
 }
 
 impl LoggedCommand {
-    pub fn new<S: AsRef<OsStr>>(arg0: S) -> Self {
+    pub(crate) fn new<S: AsRef<OsStr>>(arg0: S) -> Self {
         let arg0 = arg0.as_ref();
         LoggedCommand {
             cmdline: quote_osstr(arg0),
@@ -19,7 +19,7 @@ impl LoggedCommand {
         }
     }
 
-    pub fn arg<S: AsRef<OsStr>>(&mut self, arg: S) -> &mut Self {
+    pub(crate) fn arg<S: AsRef<OsStr>>(&mut self, arg: S) -> &mut Self {
         let arg = arg.as_ref();
         self.cmdline.push(' ');
         self.cmdline.push_str(&quote_osstr(arg));
@@ -27,7 +27,7 @@ impl LoggedCommand {
         self
     }
 
-    pub fn args<I, S>(&mut self, args: I) -> &mut Self
+    pub(crate) fn args<I, S>(&mut self, args: I) -> &mut Self
     where
         I: IntoIterator<Item = S>,
         S: AsRef<OsStr>,
@@ -41,13 +41,13 @@ impl LoggedCommand {
         self
     }
 
-    pub fn current_dir<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
+    pub(crate) fn current_dir<P: AsRef<Path>>(&mut self, dir: P) -> &mut Self {
         // TODO: Include the dir in the log message?
         self.cmd.current_dir(dir);
         self
     }
 
-    pub fn status(&mut self) -> Result<(), CommandError> {
+    pub(crate) fn status(&mut self) -> Result<(), CommandError> {
         log::debug!("Running: {}", self.cmdline);
         match self.cmd.status() {
             Ok(rc) if rc.success() => Ok(()),
@@ -62,7 +62,7 @@ impl LoggedCommand {
         }
     }
 
-    pub fn check_output(&mut self) -> Result<String, CommandOutputError> {
+    pub(crate) fn check_output(&mut self) -> Result<String, CommandOutputError> {
         log::debug!("Running: {}", self.cmdline);
         match self.cmd.stderr(Stdio::inherit()).output() {
             Ok(output) if output.status.success() => match String::from_utf8(output.stdout) {
@@ -85,7 +85,7 @@ impl LoggedCommand {
 }
 
 #[derive(Debug, Error)]
-pub enum CommandError {
+pub(crate) enum CommandError {
     #[error("failed to run `{cmdline}`")]
     Startup {
         cmdline: String,
@@ -96,7 +96,7 @@ pub enum CommandError {
 }
 
 #[derive(Debug, Error)]
-pub enum CommandOutputError {
+pub(crate) enum CommandOutputError {
     #[error("failed to run `{cmdline}`")]
     Startup {
         cmdline: String,

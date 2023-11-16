@@ -6,7 +6,7 @@ use ureq::Response;
 
 /// Error raised for a 4xx or 5xx HTTP response that includes the response body
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct StatusError {
+pub(crate) struct StatusError {
     url: String,
     method: String,
     status: String,
@@ -14,7 +14,7 @@ pub struct StatusError {
 }
 
 impl StatusError {
-    pub fn for_response(method: &str, r: Response) -> StatusError {
+    pub(crate) fn for_response(method: &str, r: Response) -> StatusError {
         let url = r.get_url().to_string();
         let status = format!("{} {}", r.status(), r.status_text());
         // If the response body is JSON, pretty-print it.
@@ -52,7 +52,7 @@ impl std::error::Error for StatusError {}
 
 /// Returns `true` iff the response's Content-Type header indicates the body is
 /// JSON
-pub fn is_json_response(r: &Response) -> bool {
+pub(crate) fn is_json_response(r: &Response) -> bool {
     r.header("Content-Type")
         .and_then(|v| v.parse::<Mime>().ok())
         .map(|ct| {

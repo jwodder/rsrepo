@@ -14,7 +14,7 @@ use which::which;
 
 /// Create a new repository and populate it with Rust packaging boilerplate
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
-pub struct New {
+pub(crate) struct New {
     /// Template a binary crate
     #[arg(long)]
     bin: bool,
@@ -51,7 +51,7 @@ pub struct New {
 }
 
 impl New {
-    pub fn run(self, provider: Provider) -> anyhow::Result<()> {
+    pub(crate) fn run(self, provider: Provider) -> anyhow::Result<()> {
         let config = provider.config()?;
         let mut templater = Templater::load()?;
         let name = self.name()?;
@@ -134,15 +134,15 @@ impl New {
         Ok(())
     }
 
-    pub fn bin(&self) -> bool {
+    pub(crate) fn bin(&self) -> bool {
         self.bin
     }
 
-    pub fn lib(&self) -> bool {
+    pub(crate) fn lib(&self) -> bool {
         self.lib || !self.bin
     }
 
-    pub fn copyright_year(&self) -> Cow<'_, str> {
+    pub(crate) fn copyright_year(&self) -> Cow<'_, str> {
         match self.copyright_year.as_ref() {
             Some(s) => s.into(),
             None => this_year().to_string().into(),

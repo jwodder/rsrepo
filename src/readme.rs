@@ -13,14 +13,14 @@ use thiserror::Error;
 use url::Url;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-pub struct Readme {
-    pub badges: Vec<Badge>,
-    pub links: Vec<Link>,
-    pub text: String,
+pub(crate) struct Readme {
+    pub(crate) badges: Vec<Badge>,
+    pub(crate) links: Vec<Link>,
+    pub(crate) text: String,
 }
 
 impl Readme {
-    pub fn repostatus(&self) -> Option<Repostatus> {
+    pub(crate) fn repostatus(&self) -> Option<Repostatus> {
         for badge in &self.badges {
             if let Some(BadgeKind::Repostatus(rs)) = badge.kind() {
                 return Some(rs);
@@ -29,7 +29,7 @@ impl Readme {
         None
     }
 
-    pub fn set_repostatus_badge(&mut self, badge: Badge) {
+    pub(crate) fn set_repostatus_badge(&mut self, badge: Badge) {
         match self
             .badges
             .iter()
@@ -40,7 +40,7 @@ impl Readme {
         }
     }
 
-    pub fn set_msrv(&mut self, msrv: RustVersion) {
+    pub(crate) fn set_msrv(&mut self, msrv: RustVersion) {
         let url = format!("https://img.shields.io/badge/MSRV-{msrv}-orange");
         if let Some(i) = self
             .badges
@@ -66,7 +66,7 @@ impl Readme {
     }
 
     // Returns `true` if changed
-    pub fn ensure_crates_links(&mut self, package: &str, docs: bool) -> bool {
+    pub(crate) fn ensure_crates_links(&mut self, package: &str, docs: bool) -> bool {
         let mut changed = false;
         let github_index = self
             .links
@@ -101,7 +101,7 @@ impl Readme {
     }
 
     // Returns `true` if changed
-    pub fn ensure_changelog_link(&mut self, repo: &GHRepo) -> bool {
+    pub(crate) fn ensure_changelog_link(&mut self, repo: &GHRepo) -> bool {
         if self.links.iter().any(|lnk| lnk.text == "Changelog") {
             false
         } else {
@@ -150,17 +150,17 @@ impl fmt::Display for Readme {
 
 #[derive(Copy, Clone, Debug, Error, Eq, PartialEq)]
 #[error("invalid readme")]
-pub struct ParseReadmeError;
+pub(crate) struct ParseReadmeError;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-pub struct Badge {
-    pub url: String,
-    pub alt: String,
-    pub target: String,
+pub(crate) struct Badge {
+    pub(crate) url: String,
+    pub(crate) alt: String,
+    pub(crate) target: String,
 }
 
 impl Badge {
-    pub fn kind(&self) -> Option<BadgeKind> {
+    pub(crate) fn kind(&self) -> Option<BadgeKind> {
         BadgeKind::for_url(&self.url)
     }
 }
@@ -172,7 +172,7 @@ impl fmt::Display for Badge {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum BadgeKind {
+pub(crate) enum BadgeKind {
     Repostatus(Repostatus),
     GitHubActions,
     Codecov,
@@ -213,7 +213,7 @@ impl BadgeKind {
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum Repostatus {
+pub(crate) enum Repostatus {
     Abandoned,
     Active,
     Concept,
@@ -225,7 +225,7 @@ pub enum Repostatus {
 }
 
 impl Repostatus {
-    pub fn for_url(url: &str) -> Option<Repostatus> {
+    pub(crate) fn for_url(url: &str) -> Option<Repostatus> {
         match all_consuming(repostatus_url)(url).finish() {
             Ok((_, repostatus)) => Some(repostatus),
             Err(_) => None,
@@ -254,12 +254,12 @@ impl FromStr for Repostatus {
 
 #[derive(Copy, Clone, Debug, Error, Eq, PartialEq)]
 #[error("invalid repostatus status")]
-pub struct ParseRepostatusError;
+pub(crate) struct ParseRepostatusError;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-pub struct Link {
-    pub url: String,
-    pub text: String,
+pub(crate) struct Link {
+    pub(crate) url: String,
+    pub(crate) text: String,
 }
 
 impl fmt::Display for Link {

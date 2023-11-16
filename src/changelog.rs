@@ -12,8 +12,8 @@ use std::str::FromStr;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-pub struct Changelog {
-    pub sections: Vec<ChangelogSection>,
+pub(crate) struct Changelog {
+    pub(crate) sections: Vec<ChangelogSection>,
 }
 
 impl FromStr for Changelog {
@@ -73,9 +73,9 @@ impl fmt::Display for Changelog {
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
-pub struct ChangelogSection {
-    pub header: ChangelogHeader,
-    pub content: String,
+pub(crate) struct ChangelogSection {
+    pub(crate) header: ChangelogHeader,
+    pub(crate) content: String,
 }
 
 impl fmt::Display for ChangelogSection {
@@ -90,7 +90,7 @@ impl fmt::Display for ChangelogSection {
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case", tag = "type")]
-pub enum ChangelogHeader {
+pub(crate) enum ChangelogHeader {
     Released { version: Version, date: NaiveDate },
     InProgress { version: Version },
     InDevelopment,
@@ -119,7 +119,7 @@ impl fmt::Display for ChangelogHeader {
 }
 
 #[derive(Copy, Clone, Debug, Error, Eq, PartialEq)]
-pub enum ParseChangelogError {
+pub(crate) enum ParseChangelogError {
     #[error("unexpected hrule")]
     UnexpectedHrule,
     #[error("text before first header")]
@@ -130,7 +130,7 @@ pub enum ParseChangelogError {
 
 #[derive(Copy, Clone, Debug, Error, Eq, PartialEq)]
 #[error("invalid changelog header title")]
-pub struct ParseHeaderError;
+pub(crate) struct ParseHeaderError;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct SectionBuilder<'a> {
