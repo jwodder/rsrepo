@@ -23,9 +23,8 @@ impl Config {
     }
 
     fn default_path() -> anyhow::Result<PathBuf> {
-        let home = match home::home_dir() {
-            Some(p) => p,
-            None => bail!("Could not determine home directory"),
+        let Some(home) = home::home_dir() else {
+            bail!("Could not determine home directory");
         };
         Ok(home.join(".config").join("rsrepo.toml"))
     }

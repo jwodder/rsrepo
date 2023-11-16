@@ -60,7 +60,7 @@ impl fmt::Display for Changelog {
         let sections = self
             .sections
             .iter()
-            .map(|sect| sect.to_string())
+            .map(ToString::to_string)
             .collect::<Vec<_>>();
         let sep = if sections.iter().any(|sect| sect.contains("\n\n")) {
             "\n\n"

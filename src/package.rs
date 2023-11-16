@@ -211,7 +211,7 @@ pub struct TextFile<'a, T> {
     _type: PhantomData<T>,
 }
 
-impl<'a, T> TextFile<'a, T> {
+impl<T> TextFile<'_, T> {
     pub fn get(&self) -> anyhow::Result<Option<T>>
     where
         T: std::str::FromStr,
@@ -234,7 +234,7 @@ impl<'a, T> TextFile<'a, T> {
     {
         let mut fp = File::create(self.dirpath.join(self.filename))
             .with_context(|| format!("failed to open {} for writing", self.filename))?;
-        write!(&mut fp, "{}", content)
+        write!(&mut fp, "{content}")
             .with_context(|| format!("failed writing to {}", self.filename))?;
         Ok(())
     }

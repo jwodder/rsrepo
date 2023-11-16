@@ -55,7 +55,7 @@ impl<'a> Git<'a> {
 
     pub fn remotes(&self) -> Result<HashSet<String>, CommandOutputError> {
         self.readlines::<[&str; 0], _>("remote", [])
-            .map(|iter| iter.collect())
+            .map(Iterator::collect)
     }
 
     pub fn rm_remote(&self, remote: &str) -> Result<(), CommandError> {

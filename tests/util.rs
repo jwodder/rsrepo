@@ -1,3 +1,4 @@
+#![cfg(test)]
 use fs_err::{copy, create_dir_all, read_dir, read_to_string};
 use similar::udiff::unified_diff;
 use similar::Algorithm;
@@ -27,18 +28,17 @@ impl CmpDirtrees {
         I: IntoIterator<Item = S>,
         S: Into<OsString>,
     {
-        self.exclude = iter.into_iter().map(|s| s.into()).collect();
+        self.exclude = iter.into_iter().map(Into::into).collect();
         self
     }
 
     pub fn assert_eq(self) {
-        if !self.check(&self.left, &self.right).unwrap() {
-            panic!(
-                "Directory trees {} and {} differ!",
-                self.left.display(),
-                self.right.display()
-            );
-        }
+        assert!(
+            !self.check(&self.left, &self.right).unwrap(),
+            "Directory trees {} and {} differ!",
+            self.left.display(),
+            self.right.display()
+        );
     }
 
     fn left_pathname(&self, path: &Path) -> String {

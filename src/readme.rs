@@ -42,27 +42,26 @@ impl Readme {
 
     pub fn set_msrv(&mut self, msrv: RustVersion) {
         let url = format!("https://img.shields.io/badge/MSRV-{msrv}-orange");
-        match self
+        if let Some(i) = self
             .badges
             .iter()
             .position(|badge| badge.kind() == Some(BadgeKind::Msrv))
         {
-            Some(i) => self.badges[i].url = url,
-            None => {
-                let pos = self
-                    .badges
-                    .iter()
-                    .position(|badge| badge.kind() == Some(BadgeKind::License))
-                    .unwrap_or(self.badges.len());
-                self.badges.insert(
-                    pos,
-                    Badge {
-                        url,
-                        alt: "Minimum Supported Rust Version".into(),
-                        target: "https://www.rust-lang.org".into(),
-                    },
-                );
-            }
+            self.badges[i].url = url;
+        } else {
+            let pos = self
+                .badges
+                .iter()
+                .position(|badge| badge.kind() == Some(BadgeKind::License))
+                .unwrap_or(self.badges.len());
+            self.badges.insert(
+                pos,
+                Badge {
+                    url,
+                    alt: "Minimum Supported Rust Version".into(),
+                    target: "https://www.rust-lang.org".into(),
+                },
+            );
         }
     }
 
@@ -74,9 +73,10 @@ impl Readme {
             .iter()
             .position(|lnk| lnk.text == "GitHub")
             .unwrap_or(0);
-        let crates_index = match self.links.iter().position(|lnk| lnk.text == "crates.io") {
-            Some(i) => i,
-            None => {
+        let crates_index =
+            if let Some(i) = self.links.iter().position(|lnk| lnk.text == "crates.io") {
+                i
+            } else {
                 self.links.insert(
                     github_index + 1,
                     Link {
@@ -86,8 +86,7 @@ impl Readme {
                 );
                 changed = true;
                 github_index + 1
-            }
-        };
+            };
         if docs && !self.links.iter().any(|lnk| lnk.text == "Documentation") {
             self.links.insert(
                 crates_index + 1,

@@ -351,7 +351,7 @@ fn write_commit_template<W: Write>(
     if let Some(notes) = notes {
         writeln!(fp, "v{version} — INSERT SHORT DESCRIPTION HERE")?;
         writeln!(fp)?;
-        writeln!(fp, "{}", notes)?;
+        writeln!(fp, "{notes}")?;
     } else {
         writeln!(fp, "v{version} — Initial release")?;
     }

@@ -1,3 +1,4 @@
+#![cfg(test)]
 mod util;
 use crate::util::{copytree, CmpDirtrees};
 use assert_cmd::Command;

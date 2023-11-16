@@ -86,7 +86,7 @@ impl fmt::Display for RustVersion {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}.{}", self.major, self.minor)?;
         if let Some(patch) = self.patch {
-            write!(f, ".{}", patch)?;
+            write!(f, ".{patch}")?;
         }
         Ok(())
     }
@@ -109,7 +109,7 @@ impl<'de> Deserialize<'de> for RustVersion {
 
 struct RustVersionVisitor;
 
-impl<'de> Visitor<'de> for RustVersionVisitor {
+impl Visitor<'_> for RustVersionVisitor {
     type Value = RustVersion;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

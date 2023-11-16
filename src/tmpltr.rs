@@ -4,6 +4,7 @@ use include_dir::{include_dir, Dir, DirEntry};
 use serde::Serialize;
 use serde_json::Value;
 use std::collections::VecDeque;
+use std::fmt::Write;
 use std::path::Path;
 use tinytemplate::{error::Error, format_unescaped, TinyTemplate};
 
@@ -89,7 +90,9 @@ fn toml_escape(value: &Value, out: &mut String) -> Result<(), Error> {
             '\n' => out.push_str(r"\n"),
             '\x0C' => out.push_str(r"\f"),
             '\r' => out.push_str(r"\r"),
-            '\x00'..='\x1F' | '\x7F' => out.push_str(&format!("\\u{:04}", ch as u32)),
+            '\x00'..='\x1F' | '\x7F' => {
+                write!(out, "\\u{:04}", ch as u32).expect("writing to a string should not fail");
+            }
             _ => out.push(ch),
         }
     }
