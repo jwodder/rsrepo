@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 pub struct Config {
     pub author: String,
     pub author_email: String,
-    pub github_user: String,
+    pub github_user: Option<String>,
 }
 
 impl Config {

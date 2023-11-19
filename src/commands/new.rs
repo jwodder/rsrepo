@@ -53,6 +53,7 @@ pub struct New {
 impl New {
     pub fn run(self, config_path: Option<PathBuf>) -> anyhow::Result<()> {
         let config = Config::load(config_path.as_deref())?;
+        let github = GitHub::authed()?;
         let mut templater = Templater::load()?;
         let name = self.name()?;
         let author_email = templater
@@ -69,7 +70,7 @@ impl New {
         } else {
             let rustrepo = GHRepo::new("rust-lang", "rust")
                 .expect("\"rust-lang/rust\" should be valid ghrepo specifier");
-            let stable = GitHub::default().latest_release(&rustrepo)?;
+            let stable = github.latest_release(&rustrepo)?;
             stable
                 .tag_name
                 .parse::<RustVersion>()
@@ -91,7 +92,7 @@ impl New {
             .current_branch()?
             .ok_or_else(|| anyhow::anyhow!("No branch set in new repository"))?;
         let context = NewContext {
-            github_user: config.github_user,
+            github_user: config.github_user.map_or_else(|| github.whoami(), Ok)?,
             author: config.author,
             author_email,
             copyright_year: self.copyright_year(),

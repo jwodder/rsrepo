@@ -10,6 +10,8 @@ v0.2.0 (in development)
 - Adjust `.github/workflows/test.yml` template:
     - `llvm-tools-preview` is now called `llvm-tools`
     - Restrict push triggers to the default branch
+- If the `github-user` configuration field is not set, its value will now be
+  fetched via the GitHub API when needed
 
 v0.1.0 (2023-09-29)
 -------------------

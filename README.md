@@ -59,10 +59,10 @@ configurations:
     - If using `rsrepo release` to publish a package, a Cargo registry API
       token must have been saved with Cargo.
 
-- A GitHub API token must either be set via the `GH_TOKEN` or `GITHUB_TOKEN`
+- A GitHub access token must either be set via the `GH_TOKEN` or `GITHUB_TOKEN`
   environment variable or else have been saved with
-  [`gh`](https://github.com/cli/cli) in order for the `mkgithub` and `release`
-  subcommands to work
+  [`gh`](https://github.com/cli/cli) in order for various commands to perform
+  GitHub REST API requests
 
 - The `release` subcommand creates a signed Git tag, and so `gpg` (or another
   program specified via Git's `gpg.program` config variable) must be installed
@@ -82,7 +82,9 @@ The configuration file (located at `~/.config/rsrepo.toml` by default) is a
   which will be replaced with the name of the package being initialized.
 
 - `github-user` — The GitHub username to use when `rsrepo new` generates
-  `Cargo.toml` and `README.md` files
+  `Cargo.toml` and `README.md` files and when `rsrepo mkgithub` creates a
+  repository.  If this is not set, the value is fetched via the GitHub API when
+  needed.
 
 `rsrepo new`
 ------------
@@ -141,6 +143,10 @@ to the remote.  In addition, if the `package.repository` field in the package's
 `Cargo.toml` is unset, it is set to the web URL of the GitHub repository; if
 instead the field differs from the web URL, a warning is emitted.
 
+The GitHub repository will be created under the user account for the GitHub
+access token in use.  Creating a repository under an organization is currently
+not supported.
+
 The package description (if any) is used as the repository description.  The
 package's keywords are used as the repository's topics, along with the "`rust`"
 topic; in addition, if the package's `README.md` file has a "WIP"
@@ -154,12 +160,7 @@ optionally be specified as an argument on the command line; if not given, the
 repository name is determined by parsing the `package.repository` field in the
 `Cargo.toml` file, falling back to the package name if there is no such field.
 When parsing the `package.repository` field, it is an error if the repository
-owner given in the URL differs from the `github-user` field in the
-configuration file.
-
-The GitHub repository will be created under the account for the user associated
-with the GitHub API token stored by `gh`.  Creating a repository under an
-organization is currently not supported.
+owner given in the URL differs from the `github-user` configuration value.
 
 ### Options
 

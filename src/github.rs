@@ -79,6 +79,13 @@ impl GitHub {
         self.request::<T, U>("PUT", path, Some(body))
     }
 
+    pub fn whoami(&self) -> anyhow::Result<String> {
+        Ok(self
+            .get::<User>("/user")
+            .context("failed to fetch authenticated GitHub user's login name")?
+            .login)
+    }
+
     pub fn create_repository(&self, config: CreateRepoBody) -> anyhow::Result<Repository> {
         self.post("/user/repos", config)
     }
@@ -137,6 +144,11 @@ fn mkurl(path: &str) -> anyhow::Result<Url> {
         .context("Failed to construct a Url for the GitHub API endpoint")?
         .join(path)
         .with_context(|| format!("Failed to construct a GitHub API URL with path {path:?}"))
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+struct User {
+    login: String,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]

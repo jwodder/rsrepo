@@ -25,6 +25,7 @@ pub struct Mkgithub {
 impl Mkgithub {
     pub fn run(self, config_path: Option<PathBuf>) -> anyhow::Result<()> {
         let config = Config::load(config_path.as_deref())?;
+        let github = GitHub::authed()?;
         let package = Package::locate()?;
         let metadata = package.metadata()?;
         let name = if let Some(s) = self.repo_name {
@@ -32,10 +33,9 @@ impl Mkgithub {
         } else {
             match metadata.repository.as_ref().map(|s| s.parse::<GHRepo>()) {
                 Some(Ok(r)) => {
-                    if r.owner() != config.github_user {
-                        bail!(
-                            "Package repository URL does not belong to github-user set in config"
-                        );
+                    let github_user = config.github_user.map_or_else(|| github.whoami(), Ok)?;
+                    if r.owner() != github_user {
+                        bail!("Package repository URL does not belong to GitHub user");
                     }
                     r.name().to_string()
                 }
@@ -53,7 +53,6 @@ impl Mkgithub {
         if let d @ Some(_) = metadata.description {
             new_repo.description = d;
         }
-        let github = GitHub::authed()?;
         let repo = github.create_repository(new_repo)?;
         log::info!("Created GitHub repository {}", repo.html_url);
 
