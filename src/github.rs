@@ -24,16 +24,16 @@ pub struct GitHub {
 }
 
 impl GitHub {
-    pub fn new<S: AsRef<str>>(token: Option<S>) -> GitHub {
-        let authorization = token.map(|tk| format!("token {}", tk.as_ref()));
+    pub fn new(token: &str) -> GitHub {
+        let auth = format!("Bearer {token}");
         let client = AgentBuilder::new()
             .user_agent(USER_AGENT)
             .https_only(true)
-            .middleware(move |mut req: ureq::Request, next: ureq::MiddlewareNext| {
-                if let Some(auth) = authorization.as_ref() {
-                    req = req.set("Authorization", auth);
-                }
-                next.handle(req.set("Accept", "application/vnd.github+json"))
+            .middleware(move |req: ureq::Request, next: ureq::MiddlewareNext| {
+                next.handle(
+                    req.set("Authorization", &auth)
+                        .set("Accept", "application/vnd.github+json"),
+                )
             })
             .build();
         GitHub { client }
@@ -41,7 +41,7 @@ impl GitHub {
 
     pub fn authed() -> anyhow::Result<GitHub> {
         let token = gh_token::get().context("Failed to retrieve GitHub token")?;
-        Ok(GitHub::new(Some(token)))
+        Ok(GitHub::new(&token))
     }
 
     fn request<T: Serialize, U: DeserializeOwned>(
@@ -130,12 +130,6 @@ impl GitHub {
         };
         let _: TopicsPayload = self.put(&format!("{}/topics", repo.api_url()), body)?;
         Ok(())
-    }
-}
-
-impl Default for GitHub {
-    fn default() -> GitHub {
-        GitHub::new::<&str>(None)
     }
 }
 
