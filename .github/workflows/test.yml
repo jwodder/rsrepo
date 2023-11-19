@@ -62,6 +62,8 @@ jobs:
 
       - name: Test crate
         run: cargo test --verbose
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   coverage:
     # This is separate from the main tests because cargo-llvm-cov doesn't run
@@ -88,6 +90,8 @@ jobs:
 
       - name: Test with coverage
         run: cargo llvm-cov --all-features --lcov --output-path lcov.info
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
