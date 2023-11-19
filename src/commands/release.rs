@@ -1,7 +1,8 @@
 use crate::changelog::{Changelog, ChangelogHeader, ChangelogSection};
 use crate::cmd::LoggedCommand;
-use crate::github::{CreateRelease, GitHub, Topic};
+use crate::github::{CreateRelease, Topic};
 use crate::package::Package;
+use crate::provider::Provider;
 use crate::readme::{Badge, Repostatus};
 use crate::util::{bump_version, move_dirtree_into, this_year, Bump};
 use anyhow::{bail, Context};
@@ -12,7 +13,6 @@ use renamore::rename_exclusive;
 use semver::{Prerelease, Version};
 use std::collections::HashSet;
 use std::io::{self, Write};
-use std::path::PathBuf;
 use tempfile::NamedTempFile;
 
 /// Prepare & publish a new release for a package
@@ -29,10 +29,10 @@ pub struct Release {
 }
 
 impl Release {
-    pub fn run(self, _: Option<PathBuf>) -> anyhow::Result<()> {
+    pub fn run(self, provider: Provider) -> anyhow::Result<()> {
+        let github = provider.github()?;
         let package = Package::locate()?;
         let git = package.git();
-        let github = GitHub::authed()?;
         let readme_file = package.readme();
         let chlog_file = package.changelog();
 

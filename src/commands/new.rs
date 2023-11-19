@@ -1,13 +1,13 @@
 use crate::cmd::LoggedCommand;
-use crate::config::Config;
 use crate::git::Git;
-use crate::github::GitHub;
+use crate::provider::Provider;
 use crate::tmpltr::Templater;
 use crate::util::{this_year, RustVersion};
 use anyhow::{bail, Context};
 use clap::Args;
 use ghrepo::GHRepo;
 use serde::Serialize;
+use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::path::PathBuf;
 use which::which;
@@ -51,18 +51,12 @@ pub struct New {
 }
 
 impl New {
-    pub fn run(self, config_path: Option<PathBuf>) -> anyhow::Result<()> {
-        let config = Config::load(config_path.as_deref())?;
-        let github = GitHub::authed()?;
+    pub fn run(self, provider: Provider) -> anyhow::Result<()> {
+        let config = provider.config()?;
         let mut templater = Templater::load()?;
         let name = self.name()?;
         let author_email = templater
-            .render_str(
-                &config.author_email,
-                AuthorEmailContext {
-                    package: name.into(),
-                },
-            )
+            .render_str(&config.author_email, AuthorEmailContext { package: name })
             .context("Failed to render author-email template")?;
 
         let msrv = if let Some(rv) = self.msrv {
@@ -70,7 +64,7 @@ impl New {
         } else {
             let rustrepo = GHRepo::new("rust-lang", "rust")
                 .expect("\"rust-lang/rust\" should be valid ghrepo specifier");
-            let stable = github.latest_release(&rustrepo)?;
+            let stable = provider.github()?.latest_release(&rustrepo)?;
             stable
                 .tag_name
                 .parse::<RustVersion>()
@@ -91,18 +85,22 @@ impl New {
         let default_branch = Git::new(&self.dirpath)
             .current_branch()?
             .ok_or_else(|| anyhow::anyhow!("No branch set in new repository"))?;
+        let github_user = match config.github_user.as_deref() {
+            Some(user) => Cow::Borrowed(user),
+            None => Cow::Owned(provider.github()?.whoami()?),
+        };
         let context = NewContext {
-            github_user: config.github_user.map_or_else(|| github.whoami(), Ok)?,
-            author: config.author,
+            github_user,
+            author: &config.author,
             author_email,
             copyright_year: self.copyright_year(),
-            name: name.into(),
-            repo_name: self.repo_name()?.into(),
+            name,
+            repo_name: self.repo_name()?,
             default_branch,
             bin,
             lib,
             msrv,
-            description: self.description,
+            description: self.description.as_deref(),
         };
 
         for template in [
@@ -144,10 +142,10 @@ impl New {
         self.lib || !self.bin
     }
 
-    pub fn copyright_year(&self) -> String {
+    pub fn copyright_year(&self) -> Cow<'_, str> {
         match self.copyright_year.as_ref() {
-            Some(s) => s.clone(),
-            None => this_year().to_string(),
+            Some(s) => s.into(),
+            None => this_year().to_string().into(),
         }
     }
 
@@ -175,21 +173,21 @@ impl New {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-struct NewContext {
-    github_user: String,
-    author: String,
+struct NewContext<'a> {
+    github_user: Cow<'a, str>,
+    author: &'a str,
     author_email: String,
-    copyright_year: String,
-    name: String,
-    repo_name: String,
+    copyright_year: Cow<'a, str>,
+    name: &'a str,
+    repo_name: &'a str,
     default_branch: String,
     bin: bool,
     lib: bool,
     msrv: RustVersion,
-    description: Option<String>,
+    description: Option<&'a str>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-struct AuthorEmailContext {
-    package: String,
+struct AuthorEmailContext<'a> {
+    package: &'a str,
 }
