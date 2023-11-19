@@ -6,10 +6,12 @@ mod git;
 mod github;
 mod http_util;
 mod package;
+mod provider;
 mod readme;
 mod tmpltr;
 mod util;
 use crate::commands::Command;
+use crate::provider::Provider;
 use anstream::AutoStream;
 use anstyle::{AnsiColor, Style};
 use anyhow::Context;
@@ -50,7 +52,7 @@ impl Arguments {
         if let Some(dir) = self.chdir {
             set_current_dir(dir).context("Failed to change directory")?;
         }
-        self.command.run(self.config)
+        self.command.run(Provider::new(self.config))
     }
 }
 

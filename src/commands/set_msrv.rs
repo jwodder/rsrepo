@@ -1,8 +1,8 @@
 use crate::package::Package;
+use crate::provider::Provider;
 use crate::util::RustVersion;
 use clap::Args;
 use std::fmt::Write;
-use std::path::PathBuf;
 
 /// Update package's MSRV
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
@@ -13,7 +13,7 @@ pub struct SetMsrv {
 }
 
 impl SetMsrv {
-    pub fn run(self, _: Option<PathBuf>) -> anyhow::Result<()> {
+    pub fn run(self, _provider: Provider) -> anyhow::Result<()> {
         let package = Package::locate()?;
 
         log::info!("Updating Cargo.toml ...");
