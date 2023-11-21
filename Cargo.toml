@@ -62,9 +62,15 @@ lto = true
 strip = true
 
 [lints.rust]
-#warn = "deny" (all = "deny"?)
-elided_lifetimes_in_paths = "deny"
-explicit_outlives_requirements = "deny"
+# Lint groups:
+future_incompatible = "deny"
+rust_2018_idioms = "deny"
+unused = { level = "deny", priority = 0 }
+
+# Set a lint in "unused" back to "warn" (to be denied again under CI):
+dead_code = { level = "warn", priority = 5 }
+
+# Deny various allow-by-default lints:
 macro_use_extern_crate = "deny"
 missing_debug_implementations = "deny"
 pointer_structural_match = "deny"
@@ -75,9 +81,65 @@ unsafe_code = "deny"
 unsafe_op_in_unsafe_fn = "deny"
 unused_import_braces = "deny"
 unused_lifetimes = "deny"
-unused_macro_rules = "deny"
 unused_qualifications = "deny"
 unused_tuple_struct_fields = "deny"
+
+# Deny various warn-by-default lints:
+ambiguous_glob_reexports = "deny"
+bad_asm_style = "deny"
+break_with_label_and_loop = "deny"
+clashing_extern_declarations = "deny"
+confusable_idents = "deny"
+const_item_mutation = "deny"
+deprecated = "deny"
+deprecated_where_clause_location = "deny"
+deref_nullptr = "deny"
+drop_bounds = "deny"
+dropping_copy_types = "deny"
+dropping_references = "deny"
+duplicate_macro_attributes = "deny"
+dyn_drop = "deny"
+exported_private_dependencies = "deny"
+for_loops_over_fallibles = "deny"
+forgetting_copy_types = "deny"
+forgetting_references = "deny"
+function_item_references = "deny"
+hidden_glob_reexports = "deny"
+improper_ctypes = "deny"
+improper_ctypes_definitions = "deny"
+inline_no_sanitize = "deny"
+internal_features = "deny"
+invalid_from_utf8 = "deny"
+invalid_macro_export_arguments = "deny"
+invalid_nan_comparisons = "deny"
+invalid_value = "deny"
+irrefutable_let_patterns = "deny"
+mixed_script_confusables = "deny"
+named_arguments_used_positionally = "deny"
+no_mangle_generic_items = "deny"
+non_fmt_panics = "deny"
+non_shorthand_field_patterns = "deny"
+noop_method_call = "deny"
+opaque_hidden_inferred_bound = "deny"
+overlapping_range_endpoints = "deny"
+private_bounds = "deny"
+private_interfaces = "deny"
+refining_impl_trait = "deny"
+renamed_and_removed_lints = "deny"
+special_module_name = "deny"
+stable_features = "deny"
+suspicious_double_ref_op = "deny"
+temporary_cstring_as_ptr = "deny"
+trivial_bounds = "deny"
+type_alias_bounds = "deny"
+unconditional_recursion = "deny"
+undefined_naked_function_abi = "deny"
+ungated_async_fn_track_caller = "deny"
+unknown_lints = "deny"
+unused_associated_type_bounds = "deny"
+unused_comparisons = "deny"
+useless_ptr_null_checks = "deny"
+while_true = "deny"
 
 [lints.rustdoc]
 bare_urls = "deny"
@@ -90,7 +152,15 @@ redundant_explicit_links = "deny"
 unescaped_backticks = "deny"
 
 [lints.clippy]
-#warn = "deny" (all = "deny"?)
+# Deny all warn-by-default lints:
+all = { level = "deny", priority = 0 }
+
+# Set some warn-by-default lints back to warn (to be denied again under CI):
+dbg_macro = { level = "warn", priority = 5 }
+todo = { level = "warn", priority = 5 }
+unimplemented = { level = "warn", priority = 5 }
+
+# Deny various allow-by-default lints:
 as_underscore = "deny"
 bool_to_int_with_if = "deny"
 borrow_as_ptr = "deny"
