@@ -153,12 +153,12 @@ unescaped_backticks = "deny"
 
 [lints.clippy]
 # Deny all warn-by-default lints:
-all = { level = "deny", priority = 0 }
+all = "deny"
 
-# Set some warn-by-default lints back to warn (to be denied again under CI):
-dbg_macro = { level = "warn", priority = 5 }
-todo = { level = "warn", priority = 5 }
-unimplemented = { level = "warn", priority = 5 }
+# Warn on various allow-by-default lints:
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
 
 # Deny various allow-by-default lints:
 as_underscore = "deny"
