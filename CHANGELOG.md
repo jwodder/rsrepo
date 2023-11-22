@@ -16,6 +16,8 @@ v0.2.0 (in development)
     - Add `[lints]` tables to `Cargo.toml`
     - Add `clippy.toml`
     - Remove `-Dwarnings` from `clippy` hook in `.pre-commit-config.yaml`
+- `.pre-commit-config.yaml` template: Remove `exclude: '^tests/data/'` from
+  end-of-file-fixer hook
 
 v0.1.0 (2023-09-29)
 -------------------
