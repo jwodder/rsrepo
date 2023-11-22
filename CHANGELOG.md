@@ -12,6 +12,10 @@ v0.2.0 (in development)
     - Restrict push triggers to the default branch
 - If the `github-user` configuration field is not set, its value will now be
   fetched via the GitHub API when needed
+- Add more extensive linting to project template
+    - Add `[lints]` tables to `Cargo.toml`
+    - Add `clippy.toml`
+    - Remove `-Dwarnings` from `clippy` hook in `.pre-commit-config.yaml`
 
 v0.1.0 (2023-09-29)
 -------------------
