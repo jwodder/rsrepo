@@ -1,9 +1,9 @@
-use anyhow::Context;
+use fs_err::{copy, create_dir_all, read_dir, read_to_string};
 use similar::udiff::unified_diff;
 use similar::Algorithm;
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
-use std::fs::{copy, create_dir_all, read_dir, read_to_string, FileType};
+use std::fs::FileType;
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -67,12 +67,8 @@ impl CmpDirtrees {
             match right_entries.remove(&fname) {
                 Some(rt) if ftype == rt => {
                     if ftype.is_file() {
-                        let left_text = read_to_string(&left_path).with_context(|| {
-                            format!("Failed to read text from {}", left_path.display())
-                        })?;
-                        let right_text = read_to_string(&right_path).with_context(|| {
-                            format!("Failed to read text from {}", right_path.display())
-                        })?;
+                        let left_text = read_to_string(&left_path)?;
+                        let right_text = read_to_string(&right_path)?;
                         if left_text != right_text {
                             eprint!(
                                 "{}",
@@ -125,17 +121,11 @@ impl CmpDirtrees {
 
     fn direntries(&self, dirpath: &Path) -> anyhow::Result<HashMap<OsString, FileType>> {
         let mut entries = HashMap::new();
-        for entry in read_dir(dirpath)
-            .with_context(|| format!("Failed to read directory {}", dirpath.display()))?
-        {
-            let entry = entry.with_context(|| {
-                format!("Error getting directory entry from {}", dirpath.display())
-            })?;
+        for entry in read_dir(dirpath)? {
+            let entry = entry?;
             let fname = entry.file_name();
             if !self.exclude.contains(&fname) {
-                let ftype = entry.file_type().with_context(|| {
-                    format!("Error getting file type of {}", entry.path().display())
-                })?;
+                let ftype = entry.file_type()?;
                 entries.insert(fname, ftype);
             }
         }

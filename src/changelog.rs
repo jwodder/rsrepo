@@ -211,8 +211,8 @@ fn in_development(input: &str) -> IResult<&str, ChangelogHeader> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use fs_err::{read_dir, read_to_string};
     use std::ffi::OsStr;
-    use std::fs::{read_dir, read_to_string};
     use std::path::Path;
 
     #[test]
