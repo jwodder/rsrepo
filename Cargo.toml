@@ -155,7 +155,7 @@ unescaped_backticks = "deny"
 # Deny all warn-by-default lints:
 all = "deny"
 
-# Warn on various allow-by-default lints:
+# Warn on various allow-by-default lints (denied under CI):
 dbg_macro = "warn"
 todo = "warn"
 unimplemented = "warn"
@@ -217,7 +217,6 @@ manual_ok_or = "deny"
 manual_string_new = "deny"
 map_unwrap_or = "deny"
 match_bool = "deny"
-match_same_arms = "deny"
 match_wild_err_arm = "deny"
 mem_forget = "deny"
 mismatching_type_param_order = "deny"
