@@ -34,7 +34,7 @@ impl CmpDirtrees {
 
     pub(crate) fn assert_eq(self) {
         assert!(
-            !self.check(&self.left, &self.right).unwrap(),
+            self.check(&self.left, &self.right).unwrap(),
             "Directory trees {} and {} differ!",
             self.left.display(),
             self.right.display()
