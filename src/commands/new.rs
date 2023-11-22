@@ -108,6 +108,7 @@ impl New {
             ".gitignore",
             "LICENSE",
             "README.md",
+            "clippy.toml",
             ".pre-commit-config.yaml",
             ".github/dependabot.yml",
             ".github/workflows/test.yml",
