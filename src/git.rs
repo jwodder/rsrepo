@@ -141,8 +141,6 @@ impl<'a> Git<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rstest::rstest;
-    use tempfile::tempdir;
 
     #[test]
     fn toplevel() {
@@ -154,24 +152,30 @@ mod tests {
         assert_eq!(git.toplevel().unwrap(), manifest_dir);
     }
 
-    // These are illegal filenames on Windows.
     #[cfg(not(windows))]
-    #[rstest]
-    #[case("foobar\r")]
-    #[case("foobar\n")]
-    #[case("foobar ")]
-    fn toplevel_basename_endswith_space(#[case] fname: &str) {
-        let tmp_path = tempdir().unwrap();
-        let repo = tmp_path.path().join(fname);
-        LoggedCommand::new("git")
-            .arg("init")
-            .arg("-b")
-            .arg("main")
-            .arg("--")
-            .arg(&repo)
-            .status()
-            .unwrap();
-        let git = Git::new(&repo);
-        assert_eq!(git.toplevel().unwrap(), repo.canonicalize().unwrap());
+    mod not_windows {
+        use super::*;
+        use rstest::rstest;
+        use tempfile::tempdir;
+
+        // These are illegal filenames on Windows.
+        #[rstest]
+        #[case("foobar\r")]
+        #[case("foobar\n")]
+        #[case("foobar ")]
+        fn toplevel_basename_endswith_space(#[case] fname: &str) {
+            let tmp_path = tempdir().unwrap();
+            let repo = tmp_path.path().join(fname);
+            LoggedCommand::new("git")
+                .arg("init")
+                .arg("-b")
+                .arg("main")
+                .arg("--")
+                .arg(&repo)
+                .status()
+                .unwrap();
+            let git = Git::new(&repo);
+            assert_eq!(git.toplevel().unwrap(), repo.canonicalize().unwrap());
+        }
     }
 }
