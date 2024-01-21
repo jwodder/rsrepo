@@ -1,15 +1,15 @@
 use chrono::naive::NaiveDate;
-use nom::branch::alt;
-use nom::bytes::complete::{tag_no_case, take_till1};
-use nom::character::complete::{char, digit1, space1};
-use nom::combinator::{all_consuming, map_res, recognize};
-use nom::sequence::{delimited, tuple};
-use nom::{Finish, IResult, Parser};
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
 use thiserror::Error;
+use winnow::{
+    ascii::{digit1, space1, Caseless},
+    combinator::alt,
+    token::take_till,
+    PResult, Parser,
+};
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub(crate) struct Changelog {
@@ -100,11 +100,8 @@ impl FromStr for ChangelogHeader {
     type Err = ParseHeaderError;
 
     fn from_str(s: &str) -> Result<ChangelogHeader, ParseHeaderError> {
-        match all_consuming(parse_header)(s).finish() {
-            Ok((_, header)) => Ok(header),
-            // TODO: Include error details from nom error
-            Err(_) => Err(ParseHeaderError),
-        }
+        // TODO: Include error details from winnow error
+        parse_header.parse(s).map_err(|_| ParseHeaderError)
     }
 }
 
@@ -170,42 +167,39 @@ impl<'a> SectionBuilder<'a> {
     }
 }
 
-fn parse_header(input: &str) -> IResult<&str, ChangelogHeader> {
-    alt((versioned_header, in_development))(input)
+fn parse_header(input: &mut &str) -> PResult<ChangelogHeader> {
+    alt((versioned_header, in_development)).parse_next(input)
 }
 
-fn versioned_header(input: &str) -> IResult<&str, ChangelogHeader> {
-    let (input, _) = char('v')(input)?;
-    let (input, version) = map_res(
-        take_till1(|ch: char| ch.is_ascii_whitespace()),
-        |s: &str| s.parse::<Version>(),
-    )(input)?;
-    let (input, _) = space1(input)?;
-    let (input, parenthed) = delimited(
-        char('('),
-        alt((ymd.map(Some), tag_no_case("in development").map(|_| None))),
-        char(')'),
-    )(input)?;
-    let header = if let Some(date) = parenthed {
-        ChangelogHeader::Released { version, date }
+fn versioned_header(input: &mut &str) -> PResult<ChangelogHeader> {
+    let (_, version, _, _, parenthed, _) = (
+        'v',
+        take_till(1.., |ch: char| ch.is_ascii_whitespace()).try_map(|s: &str| s.parse::<Version>()),
+        space1,
+        '(',
+        alt((ymd.map(Some), Caseless("in development").map(|_| None))),
+        ')',
+    )
+        .parse_next(input)?;
+    if let Some(date) = parenthed {
+        Ok(ChangelogHeader::Released { version, date })
     } else {
-        ChangelogHeader::InProgress { version }
-    };
-    Ok((input, header))
+        Ok(ChangelogHeader::InProgress { version })
+    }
 }
 
-fn ymd(input: &str) -> IResult<&str, NaiveDate> {
+fn ymd(input: &mut &str) -> PResult<NaiveDate> {
     // TODO: Make this take exactly 4-2-2 digits
-    map_res(
-        recognize(tuple((digit1, char('-'), digit1, char('-'), digit1))),
-        |s: &str| s.parse::<NaiveDate>(),
-    )(input)
+    (digit1, '-', digit1, '-', digit1)
+        .recognize()
+        .try_map(|s: &str| s.parse::<NaiveDate>())
+        .parse_next(input)
 }
 
-fn in_development(input: &str) -> IResult<&str, ChangelogHeader> {
-    tag_no_case("in development")
+fn in_development(input: &mut &str) -> PResult<ChangelogHeader> {
+    Caseless("in development")
         .map(|_| ChangelogHeader::InDevelopment)
-        .parse(input)
+        .parse_next(input)
 }
 
 #[cfg(test)]

@@ -1,16 +1,17 @@
 use crate::util::RustVersion;
 use ghrepo::GHRepo;
-use nom::bytes::complete::is_not;
-use nom::character::complete::{char, line_ending, space1};
-use nom::combinator::{all_consuming, rest};
-use nom::multi::{many1, separated_list1};
-use nom::sequence::{delimited, terminated, tuple};
-use nom::{Finish, IResult};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
 use thiserror::Error;
 use url::Url;
+use winnow::{
+    ascii::{line_ending, space1},
+    combinator::{delimited, preceded, repeat, rest, separated, terminated},
+    seq,
+    token::take_till,
+    PResult, Parser,
+};
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub(crate) struct Readme {
@@ -118,11 +119,8 @@ impl FromStr for Readme {
     type Err = ParseReadmeError;
 
     fn from_str(s: &str) -> Result<Readme, ParseReadmeError> {
-        match all_consuming(parse_readme)(s).finish() {
-            Ok((_, readme)) => Ok(readme),
-            // TODO: Include error details from nom error
-            Err(_) => Err(ParseReadmeError),
-        }
+        // TODO: Include error details from winnow error
+        parse_readme.parse(s).map_err(|_| ParseReadmeError)
     }
 }
 
@@ -273,58 +271,54 @@ struct Image {
     alt: String,
 }
 
-fn parse_readme(input: &str) -> IResult<&str, Readme> {
-    let (input, badges) = many1(terminated(badge, line_ending))(input)?;
-    let (input, _) = line_ending(input)?;
-    let (input, links) = separated_list1(tuple((space1, char('|'), space1)), link)(input)?;
-    let (input, _) = line_ending(input)?;
-    let (input, _) = line_ending(input)?;
-    let (input, text) = rest(input)?;
-    Ok((
-        input,
+fn parse_readme(input: &mut &str) -> PResult<Readme> {
+    seq! {
         Readme {
-            badges,
-            links,
-            text: text.into(),
-        },
-    ))
+            badges: repeat(1.., terminated(badge, line_ending)),
+            _: line_ending,
+            links: separated(1.., link, (space1, '|', space1)),
+            _: line_ending,
+            _: line_ending,
+            text: rest.map(String::from),
+        }
+    }
+    .parse_next(input)
 }
 
-fn badge(input: &str) -> IResult<&str, Badge> {
-    let (input, image) = delimited(char('['), image, char(']'))(input)?;
-    let (input, url) = delimited(char('('), many1(is_not(")")), char(')'))(input)?;
-    Ok((
-        input,
-        Badge {
-            url: image.url,
-            alt: image.alt,
-            target: url.into_iter().collect(),
-        },
-    ))
+fn badge(input: &mut &str) -> PResult<Badge> {
+    let (image, url) = (
+        delimited('[', image, ']'),
+        delimited('(', take_till(1.., ')'), ')'),
+    )
+        .parse_next(input)?;
+    Ok(Badge {
+        url: image.url,
+        alt: image.alt,
+        target: url.to_owned(),
+    })
 }
 
-fn image(input: &str) -> IResult<&str, Image> {
-    let (input, _) = char('!')(input)?;
-    let (input, lnk) = link(input)?;
-    Ok((
-        input,
-        Image {
+fn image(input: &mut &str) -> PResult<Image> {
+    preceded('!', link)
+        .map(|lnk| Image {
             alt: lnk.text,
             url: lnk.url,
-        },
-    ))
+        })
+        .parse_next(input)
 }
 
-fn link(input: &str) -> IResult<&str, Link> {
-    let (input, text) = delimited(char('['), many1(is_not("]")), char(']'))(input)?;
-    let (input, url) = delimited(char('('), many1(is_not(")")), char(')'))(input)?;
-    Ok((
-        input,
+fn link(input: &mut &str) -> PResult<Link> {
+    seq! {
         Link {
-            text: text.into_iter().collect(),
-            url: url.into_iter().collect(),
-        },
-    ))
+            _: '[',
+            text: take_till(1.., ']').map(String::from),
+            _: ']',
+            _: '(',
+            url: take_till(1.., ')').map(String::from),
+            _: ')',
+        }
+    }
+    .parse_next(input)
 }
 
 #[cfg(test)]

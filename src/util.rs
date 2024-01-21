@@ -1,11 +1,5 @@
 use chrono::Datelike;
 use fs_err::{create_dir_all, read_dir, remove_dir};
-use nom::bytes::complete::tag;
-use nom::character::complete::{char, i32 as nom_i32, space0, space1, u32 as nom_u32};
-use nom::combinator::{all_consuming, opt, recognize, rest};
-use nom::multi::separated_list1;
-use nom::sequence::{preceded, tuple};
-use nom::{Finish, IResult};
 use rangemap::RangeInclusiveSet;
 use renamore::rename_exclusive;
 use semver::Version;
@@ -20,6 +14,11 @@ use std::ops::RangeInclusive;
 use std::path::{Path, PathBuf, StripPrefixError};
 use std::str::FromStr;
 use thiserror::Error;
+use winnow::{
+    ascii::{dec_uint, digit1, space0, space1},
+    combinator::{opt, preceded, rest, separated},
+    seq, PResult, Parser,
+};
 
 pub(crate) fn this_year() -> i32 {
     chrono::Local::now().year()
@@ -75,10 +74,7 @@ impl FromStr for RustVersion {
     type Err = ParseRustVersionError;
 
     fn from_str(s: &str) -> Result<RustVersion, ParseRustVersionError> {
-        match all_consuming(rust_version)(s).finish() {
-            Ok((_, rv)) => Ok(rv),
-            Err(_) => Err(ParseRustVersionError),
-        }
+        rust_version.parse(s).map_err(|_| ParseRustVersionError)
     }
 }
 
@@ -130,20 +126,17 @@ impl Visitor<'_> for RustVersionVisitor {
 #[error("invalid Rust version/MSRV")]
 pub(crate) struct ParseRustVersionError;
 
-fn rust_version(input: &str) -> IResult<&str, RustVersion> {
-    let (input, _) = opt(char('v'))(input)?;
-    let (input, major) = nom_u32(input)?;
-    let (input, _) = char('.')(input)?;
-    let (input, minor) = nom_u32(input)?;
-    let (input, patch) = opt(preceded(char('.'), nom_u32))(input)?;
-    Ok((
-        input,
+fn rust_version(input: &mut &str) -> PResult<RustVersion> {
+    seq! {
         RustVersion {
-            major,
-            minor,
-            patch,
-        },
-    ))
+            _: opt('v'),
+            major: dec_uint,
+            _: '.',
+            minor: dec_uint,
+            patch: opt(preceded('.', dec_uint)),
+        }
+    }
+    .parse_next(input)
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -178,10 +171,7 @@ impl FromStr for CopyrightLine {
     type Err = ParseCopyrightError;
 
     fn from_str(s: &str) -> Result<CopyrightLine, ParseCopyrightError> {
-        match all_consuming(copyright)(s).finish() {
-            Ok((_, c)) => Ok(c),
-            Err(_) => Err(ParseCopyrightError),
-        }
+        copyright.parse(s).map_err(|_| ParseCopyrightError)
     }
 }
 
@@ -208,35 +198,24 @@ impl fmt::Display for CopyrightLine {
 #[error("invalid copyright line")]
 pub(crate) struct ParseCopyrightError;
 
-fn copyright(input: &str) -> IResult<&str, CopyrightLine> {
-    let (input, prefix) = recognize(tuple((
-        space0,
-        tag("Copyright"),
-        space1,
-        opt(tuple((tag("(c)"), space1))),
-    )))(input)?;
-    let (input, ranges) = separated_list1(tuple((space0, char(','), space0)), year_range)(input)?;
-    let (input, _) = space1(input)?;
-    let (input, authors) = rest(input)?;
-    Ok((
-        input,
+fn copyright(input: &mut &str) -> PResult<CopyrightLine> {
+    seq! {
         CopyrightLine {
-            prefix: prefix.into(),
-            years: ranges.into_iter().collect(),
-            authors: authors.into(),
-        },
-    ))
+            prefix: (space0, "Copyright", space1, opt(("(c)", space1))).recognize().map(String::from),
+            years: separated(1.., year_range, (space0, ',', space0)).map(|ranges: Vec<RangeInclusive<i32>>| ranges.into_iter().collect()),
+            _: space1,
+            authors: rest.map(String::from),
+        }
+    }.parse_next(input)
 }
 
-fn year_range(input: &str) -> IResult<&str, RangeInclusive<i32>> {
-    let (input, start) = nom_i32(input)?;
-    let (input, end) = opt(preceded(tuple((space0, char('-'), space0)), nom_i32))(input)?;
-    let rng = if let Some(end) = end {
-        start..=end
-    } else {
-        start..=start
-    };
-    Ok((input, rng))
+fn year_range(input: &mut &str) -> PResult<RangeInclusive<i32>> {
+    let (start, end) = (
+        digit1.parse_to(),
+        opt(preceded((space0, '-', space0), digit1.parse_to())),
+    )
+        .parse_next(input)?;
+    Ok(start..=end.unwrap_or(start))
 }
 
 pub(crate) fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtreeIntoError> {
