@@ -1,5 +1,6 @@
 v0.3.0 (in development)
 -----------------------
+- Switch from nom to winnow
 
 v0.2.0 (2023-11-22)
 -------------------
