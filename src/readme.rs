@@ -1,8 +1,8 @@
 use crate::util::RustVersion;
 use ghrepo::GHRepo;
-use nom::bytes::complete::{is_not, tag};
-use nom::character::complete::{alpha1, char, line_ending, space1};
-use nom::combinator::{all_consuming, map_res, rest};
+use nom::bytes::complete::is_not;
+use nom::character::complete::{char, line_ending, space1};
+use nom::combinator::{all_consuming, rest};
 use nom::multi::{many1, separated_list1};
 use nom::sequence::{delimited, terminated, tuple};
 use nom::{Finish, IResult};
@@ -226,10 +226,10 @@ pub(crate) enum Repostatus {
 
 impl Repostatus {
     pub(crate) fn for_url(url: &str) -> Option<Repostatus> {
-        match all_consuming(repostatus_url)(url).finish() {
-            Ok((_, repostatus)) => Some(repostatus),
-            Err(_) => None,
-        }
+        url.strip_prefix("https://www.repostatus.org/badges/latest/")?
+            .strip_suffix(".svg")?
+            .parse::<Repostatus>()
+            .ok()
     }
 }
 
@@ -325,14 +325,6 @@ fn link(input: &str) -> IResult<&str, Link> {
             url: url.into_iter().collect(),
         },
     ))
-}
-
-fn repostatus_url(input: &str) -> IResult<&str, Repostatus> {
-    delimited(
-        tag("https://www.repostatus.org/badges/latest/"),
-        map_res(alpha1, |s: &str| s.parse::<Repostatus>()),
-        tag(".svg"),
-    )(input)
 }
 
 #[cfg(test)]

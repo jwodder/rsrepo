@@ -1,3 +1,6 @@
+v0.3.0 (in development)
+-----------------------
+
 v0.2.0 (2023-11-22)
 -------------------
 - `new`: When determining the default MSRV from the latest Rust release, strip
