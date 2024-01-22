@@ -7,6 +7,7 @@ use thiserror::Error;
 use winnow::{
     ascii::{digit1, space1, Caseless},
     combinator::alt,
+    stream::AsChar,
     token::take_till,
     PResult, Parser,
 };
@@ -174,7 +175,7 @@ fn parse_header(input: &mut &str) -> PResult<ChangelogHeader> {
 fn versioned_header(input: &mut &str) -> PResult<ChangelogHeader> {
     let (_, version, _, _, parenthed, _) = (
         'v',
-        take_till(1.., |ch: char| ch.is_ascii_whitespace()).try_map(|s: &str| s.parse::<Version>()),
+        take_till(1.., AsChar::is_space).try_map(|s: &str| s.parse::<Version>()),
         space1,
         '(',
         alt((ymd.map(Some), Caseless("in development").map(|_| None))),
