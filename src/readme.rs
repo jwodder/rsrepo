@@ -8,6 +8,7 @@ use url::Url;
 use winnow::{
     ascii::{line_ending, space1},
     combinator::{delimited, preceded, repeat, rest, separated, terminated},
+    error::ParserError,
     seq,
     token::take_till,
     PResult, Parser,
@@ -286,11 +287,7 @@ fn parse_readme(input: &mut &str) -> PResult<Readme> {
 }
 
 fn badge(input: &mut &str) -> PResult<Badge> {
-    let (image, url) = (
-        delimited('[', image, ']'),
-        delimited('(', take_till(1.., ')'), ')'),
-    )
-        .parse_next(input)?;
+    let (image, url) = (delimited('[', image, ']'), bracketed1('(', ')')).parse_next(input)?;
     Ok(Badge {
         url: image.url,
         alt: image.alt,
@@ -310,15 +307,18 @@ fn image(input: &mut &str) -> PResult<Image> {
 fn link(input: &mut &str) -> PResult<Link> {
     seq! {
         Link {
-            _: '[',
-            text: take_till(1.., ']').map(String::from),
-            _: ']',
-            _: '(',
-            url: take_till(1.., ')').map(String::from),
-            _: ')',
+            text: bracketed1('[', ']').map(String::from),
+            url: bracketed1('(', ')').map(String::from),
         }
     }
     .parse_next(input)
+}
+
+fn bracketed1<'a, E: ParserError<&'a str>>(
+    open: char,
+    close: char,
+) -> impl Parser<&'a str, &'a str, E> {
+    delimited(open, take_till(1.., close), close)
 }
 
 #[cfg(test)]
