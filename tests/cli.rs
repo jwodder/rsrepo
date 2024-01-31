@@ -20,6 +20,9 @@ fn new_implicit_lib() {
         .arg("--copyright-year=2525")
         .arg("--msrv=1.69")
         .arg(&repo)
+        .env("GIT_CONFIG_COUNT", "1")
+        .env("GIT_CONFIG_KEY_0", "init.defaultBranch")
+        .env("GIT_CONFIG_VALUE_0", "master")
         .assert()
         .success();
     Command::new("git")
@@ -47,6 +50,9 @@ fn new_explicit_lib() {
         .arg("--copyright-year=2525")
         .arg("--msrv=1.69")
         .arg(&repo)
+        .env("GIT_CONFIG_COUNT", "1")
+        .env("GIT_CONFIG_KEY_0", "init.defaultBranch")
+        .env("GIT_CONFIG_VALUE_0", "master")
         .assert()
         .success();
     Command::new("git")
@@ -74,6 +80,9 @@ fn new_bin() {
         .arg("--copyright-year=2525")
         .arg("--msrv=1.69")
         .arg(&repo)
+        .env("GIT_CONFIG_COUNT", "1")
+        .env("GIT_CONFIG_KEY_0", "init.defaultBranch")
+        .env("GIT_CONFIG_VALUE_0", "master")
         .assert()
         .success();
     Command::new("git")
@@ -102,6 +111,9 @@ fn new_bin_lib() {
         .arg("--copyright-year=2525")
         .arg("--msrv=1.69")
         .arg(&repo)
+        .env("GIT_CONFIG_COUNT", "1")
+        .env("GIT_CONFIG_KEY_0", "init.defaultBranch")
+        .env("GIT_CONFIG_VALUE_0", "master")
         .assert()
         .success();
     Command::new("git")
@@ -130,6 +142,9 @@ fn new_custom_project_name() {
         .arg("--msrv=1.69")
         .arg("--name=quux")
         .arg(&repo)
+        .env("GIT_CONFIG_COUNT", "1")
+        .env("GIT_CONFIG_KEY_0", "init.defaultBranch")
+        .env("GIT_CONFIG_VALUE_0", "master")
         .assert()
         .success();
     Command::new("git")
@@ -161,6 +176,9 @@ fn new_custom_repo_name() {
         .arg("--msrv=1.69")
         .arg("--repo-name=quux")
         .arg(&repo)
+        .env("GIT_CONFIG_COUNT", "1")
+        .env("GIT_CONFIG_KEY_0", "init.defaultBranch")
+        .env("GIT_CONFIG_VALUE_0", "master")
         .assert()
         .success();
     Command::new("git")
@@ -193,6 +211,9 @@ fn new_custom_project_repo_name() {
         .arg("--name=gnusto")
         .arg("--repo-name=cleesh")
         .arg(&repo)
+        .env("GIT_CONFIG_COUNT", "1")
+        .env("GIT_CONFIG_KEY_0", "init.defaultBranch")
+        .env("GIT_CONFIG_VALUE_0", "master")
         .assert()
         .success();
     Command::new("git")
@@ -226,6 +247,9 @@ fn new_description() {
         .arg("-d")
         .arg("A library for foo'ing bars")
         .arg(&repo)
+        .env("GIT_CONFIG_COUNT", "1")
+        .env("GIT_CONFIG_KEY_0", "init.defaultBranch")
+        .env("GIT_CONFIG_VALUE_0", "master")
         .assert()
         .success();
     Command::new("git")
