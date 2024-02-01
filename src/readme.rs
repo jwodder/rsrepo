@@ -103,12 +103,12 @@ impl Readme {
     }
 
     // Returns `true` if changed
-    pub(crate) fn ensure_changelog_link(&mut self, repo: &GHRepo) -> bool {
+    pub(crate) fn ensure_changelog_link(&mut self, repo: &GHRepo, default_branch: &str) -> bool {
         if self.links.iter().any(|lnk| lnk.text == "Changelog") {
             false
         } else {
             self.links.push(Link {
-                url: format!("https://github.com/{repo}/blob/master/CHANGELOG.md"),
+                url: format!("https://github.com/{repo}/blob/{default_branch}/CHANGELOG.md"),
                 text: "Changelog".into(),
             });
             true

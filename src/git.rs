@@ -136,6 +136,19 @@ impl<'a> Git<'a> {
         }
         Ok(PathBuf::from(s))
     }
+
+    // Returns None if the default branch could not be determined
+    pub(crate) fn default_branch(&self) -> Result<Option<String>, CommandOutputError> {
+        let branches = self
+            .readlines("branch", ["--format=%(refname:short)"])?
+            .collect::<HashSet<_>>();
+        for guess in ["main", "master"] {
+            if branches.contains(guess) {
+                return Ok(Some(guess.to_owned()));
+            }
+        }
+        Ok(None)
+    }
 }
 
 #[cfg(test)]

@@ -43,6 +43,9 @@ impl Release {
             .context("Could not determine GitHub repository for local repository")?;
         let is_lib = package.is_lib()?;
         let publish = metadata.publish.as_deref() != Some(&[]);
+        let Some(default_branch) = git.default_branch()? else {
+            bail!("Could not determine repository's default branch");
+        };
 
         // Determine new version
         let new_version = if let Some(v) = self.version {
@@ -270,7 +273,7 @@ impl Release {
         let Some(mut readme) = readme_file.get()? else {
             bail!("README.md suddenly disappeared!");
         };
-        if readme.ensure_changelog_link(&ghrepo) {
+        if readme.ensure_changelog_link(&ghrepo, &default_branch) {
             log::info!("Adding Changelog link to README.md ...");
             readme_file.set(readme)?;
         }
