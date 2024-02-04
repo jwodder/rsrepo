@@ -273,7 +273,7 @@ impl Release {
         let Some(mut readme) = readme_file.get()? else {
             bail!("README.md suddenly disappeared!");
         };
-        if readme.ensure_changelog_link(&ghrepo, &default_branch) {
+        if readme.ensure_changelog_link(&ghrepo, default_branch) {
             log::info!("Adding Changelog link to README.md ...");
             readme_file.set(readme)?;
         }
