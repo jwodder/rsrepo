@@ -3,6 +3,7 @@ v0.3.0 (in development)
 - Switch from nom to winnow
 - `release`: Take name of repository's default branch into account when adding
   changelog link to README
+- `test.yml` template: Improve Dependabot exclusion condition
 
 v0.2.0 (2023-11-22)
 -------------------
