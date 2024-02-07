@@ -1,13 +1,21 @@
 use anyhow::{bail, Context};
-use std::env;
 use std::io::ErrorKind;
 use std::process::{Command, Stdio};
 
 fn main() -> anyhow::Result<()> {
     println!("cargo:rerun-if-changed=.git/HEAD");
     println!("cargo:rerun-if-changed=.git/refs");
-    let manifest_dir = getenv("CARGO_MANIFEST_DIR")?;
     let pkg_version = getenv("CARGO_PKG_VERSION")?;
+    if let Some(commit) = get_commit_hash()? {
+        println!("cargo:rustc-env=VERSION_WITH_GIT={pkg_version} (commit: {commit})");
+    } else {
+        println!("cargo:rustc-env=VERSION_WITH_GIT={pkg_version}");
+    }
+    Ok(())
+}
+
+fn get_commit_hash() -> anyhow::Result<Option<String>> {
+    let manifest_dir = getenv("CARGO_MANIFEST_DIR")?;
     match Command::new("git")
         .arg("rev-parse")
         .arg("--git-dir")
@@ -31,34 +39,22 @@ fn main() -> anyhow::Result<()> {
                     output.status
                 );
             }
-            let mut revision = String::from_utf8(output.stdout)
-                .context("`git rev-parse --short HEAD` output was not UTF-8")?;
-            chomp(&mut revision);
-            println!("cargo:rustc-env=VERSION_WITH_GIT={pkg_version} (commit: {revision})");
+            let revision = std::str::from_utf8(&output.stdout)
+                .context("`git rev-parse --short HEAD` output was not UTF-8")?
+                .trim()
+                .to_owned();
+            Ok(Some(revision))
         }
-        Ok(_) => {
-            // We are not in a Git repository
-            println!("cargo:rustc-env=VERSION_WITH_GIT={pkg_version}");
-        }
+        Ok(_) => Ok(None), // We are not in a Git repository
         Err(e) if e.kind() == ErrorKind::NotFound => {
             // Git doesn't seem to be installed, so assume we're not in a Git
             // repository
-            println!("cargo:rustc-env=VERSION_WITH_GIT={pkg_version}");
+            Ok(None)
         }
-        Err(e) => return Err(e).context("failed to run `git rev-parse --git-dir`"),
+        Err(e) => Err(e).context("failed to run `git rev-parse --git-dir`"),
     }
-    Ok(())
 }
 
 fn getenv(name: &str) -> anyhow::Result<String> {
-    env::var(name).with_context(|| format!("{name} envvar not set"))
-}
-
-fn chomp(s: &mut String) {
-    if s.ends_with('\n') {
-        s.pop();
-        if s.ends_with('\r') {
-            s.pop();
-        }
-    }
+    std::env::var(name).with_context(|| format!("{name} envvar not set"))
 }
