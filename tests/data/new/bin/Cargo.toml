@@ -36,7 +36,6 @@ unsafe_op_in_unsafe_fn = "deny"
 unused_import_braces = "deny"
 unused_lifetimes = "deny"
 unused_qualifications = "deny"
-unused_tuple_struct_fields = "deny"
 
 # Deny various warn-by-default lints:
 ambiguous_glob_reexports = "deny"
