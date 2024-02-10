@@ -6,6 +6,7 @@ v0.3.0 (in development)
 - `test.yml` template:
     - Improve Dependabot exclusion condition
     - Use v4 of Codecov action with token
+- Update lints template in `Cargo.toml` for Rust 1.76
 
 v0.2.0 (2023-11-22)
 -------------------
