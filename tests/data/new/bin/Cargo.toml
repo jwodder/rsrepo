@@ -17,12 +17,12 @@ exclude = ["/.*"]
 
 [lints.rust]
 # Lint groups:
-future_incompatible = "deny"
-rust_2018_idioms = "deny"
-unused = { level = "deny", priority = 0 }
+future_incompatible = { level = "deny", priority = -1 }
+rust_2018_idioms = { level = "deny", priority = -1 }
+unused = { level = "deny", priority = -1 }
 
 # Set a lint in "unused" back to "warn" (to be denied again under CI):
-dead_code = { level = "warn", priority = 5 }
+dead_code = "warn"
 
 # Deny various allow-by-default lints:
 macro_use_extern_crate = "deny"
@@ -96,7 +96,7 @@ while_true = "deny"
 
 [lints.clippy]
 # Deny all warn-by-default lints:
-all = "deny"
+all = { level = "deny", priority = -1 }
 
 # Warn on various allow-by-default lints (denied under CI):
 dbg_macro = "warn"
