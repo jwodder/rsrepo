@@ -8,7 +8,7 @@ use winnow::{
     ascii::{space1, Caseless},
     combinator::alt,
     stream::AsChar,
-    token::{take, take_till},
+    token::{take_till, take_while},
     PResult, Parser,
 };
 
@@ -190,13 +190,12 @@ fn versioned_header(input: &mut &str) -> PResult<ChangelogHeader> {
 }
 
 fn ymd(input: &mut &str) -> PResult<NaiveDate> {
-    let is_int = |s: &str| s.chars().all(|c| c.is_ascii_digit());
     (
-        take(4usize).verify(is_int),
+        take_while(4, AsChar::is_dec_digit),
         '-',
-        take(2usize).verify(is_int),
+        take_while(2, AsChar::is_dec_digit),
         '-',
-        take(2usize).verify(is_int),
+        take_while(2, AsChar::is_dec_digit),
     )
         .recognize()
         .try_map(|s: &str| s.parse::<NaiveDate>())
