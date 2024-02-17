@@ -5,10 +5,10 @@ use std::fmt;
 use std::str::FromStr;
 use thiserror::Error;
 use winnow::{
-    ascii::{digit1, space1, Caseless},
+    ascii::{space1, Caseless},
     combinator::alt,
     stream::AsChar,
-    token::take_till,
+    token::{take, take_till},
     PResult, Parser,
 };
 
@@ -190,8 +190,14 @@ fn versioned_header(input: &mut &str) -> PResult<ChangelogHeader> {
 }
 
 fn ymd(input: &mut &str) -> PResult<NaiveDate> {
-    // TODO: Make this take exactly 4-2-2 digits
-    (digit1, '-', digit1, '-', digit1)
+    let is_int = |s: &str| s.chars().all(|c| c.is_ascii_digit());
+    (
+        take(4usize).verify(is_int),
+        '-',
+        take(2usize).verify(is_int),
+        '-',
+        take(2usize).verify(is_int),
+    )
         .recognize()
         .try_map(|s: &str| s.parse::<NaiveDate>())
         .parse_next(input)
