@@ -14,7 +14,7 @@ use std::io::{BufRead, BufReader, ErrorKind, Write};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
-use toml_edit::Document;
+use toml_edit::DocumentMut;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub(crate) struct Package {
@@ -113,7 +113,7 @@ impl Package {
         }
     }
 
-    pub(crate) fn manifest(&self) -> TextFile<'_, Document> {
+    pub(crate) fn manifest(&self) -> TextFile<'_, DocumentMut> {
         TextFile {
             dirpath: self.path(),
             filename: "Cargo.toml",
