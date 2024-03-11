@@ -16,8 +16,8 @@ anstream = "0.6.13"
 anstyle = "1.0.6"
 anyhow = "1.0.80"
 cargo_metadata = "0.18.1"
-chrono = { version = "0.4.34", default-features = false, features = ["clock", "serde"] }
-clap = { version = "4.5.1", default-features = false, features = ["derive", "error-context", "help", "std", "suggestions", "usage", "wrap_help"] }
+chrono = { version = "0.4.35", default-features = false, features = ["clock", "serde"] }
+clap = { version = "4.5.2", default-features = false, features = ["derive", "error-context", "help", "std", "suggestions", "usage", "wrap_help"] }
 fern = "0.6.2"
 fs-err = "2.11.0"
 gh-token = "0.1.7"
@@ -39,7 +39,7 @@ shell-words = "1.1.0"
 tempfile = "3.10.1"
 thiserror = "1.0.57"
 tinytemplate = "1.2.1"
-toml = { version = "0.8.10", default-features = false, features = ["parse"] }
+toml = { version = "0.8.11", default-features = false, features = ["parse"] }
 toml_edit = "0.22.6"
 ureq = { version = "2.9.6", features = ["json"] }
 url = "2.5.0"
