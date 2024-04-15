@@ -14,9 +14,9 @@ publish = false
 [dependencies]
 anstream = "0.6.13"
 anstyle = "1.0.6"
-anyhow = "1.0.81"
+anyhow = "1.0.82"
 cargo_metadata = "0.18.1"
-chrono = { version = "0.4.37", default-features = false, features = ["clock", "serde"] }
+chrono = { version = "0.4.38", default-features = false, features = ["clock", "serde"] }
 clap = { version = "4.5.4", default-features = false, features = ["derive", "error-context", "help", "std", "suggestions", "usage", "wrap_help"] }
 fern = "0.6.2"
 fs-err = "2.11.0"
@@ -44,18 +44,18 @@ toml_edit = "0.22.9"
 ureq = { version = "2.9.6", features = ["json"] }
 url = "2.5.0"
 which = "6.0.1"
-winnow = "0.6.5"
+winnow = "0.6.6"
 
 [dev-dependencies]
 assert_cmd = "2.0.14"
 assert_fs = "1.1.1"
 predicates = { version = "3.1.0", default-features = false }
-rstest = { version = "0.18.2", default-features = false }
+rstest = { version = "0.19.0", default-features = false }
 similar = "2.5.0"
 tempfile = "3.10.1"
 
 [build-dependencies]
-anyhow = "1.0.81"
+anyhow = "1.0.82"
 
 [profile.release]
 lto = true
