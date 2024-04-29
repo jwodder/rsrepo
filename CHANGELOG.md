@@ -10,6 +10,7 @@ v0.3.0 (in development)
     - Update lints for Rust 1.76
     - Add empty `[dev-dependencies]` table after `[dependencies]` and above
       `[lints.*]`
+    - Set `lints.rust.unused_variables = "warn"`
 
 v0.2.0 (2023-11-22)
 -------------------

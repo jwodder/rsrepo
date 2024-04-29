@@ -22,8 +22,9 @@ future_incompatible = { level = "deny", priority = -1 }
 rust_2018_idioms = { level = "deny", priority = -1 }
 unused = { level = "deny", priority = -1 }
 
-# Set a lint in "unused" back to "warn" (to be denied again under CI):
+# Set some lints in "unused" back to "warn" (to be denied again under CI):
 dead_code = "warn"
+unused_variables = "warn"
 
 # Deny various allow-by-default lints:
 macro_use_extern_crate = "deny"
