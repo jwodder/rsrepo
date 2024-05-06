@@ -8,7 +8,6 @@ updates:
       interval: monthly
     commit-message:
       prefix: "[cargo]"
-      include: scope
     groups:
       deps:
         patterns:
@@ -23,7 +22,6 @@ updates:
       interval: weekly
     commit-message:
       prefix: "[gh-actions]"
-      include: scope
     labels:
       - dependencies
       - d:github-actions
