@@ -11,6 +11,8 @@ v0.3.0 (in development)
     - Add empty `[dev-dependencies]` table after `[dependencies]` and above
       `[lints.*]`
     - Set `lints.rust.unused_variables = "warn"`
+- `.github/dependabot.yml` template: Change cargo update interval from weekly
+  to monthly
 
 v0.2.0 (2023-11-22)
 -------------------
