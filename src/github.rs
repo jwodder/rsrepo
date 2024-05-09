@@ -154,7 +154,7 @@ impl GitHub {
                 encrypted_value: encrypt_secret(&pubkey.key, value)?,
                 key_id: pubkey.key_id,
             };
-            self.put(&format!("{secrets}/{name}"), payload)?;
+            self.put::<_, serde::de::IgnoredAny>(&format!("{secrets}/{name}"), payload)?;
         }
         Ok(())
     }
