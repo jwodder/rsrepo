@@ -1,5 +1,7 @@
 use crate::http_util::StatusError;
 use anyhow::Context;
+use base64::{engine::general_purpose::STANDARD, Engine};
+use dryoc::{constants::CRYPTO_BOX_PUBLICKEYBYTES, dryocbox::VecBox};
 use ghrepo::GHRepo;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::borrow::Cow;
@@ -133,6 +135,27 @@ impl GitHub {
             names: topics.into_iter().collect(),
         };
         let _: TopicsPayload = self.put(&format!("{}/topics", repo.api_url()), body)?;
+        Ok(())
+    }
+
+    pub(crate) fn set_actions_secret<R>(
+        &self,
+        repo: &R,
+        name: &str,
+        value: &str,
+    ) -> anyhow::Result<()>
+    where
+        for<'a> R: RepositoryEndpoint<'a>,
+    {
+        for scope in ["actions", "dependabot"] {
+            let secrets = format!("{}/{}/secrets", repo.api_url(), scope);
+            let pubkey = self.get::<PublicKey>(&format!("{secrets}/public-key"))?;
+            let payload = CreateSecret {
+                encrypted_value: encrypt_secret(&pubkey.key, value)?,
+                key_id: pubkey.key_id,
+            };
+            self.put(&format!("{secrets}/{name}"), payload)?;
+        }
         Ok(())
     }
 }
@@ -308,6 +331,28 @@ pub(crate) struct Release {
     //pub(crate) published_at: DateTime<FixedOffset>,
     //pub(crate) author: SimpleUser,
     //pub(crate) assets: Vec<ReleaseAsset>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+struct PublicKey {
+    key_id: String,
+    key: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+struct CreateSecret {
+    encrypted_value: String,
+    key_id: String,
+}
+
+fn encrypt_secret(public_key: &str, secret_value: &str) -> anyhow::Result<String> {
+    let mut pkey = [0; CRYPTO_BOX_PUBLICKEYBYTES];
+    if STANDARD.decode_slice(public_key, &mut pkey) != Ok(CRYPTO_BOX_PUBLICKEYBYTES) {
+        anyhow::bail!("decoded public key not valid length");
+    };
+    let sealed_box =
+        VecBox::seal(secret_value.as_bytes(), &pkey).context("failed to encrypt secret value")?;
+    Ok(STANDARD.encode(sealed_box.to_vec()))
 }
 
 #[cfg(test)]

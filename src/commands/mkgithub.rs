@@ -10,6 +10,14 @@ use std::borrow::Cow;
 /// Create a GitHub repository for the project and push
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
 pub(crate) struct Mkgithub {
+    /// Value for `CODECOV_TOKEN` actions secret
+    #[arg(long, value_name = "SECRET", env = "CODECOV_TOKEN")]
+    codecov_token: Option<String>,
+
+    /// Do not set `CODECOV_TOKEN` actions secret
+    #[arg(long)]
+    no_codecov_token: bool,
+
     /// Make the new repository private
     #[arg(short = 'P', long)]
     private: bool,
@@ -104,6 +112,23 @@ impl Mkgithub {
                 "Update a GitHub Actions action dependency",
             ),
         )?;
+
+        if !self.no_codecov_token {
+            let token = match self.codecov_token.as_deref() {
+                Some(t) => t,
+                None => provider
+                    .config()?
+                    .codecov_token
+                    .as_deref()
+                    .unwrap_or_default(),
+            };
+            if !token.is_empty() {
+                log::info!("Setting CODECOV_TOKEN secret");
+                github.set_actions_secret(&repo, "CODECOV_TOKEN", token)?;
+            } else {
+                log::warn!("CODECOV_TOKEN value not set; not setting secret");
+            }
+        }
 
         if metadata.repository.is_none() {
             log::info!("Setting 'package.repository' field in Cargo.toml ...");

@@ -10,6 +10,7 @@ pub(crate) struct Config {
     pub(crate) author: String,
     pub(crate) author_email: String,
     pub(crate) github_user: Option<String>,
+    pub(crate) codecov_token: Option<String>,
 }
 
 impl Config {

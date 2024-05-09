@@ -74,17 +74,22 @@ Configuration File
 The configuration file (located at `~/.config/rsrepo.toml` by default) is a
 [TOML](https://toml.io) file with the following fields:
 
-- `author` — The author name to use when `rsrepo new` generates `Cargo.toml`
-  and `LICENSE` files
+- `author` *(required)* — The author name to use when `rsrepo new` generates
+  `Cargo.toml` and `LICENSE` files
 
-- `author-email` — The author e-mail to use when `rsrepo new` generates a
-  `Cargo.toml` file; this may contain a placeholder of the form `{package}`,
-  which will be replaced with the name of the package being initialized.
+- `author-email` *(required)* — The author e-mail to use when `rsrepo new`
+  generates a `Cargo.toml` file; this may contain a placeholder of the form
+  `{package}`, which will be replaced with the name of the package being
+  initialized.
 
 - `github-user` — The GitHub username to use when `rsrepo new` generates
   `Cargo.toml` and `README.md` files and when `rsrepo mkgithub` creates a
   repository.  If this is not set, the value is fetched via the GitHub API when
   needed.
+
+- `codecov-token` — Default value that the `rsrepo mkgithub` command should use
+  for the `CODECOV_TOKEN` secret when no value is specified on the command line
+  or in the environment
 
 `rsrepo new`
 ------------
@@ -152,7 +157,8 @@ package's keywords are used as the repository's topics, along with the "`rust`"
 topic; in addition, if the package's `README.md` file has a "WIP"
 [repostatus.org](https://www.repostatus.org) badge, the "`work-in-progress`"
 topic is added.  The custom labels used by the `dependabot.yml` file generated
-by `rsrepo new` are created in the repository as well.
+by `rsrepo new` are created in the repository as well, and a `CODECOV_TOKEN`
+secret is set for GitHub Actions (including for Dependabot).
 
 The bare name of the repository to create (e.g. `hello-world`, not
 `octocat/hello-world` or `https://github.com/octocat/hello-world`) can
@@ -163,6 +169,15 @@ When parsing the `package.repository` field, it is an error if the repository
 owner given in the URL differs from the `github-user` configuration value.
 
 ### Options
+
+- `--codecov-token <secret>` — Specify the value to use for the `CODECOV_TOKEN`
+  secret.  This option can be set via the `CODECOV_TOKEN` environment variable,
+  and a default value can be set via the configuration file.
+
+  If no value is not set and `--no-codecov-token` is not given, a warning is
+  emitted.
+
+- `--no-codecov-token` — Do not set the `CODECOV_TOKEN` secret
 
 - `-P`, `--private` — Make the new repository private
 

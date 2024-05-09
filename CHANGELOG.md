@@ -3,6 +3,7 @@ v0.3.0 (in development)
 - Switch from nom to winnow
 - `release`: Take name of repository's default branch into account when adding
   changelog link to README
+- `mkgithub`: Set `CODECOV_TOKEN` secret for newly-created repositories
 - `test.yml` template:
     - Improve Dependabot exclusion condition
     - Use v4 of Codecov action with token
