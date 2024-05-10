@@ -11,7 +11,12 @@ use std::borrow::Cow;
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
 pub(crate) struct Mkgithub {
     /// Value for `CODECOV_TOKEN` actions secret
-    #[arg(long, value_name = "SECRET", env = "CODECOV_TOKEN")]
+    #[arg(
+        long,
+        value_name = "SECRET",
+        env = "CODECOV_TOKEN",
+        hide_env_values = true
+    )]
     codecov_token: Option<String>,
 
     /// Do not set `CODECOV_TOKEN` actions secret
