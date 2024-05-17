@@ -1,5 +1,5 @@
-v0.3.0 (in development)
------------------------
+v0.3.0 (2024-05-17)
+-------------------
 - Switch from nom to winnow
 - `release`: Take name of repository's default branch into account when adding
   changelog link to README

@@ -901,7 +901,7 @@ dependencies = [
 
 [[package]]
 name = "rsrepo"
-version = "0.3.0-dev"
+version = "0.3.0"
 dependencies = [
  "anstream",
  "anstyle",
