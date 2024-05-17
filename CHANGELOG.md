@@ -1,3 +1,8 @@
+v0.4.0 (in development)
+-----------------------
+- Replace Dependabot with Renovate
+- Use `cargo-minimal-versions` in `test.yml`
+
 v0.3.0 (2024-05-17)
 -------------------
 - Switch from nom to winnow
