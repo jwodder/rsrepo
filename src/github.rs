@@ -147,15 +147,13 @@ impl GitHub {
     where
         for<'a> R: RepositoryEndpoint<'a>,
     {
-        for scope in ["actions", "dependabot"] {
-            let secrets = format!("{}/{}/secrets", repo.api_url(), scope);
-            let pubkey = self.get::<PublicKey>(&format!("{secrets}/public-key"))?;
-            let payload = CreateSecret {
-                encrypted_value: encrypt_secret(&pubkey.key, value)?,
-                key_id: pubkey.key_id,
-            };
-            self.put::<_, serde::de::IgnoredAny>(&format!("{secrets}/{name}"), payload)?;
-        }
+        let secrets = format!("{}/actions/secrets", repo.api_url());
+        let pubkey = self.get::<PublicKey>(&format!("{secrets}/public-key"))?;
+        let payload = CreateSecret {
+            encrypted_value: encrypt_secret(&pubkey.key, value)?,
+            key_id: pubkey.key_id,
+        };
+        self.put::<_, serde::de::IgnoredAny>(&format!("{secrets}/{name}"), payload)?;
         Ok(())
     }
 }
