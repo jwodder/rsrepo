@@ -1,4 +1,4 @@
-use crate::github::{CreateRepoBody, Label, Topic};
+use crate::github::{CreateRepoBody, Label, RequiredStatusChecks, SetBranchProtection, Topic};
 use crate::package::Package;
 use crate::provider::Provider;
 use crate::readme::Repostatus;
@@ -59,16 +59,13 @@ impl Mkgithub {
             }
         };
 
-        let mut new_repo = CreateRepoBody {
+        let repo = github.create_repository(CreateRepoBody {
             name,
-            description: None,
+            description: metadata.description,
             private: Some(self.private),
             delete_branch_on_merge: Some(true),
-        };
-        if let d @ Some(_) = metadata.description {
-            new_repo.description = d;
-        }
-        let repo = github.create_repository(new_repo)?;
+            allow_auto_merge: Some(true),
+        })?;
         log::info!("Created GitHub repository {}", repo.html_url);
 
         log::info!("Setting remote and pushing");
@@ -96,7 +93,41 @@ impl Mkgithub {
         );
         github.set_topics(&repo, topics)?;
 
-        log::info!("Creating Dependabot labels ...");
+        log::info!("Setting protection rules for default branch ...");
+        let mut contexts = vec![
+            // This needs to be kept in sync with the tests in test.yml.tt:
+            "test (ubuntu-latest, msrv)",
+            "test (ubuntu-latest, stable)",
+            "test (ubuntu-latest, beta)",
+            "test (ubuntu-latest, nightly)",
+            "test (macos-latest, stable)",
+            "test (windows-latest, stable)",
+            "minimal-versions",
+            "lint",
+            "coverage",
+        ];
+        if package.is_lib()? {
+            contexts.push("docs");
+        }
+        let Some(default_branch) = git.default_branch()? else {
+            bail!("Could not determine repository's default branch");
+        };
+        github.set_branch_protection(
+            &repo,
+            default_branch,
+            SetBranchProtection {
+                required_status_checks: Some(RequiredStatusChecks {
+                    strict: false,
+                    contexts,
+                }),
+                allow_force_pushes: Some(true),
+                enforce_admins: Some(false),
+                required_pull_request_reviews: None,
+                restrictions: None,
+            },
+        )?;
+
+        log::info!("Creating dependency-update PR labels ...");
         github.create_label(
             &repo,
             Label::new(
