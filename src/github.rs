@@ -147,15 +147,27 @@ impl GitHub {
     where
         for<'a> R: RepositoryEndpoint<'a>,
     {
-        for scope in ["actions", "dependabot"] {
-            let secrets = format!("{}/{}/secrets", repo.api_url(), scope);
-            let pubkey = self.get::<PublicKey>(&format!("{secrets}/public-key"))?;
-            let payload = CreateSecret {
-                encrypted_value: encrypt_secret(&pubkey.key, value)?,
-                key_id: pubkey.key_id,
-            };
-            self.put::<_, serde::de::IgnoredAny>(&format!("{secrets}/{name}"), payload)?;
-        }
+        let secrets = format!("{}/actions/secrets", repo.api_url());
+        let pubkey = self.get::<PublicKey>(&format!("{secrets}/public-key"))?;
+        let payload = CreateSecret {
+            encrypted_value: encrypt_secret(&pubkey.key, value)?,
+            key_id: pubkey.key_id,
+        };
+        self.put::<_, serde::de::IgnoredAny>(&format!("{secrets}/{name}"), payload)?;
+        Ok(())
+    }
+
+    pub(crate) fn set_branch_protection<R>(
+        &self,
+        repo: &R,
+        branch: &str,
+        body: SetBranchProtection,
+    ) -> anyhow::Result<()>
+    where
+        for<'a> R: RepositoryEndpoint<'a>,
+    {
+        let url = format!("{}/branches/{}/protection", repo.api_url(), branch);
+        self.put::<_, serde::de::IgnoredAny>(&url, body)?;
         Ok(())
     }
 }
@@ -181,6 +193,8 @@ pub(crate) struct CreateRepoBody {
     pub(crate) private: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) delete_branch_on_merge: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) allow_auto_merge: Option<bool>,
 }
 
 pub(crate) trait RepositoryEndpoint<'a> {
@@ -331,6 +345,21 @@ pub(crate) struct Release {
     //pub(crate) published_at: DateTime<FixedOffset>,
     //pub(crate) author: SimpleUser,
     //pub(crate) assets: Vec<ReleaseAsset>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub(crate) struct SetBranchProtection {
+    pub(crate) required_status_checks: Option<RequiredStatusChecks>,
+    pub(crate) allow_force_pushes: Option<bool>,
+    pub(crate) enforce_admins: Option<bool>,
+    pub(crate) required_pull_request_reviews: Option<()>,
+    pub(crate) restrictions: Option<()>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub(crate) struct RequiredStatusChecks {
+    pub(crate) strict: bool,
+    pub(crate) contexts: Vec<&'static str>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]

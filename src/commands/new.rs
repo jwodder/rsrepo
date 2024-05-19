@@ -110,7 +110,7 @@ impl New {
             "README.md",
             "clippy.toml",
             ".pre-commit-config.yaml",
-            ".github/dependabot.yml",
+            ".github/renovate.json5",
             ".github/workflows/test.yml",
         ] {
             log::info!("Rendering {template} ...");
