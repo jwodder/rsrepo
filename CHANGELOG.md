@@ -4,7 +4,9 @@ v0.4.0 (in development)
 - Use `cargo-minimal-versions` in `test.yml`
 - `mkgithub` now additionally enables PR automerging and requiring tests to
   pass before merging
-- `Cargo.toml` template: Remove `pointer_structural_match` lint
+- `Cargo.toml` template:
+    - Remove `pointer_structural_match` lint
+    - Update lints for Rust 1.80
 
 v0.3.0 (2024-05-17)
 -------------------
