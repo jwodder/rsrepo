@@ -7,6 +7,7 @@ v0.4.0 (in development)
 - `Cargo.toml` template:
     - Remove `pointer_structural_match` lint
     - Update lints for Rust 1.80
+    - Set rustc's `unknown_lints` lint back to "warn" level
 
 v0.3.0 (2024-05-17)
 -------------------
