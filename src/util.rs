@@ -201,7 +201,7 @@ pub(crate) struct ParseCopyrightError;
 fn copyright(input: &mut &str) -> PResult<CopyrightLine> {
     seq! {
         CopyrightLine {
-            prefix: (space0, "Copyright", space1, opt(("(c)", space1))).recognize().map(String::from),
+            prefix: (space0, "Copyright", space1, opt(("(c)", space1))).take().map(String::from),
             years: separated(1.., year_range, (space0, ',', space0)).map(|ranges: Vec<RangeInclusive<i32>>| ranges.into_iter().collect()),
             _: space1,
             authors: rest.map(String::from),

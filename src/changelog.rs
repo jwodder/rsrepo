@@ -197,7 +197,7 @@ fn ymd(input: &mut &str) -> PResult<NaiveDate> {
         '-',
         take_while(2, AsChar::is_dec_digit),
     )
-        .recognize()
+        .take()
         .try_map(|s: &str| s.parse::<NaiveDate>())
         .parse_next(input)
 }
