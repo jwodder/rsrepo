@@ -45,7 +45,7 @@ toml = { version = "0.8.12", default-features = false, features = ["parse"] }
 toml_edit = "0.22.12"
 ureq = { version = "2.9.7", features = ["json"] }
 url = "2.5.0"
-which = "6.0.1"
+which = "7.0.0"
 winnow = "0.6.15"
 
 [dev-dependencies]
