@@ -8,6 +8,7 @@ v0.4.0 (in development)
     - Remove `pointer_structural_match` lint
     - Update lints for Rust 1.80
     - Set rustc's `unknown_lints` lint back to "warn" level
+- `test.yml` template: Use v5 of Codecov action
 
 v0.3.0 (2024-05-17)
 -------------------
