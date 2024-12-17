@@ -73,6 +73,10 @@ impl Package {
         &self.metadata
     }
 
+    pub(crate) fn name(&self) -> &str {
+        &self.metadata.name
+    }
+
     pub(crate) fn readme(&self) -> TextFile<'_, Readme> {
         TextFile {
             dirpath: self.path(),
@@ -121,7 +125,7 @@ impl Package {
             LoggedCommand::new("cargo")
                 .arg("update")
                 .arg("-p")
-                .arg(&self.metadata.name)
+                .arg(self.name())
                 .arg("--precise")
                 .arg(vs)
                 .current_dir(self.path())
