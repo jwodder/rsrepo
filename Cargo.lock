@@ -1045,7 +1045,7 @@ dependencies = [
 
 [[package]]
 name = "rsrepo"
-version = "0.4.0-dev"
+version = "0.4.0"
 dependencies = [
  "anstream",
  "anstyle",

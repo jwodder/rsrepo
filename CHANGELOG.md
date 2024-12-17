@@ -1,5 +1,5 @@
-v0.4.0 (in development)
------------------------
+v0.4.0 (2024-12-17)
+-------------------
 - Replace Dependabot with Renovate
 - Use `cargo-minimal-versions` in `test.yml`
 - `mkgithub` now additionally enables PR automerging and requiring tests to
