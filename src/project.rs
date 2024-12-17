@@ -39,6 +39,18 @@ impl Project {
         })
     }
 
+    pub(crate) fn manifest_path(&self) -> &Path {
+        &self.manifest_path
+    }
+
+    pub(crate) fn project_type(&self) -> ProjectType {
+        self.project_type
+    }
+
+    pub(crate) fn repository(&self) -> Option<&str> {
+        self.repository.as_deref()
+    }
+
     fn packages(&self) -> anyhow::Result<Vec<CargoPackage>> {
         Ok(MetadataCommand::new()
             .manifest_path(&self.manifest_path)
@@ -88,11 +100,9 @@ impl Project {
         Ok(Some(Package::new(self.manifest_path.clone(), metadata)))
     }
 
-    /*
-        pub(crate) fn is_root_package(&self, pkg: &Package) -> bool {
-            self.manifest_path == pkg.manifest_path()
-        }
-    */
+    pub(crate) fn is_root_package(&self, pkg: &Package) -> bool {
+        self.manifest_path == pkg.manifest_path()
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -102,13 +112,11 @@ pub(crate) enum ProjectType {
     VirtualWorkspace,
 }
 
-/*
 impl ProjectType {
     pub(crate) fn is_workspace(&self) -> bool {
         matches!(self, ProjectType::Workspace | ProjectType::VirtualWorkspace)
     }
 }
-*/
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(try_from = "RawCargo")]
