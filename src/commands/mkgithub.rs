@@ -107,7 +107,7 @@ impl Mkgithub {
             "lint",
             "coverage",
         ];
-        if package.is_lib()? {
+        if package.is_lib() {
             contexts.push("docs");
         }
         let Some(default_branch) = git.default_branch()? else {

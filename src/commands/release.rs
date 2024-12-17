@@ -42,7 +42,7 @@ impl Release {
         let ghrepo = LocalRepo::new(package.path())
             .github_remote("origin")
             .context("Could not determine GitHub repository for local repository")?;
-        let is_lib = package.is_lib()?;
+        let is_lib = package.is_lib();
         let publish = metadata.publish.as_deref() != Some(&[]);
         let Some(default_branch) = git.default_branch()? else {
             bail!("Could not determine repository's default branch");

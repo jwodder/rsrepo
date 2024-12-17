@@ -4,7 +4,7 @@ use crate::git::Git;
 use crate::readme::Readme;
 use crate::util::CopyrightLine;
 use anyhow::{bail, Context};
-use cargo_metadata::Package as CargoPackage;
+use cargo_metadata::{Package as CargoPackage, TargetKind};
 use fs_err::{read_to_string, File};
 use in_place::InPlace;
 use semver::Version;
@@ -37,24 +37,20 @@ impl Package {
         &self.manifest_path
     }
 
-    pub(crate) fn is_bin(&self) -> anyhow::Result<bool> {
-        let srcdir = self.path().join("src");
-        Ok(srcdir
-            .join("main.rs")
-            .try_exists()
-            .context("could not determine whether src/main.rs exists")?
-            || srcdir
-                .join("bin")
-                .try_exists()
-                .context("could not determine whether src/bin/ exists")?)
+    pub(crate) fn is_bin(&self) -> bool {
+        self.metadata
+            .targets
+            .iter()
+            .flat_map(|t| t.kind.iter())
+            .any(|k| k == &TargetKind::Bin)
     }
 
-    pub(crate) fn is_lib(&self) -> anyhow::Result<bool> {
-        let srcdir = self.path().join("src");
-        srcdir
-            .join("lib.rs")
-            .try_exists()
-            .context("could not determine whether src/main.rs exists")
+    pub(crate) fn is_lib(&self) -> bool {
+        self.metadata
+            .targets
+            .iter()
+            .flat_map(|t| t.kind.iter())
+            .any(|k| k == &TargetKind::Lib)
     }
 
     pub(crate) fn latest_tag_version(&self) -> anyhow::Result<Option<Version>> {
@@ -121,7 +117,7 @@ impl Package {
     pub(crate) fn set_cargo_version(&self, v: Version) -> anyhow::Result<()> {
         let vs = v.to_string();
         self.set_package_field("version", &vs)?;
-        if self.is_bin()? && self.path().join("Cargo.lock").exists() {
+        if self.is_bin() && self.path().join("Cargo.lock").exists() {
             LoggedCommand::new("cargo")
                 .arg("update")
                 .arg("-p")
