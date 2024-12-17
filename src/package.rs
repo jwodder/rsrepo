@@ -18,13 +18,15 @@ use toml_edit::DocumentMut;
 pub(crate) struct Package {
     manifest_path: PathBuf,
     metadata: CargoPackage,
+    is_root: bool,
 }
 
 impl Package {
-    pub(crate) fn new(manifest_path: PathBuf, metadata: CargoPackage) -> Package {
+    pub(crate) fn new(manifest_path: PathBuf, metadata: CargoPackage, is_root: bool) -> Package {
         Package {
             manifest_path,
             metadata,
+            is_root,
         }
     }
 
@@ -84,6 +86,10 @@ impl Package {
 
     pub(crate) fn name(&self) -> &str {
         &self.metadata.name
+    }
+
+    pub(crate) fn is_root_package(&self) -> bool {
+        self.is_root
     }
 
     pub(crate) fn readme(&self) -> TextFile<'_, Readme> {

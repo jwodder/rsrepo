@@ -51,7 +51,7 @@ impl Project {
         self.repository.as_deref()
     }
 
-    fn packages(&self) -> anyhow::Result<Vec<CargoPackage>> {
+    fn package_metadata(&self) -> anyhow::Result<Vec<CargoPackage>> {
         Ok(MetadataCommand::new()
             .manifest_path(&self.manifest_path)
             .no_deps()
@@ -63,16 +63,29 @@ impl Project {
     pub(crate) fn current_package(&self) -> anyhow::Result<Option<Package>> {
         let manifest_path = locate_project(false)?;
         let mut matches = self
-            .packages()?
+            .package_metadata()?
             .into_iter()
             .filter(|p| p.manifest_path == manifest_path)
             .collect::<Vec<_>>();
         if matches.len() == 1 {
             let metadata = matches.pop().expect("one-length Vec should not be empty");
-            Ok(Some(Package::new(manifest_path, metadata)))
+            let is_root = manifest_path == self.manifest_path;
+            Ok(Some(Package::new(manifest_path, metadata, is_root)))
         } else {
             Ok(None)
         }
+    }
+
+    pub(crate) fn packages(&self) -> anyhow::Result<Vec<Package>> {
+        Ok(self
+            .package_metadata()?
+            .into_iter()
+            .map(|md| {
+                let manifest_path = md.manifest_path.clone().into_std_path_buf();
+                let is_root = manifest_path == self.manifest_path;
+                Package::new(manifest_path, md, is_root)
+            })
+            .collect())
     }
 
     /*
@@ -88,7 +101,7 @@ impl Project {
             return Ok(None);
         }
         let mut matches = self
-            .packages()?
+            .package_metadata()?
             .into_iter()
             .filter(|p| p.manifest_path == self.manifest_path)
             .collect::<Vec<_>>();
@@ -97,11 +110,11 @@ impl Project {
         } else {
             anyhow::bail!("failed to find root package in workspace");
         };
-        Ok(Some(Package::new(self.manifest_path.clone(), metadata)))
-    }
-
-    pub(crate) fn is_root_package(&self, pkg: &Package) -> bool {
-        self.manifest_path == pkg.manifest_path()
+        Ok(Some(Package::new(
+            self.manifest_path.clone(),
+            metadata,
+            true,
+        )))
     }
 }
 
