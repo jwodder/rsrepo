@@ -5,8 +5,10 @@ use clap::Args;
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 
+/// Display details about current project/package
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
 pub(crate) struct Inspect {
+    /// List all packages in the workspace
     #[arg(long)]
     workspace: bool,
 }

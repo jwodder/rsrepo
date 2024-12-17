@@ -1,3 +1,7 @@
+v0.5.0 (in development)
+-----------------------
+- Added `inspect` command
+
 v0.4.0 (2024-12-17)
 -------------------
 - Replace Dependabot with Renovate

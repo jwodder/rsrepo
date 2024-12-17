@@ -137,6 +137,18 @@ The following files are created in the directory:
 - `--repo-name <name>` — Specify the GitHub repository name (sans owner) to use
   in URLs in generated files; defaults to the package name
 
+`rsrepo inspect`
+----------------
+
+    rsrepo [<global options>] inspect [<options>]
+
+Emit a JSON object describing the project and the workspace package (if any) in
+the current directory.
+
+### Options
+
+- `--workspace` — Also include details on all packages in the workspace
+
 `rsrepo mkgithub`
 -----------------
 
