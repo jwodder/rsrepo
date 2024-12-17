@@ -1,7 +1,7 @@
 use crate::changelog::{Changelog, ChangelogHeader, ChangelogSection};
 use crate::cmd::LoggedCommand;
 use crate::github::{CreateRelease, Topic};
-use crate::project::Project;
+use crate::package::Package;
 use crate::provider::Provider;
 use crate::readme::{Badge, Repostatus};
 use crate::util::{bump_version, move_dirtree_into, this_year, Bump};
@@ -31,8 +31,7 @@ pub(crate) struct Release {
 impl Release {
     pub(crate) fn run(self, provider: Provider) -> anyhow::Result<()> {
         let github = provider.github()?;
-        let project = Project::locate()?;
-        let package = project.current_package()?;
+        let package = Package::locate()?;
         let git = package.git();
         let readme_file = package.readme();
         let chlog_file = package.changelog();

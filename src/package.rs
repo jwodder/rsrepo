@@ -1,6 +1,7 @@
 use crate::changelog::Changelog;
 use crate::cmd::LoggedCommand;
 use crate::git::Git;
+use crate::project::Project;
 use crate::readme::Readme;
 use crate::util::CopyrightLine;
 use anyhow::{bail, Context};
@@ -25,6 +26,14 @@ impl Package {
             manifest_path,
             metadata,
         }
+    }
+
+    pub(crate) fn locate() -> anyhow::Result<Package> {
+        let project = Project::locate()?;
+        let Some(package) = project.current_package()? else {
+            bail!("no package in current directory");
+        };
+        Ok(package)
     }
 
     pub(crate) fn path(&self) -> &Path {

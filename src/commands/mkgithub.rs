@@ -1,5 +1,5 @@
 use crate::github::{CreateRepoBody, Label, RequiredStatusChecks, SetBranchProtection, Topic};
-use crate::project::Project;
+use crate::package::Package;
 use crate::provider::Provider;
 use crate::readme::Repostatus;
 use anyhow::bail;
@@ -38,8 +38,7 @@ pub(crate) struct Mkgithub {
 impl Mkgithub {
     pub(crate) fn run(self, provider: Provider) -> anyhow::Result<()> {
         let github = provider.github()?;
-        let project = Project::locate()?;
-        let package = project.current_package()?;
+        let package = Package::locate()?;
         let metadata = package.metadata();
         let name = if let Some(s) = self.repo_name {
             s

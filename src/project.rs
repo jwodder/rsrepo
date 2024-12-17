@@ -48,19 +48,19 @@ impl Project {
             .packages)
     }
 
-    pub(crate) fn current_package(&self) -> anyhow::Result<Package> {
+    pub(crate) fn current_package(&self) -> anyhow::Result<Option<Package>> {
         let manifest_path = locate_project(false)?;
         let mut matches = self
             .packages()?
             .into_iter()
             .filter(|p| p.manifest_path == manifest_path)
             .collect::<Vec<_>>();
-        let metadata = if matches.len() == 1 {
-            matches.pop().expect("one-length Vec should not be empty")
+        if matches.len() == 1 {
+            let metadata = matches.pop().expect("one-length Vec should not be empty");
+            Ok(Some(Package::new(manifest_path, metadata)))
         } else {
-            anyhow::bail!("failed to find package in workspace for current directory");
-        };
-        Ok(Package::new(manifest_path, metadata))
+            Ok(None)
+        }
     }
 
     /*
