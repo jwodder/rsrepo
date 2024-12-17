@@ -1,5 +1,5 @@
 use crate::github::{CreateRepoBody, Label, RequiredStatusChecks, SetBranchProtection, Topic};
-use crate::package::Package;
+use crate::project::Project;
 use crate::provider::Provider;
 use crate::readme::Repostatus;
 use anyhow::bail;
@@ -38,8 +38,9 @@ pub(crate) struct Mkgithub {
 impl Mkgithub {
     pub(crate) fn run(self, provider: Provider) -> anyhow::Result<()> {
         let github = provider.github()?;
-        let package = Package::locate()?;
-        let metadata = package.metadata()?;
+        let project = Project::locate()?;
+        let package = project.current_package()?;
+        let metadata = package.metadata();
         let name = if let Some(s) = self.repo_name {
             s
         } else {
@@ -55,13 +56,13 @@ impl Mkgithub {
                     r.name().to_string()
                 }
                 Some(Err(_)) => bail!("Package repository URL does not point to GitHub"),
-                None => metadata.name,
+                None => metadata.name.clone(),
             }
         };
 
         let repo = github.create_repository(CreateRepoBody {
             name,
-            description: metadata.description,
+            description: metadata.description.clone(),
             private: Some(self.private),
             delete_branch_on_merge: Some(true),
             allow_auto_merge: Some(true),
@@ -77,8 +78,8 @@ impl Mkgithub {
         git.run("push", ["-u", "origin", "refs/heads/*", "refs/tags/*"])?;
 
         let mut topics = Vec::from([Topic::new("rust")]);
-        for keyword in metadata.keywords {
-            let tp = Topic::new(&keyword);
+        for keyword in &metadata.keywords {
+            let tp = Topic::new(keyword);
             if tp != keyword {
                 log::warn!("Keyword {keyword:?} sanitized to \"{tp}\" for use as GitHub topic");
             }

@@ -6,6 +6,7 @@ mod git;
 mod github;
 mod http_util;
 mod package;
+mod project;
 mod provider;
 mod readme;
 mod tmpltr;

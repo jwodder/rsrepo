@@ -1,4 +1,4 @@
-use crate::package::Package;
+use crate::project::Project;
 use crate::provider::Provider;
 use crate::util::RustVersion;
 use clap::Args;
@@ -14,7 +14,8 @@ pub(crate) struct SetMsrv {
 
 impl SetMsrv {
     pub(crate) fn run(self, _provider: Provider) -> anyhow::Result<()> {
-        let package = Package::locate()?;
+        let project = Project::locate()?;
+        let package = project.current_package()?;
 
         log::info!("Updating Cargo.toml ...");
         package.set_package_field("rust-version", self.msrv.to_string())?;

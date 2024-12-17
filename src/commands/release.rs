@@ -1,7 +1,7 @@
 use crate::changelog::{Changelog, ChangelogHeader, ChangelogSection};
 use crate::cmd::LoggedCommand;
 use crate::github::{CreateRelease, Topic};
-use crate::package::Package;
+use crate::project::Project;
 use crate::provider::Provider;
 use crate::readme::{Badge, Repostatus};
 use crate::util::{bump_version, move_dirtree_into, this_year, Bump};
@@ -31,13 +31,14 @@ pub(crate) struct Release {
 impl Release {
     pub(crate) fn run(self, provider: Provider) -> anyhow::Result<()> {
         let github = provider.github()?;
-        let package = Package::locate()?;
+        let project = Project::locate()?;
+        let package = project.current_package()?;
         let git = package.git();
         let readme_file = package.readme();
         let chlog_file = package.changelog();
 
-        let metadata = package.metadata()?;
-        let old_version = metadata.version;
+        let metadata = package.metadata();
+        let old_version = &metadata.version;
         let ghrepo = LocalRepo::new(package.path())
             .github_remote("origin")
             .context("Could not determine GitHub repository for local repository")?;
@@ -52,7 +53,7 @@ impl Release {
             v // Skips the checks from the other branch
         } else {
             self.bumping
-                .bump(package.latest_tag_version()?, &old_version)?
+                .bump(package.latest_tag_version()?, old_version)?
         };
         if git.tag_exists(&new_version.to_string())?
             || git.tag_exists(&format!("v{new_version}"))?
@@ -62,7 +63,7 @@ impl Release {
 
         log::info!("Preparing version {new_version} ...");
 
-        if new_version != old_version {
+        if &new_version != old_version {
             log::info!("Setting version in Cargo.toml ...");
             package.set_cargo_version(new_version.clone())?;
         }
