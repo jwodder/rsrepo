@@ -36,12 +36,12 @@ impl Release {
         let readme_file = package.readme();
         let chlog_file = package.changelog();
 
-        let metadata = package.metadata()?;
-        let old_version = metadata.version;
+        let metadata = package.metadata();
+        let old_version = &metadata.version;
         let ghrepo = LocalRepo::new(package.path())
             .github_remote("origin")
             .context("Could not determine GitHub repository for local repository")?;
-        let is_lib = package.is_lib()?;
+        let is_lib = package.is_lib();
         let publish = metadata.publish.as_deref() != Some(&[]);
         let Some(default_branch) = git.default_branch()? else {
             bail!("Could not determine repository's default branch");
@@ -52,7 +52,7 @@ impl Release {
             v // Skips the checks from the other branch
         } else {
             self.bumping
-                .bump(package.latest_tag_version()?, &old_version)?
+                .bump(package.latest_tag_version()?, old_version)?
         };
         if git.tag_exists(&new_version.to_string())?
             || git.tag_exists(&format!("v{new_version}"))?
@@ -62,7 +62,7 @@ impl Release {
 
         log::info!("Preparing version {new_version} ...");
 
-        if new_version != old_version {
+        if &new_version != old_version {
             log::info!("Setting version in Cargo.toml ...");
             package.set_cargo_version(new_version.clone())?;
         }
