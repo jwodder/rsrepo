@@ -53,6 +53,7 @@ impl Project {
     }
 
     pub(crate) fn package_set(&self) -> anyhow::Result<PackageSet> {
+        log::debug!("Running `cargo metadata`");
         let package_metadata = MetadataCommand::new()
             .manifest_path(&self.manifest_path)
             .no_deps()
