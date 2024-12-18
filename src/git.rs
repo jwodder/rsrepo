@@ -77,8 +77,15 @@ impl<'a> Git<'a> {
             .context("Error parsing Git commit years")
     }
 
-    pub(crate) fn latest_tag(&self) -> Result<Option<String>, CommandOutputError> {
-        Ok(self.readlines("tag", ["-l", "--sort=-creatordate"])?.next())
+    pub(crate) fn latest_tag(
+        &self,
+        prefix: Option<&str>,
+    ) -> Result<Option<String>, CommandOutputError> {
+        let mut args = vec![String::from("-l"), String::from("--sort=-creatordate")];
+        if let Some(pre) = prefix {
+            args.push(format!("{pre}*"));
+        }
+        Ok(self.readlines("tag", args)?.next())
     }
 
     pub(crate) fn current_branch(&self) -> Result<Option<String>, CommandOutputError> {

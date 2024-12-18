@@ -59,10 +59,17 @@ impl Package {
             .any(|k| k == &TargetKind::Lib)
     }
 
-    pub(crate) fn latest_tag_version(&self) -> anyhow::Result<Option<Version>> {
-        if let Some(tag) = self.git().latest_tag()? {
-            tag.strip_prefix('v')
-                .unwrap_or(&tag)
+    pub(crate) fn latest_tag_version(
+        &self,
+        prefix: Option<&str>,
+    ) -> anyhow::Result<Option<Version>> {
+        if let Some(tag) = self.git().latest_tag(prefix)? {
+            let tagv = match prefix {
+                Some(pre) => tag.strip_prefix(pre).unwrap_or(&*tag),
+                None => &*tag,
+            };
+            tagv.strip_prefix('v')
+                .unwrap_or(tagv)
                 .parse::<Version>()
                 .with_context(|| format!("Failed to parse latest Git tag {tag:?} as a version"))
                 .map(Some)

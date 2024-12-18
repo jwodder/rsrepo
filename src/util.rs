@@ -330,6 +330,10 @@ pub(crate) enum LocateError {
     InvalidPath(PathBuf),
 }
 
+pub(crate) fn workspace_tag_prefix(package_name: &str) -> String {
+    format!("{package_name}/")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
