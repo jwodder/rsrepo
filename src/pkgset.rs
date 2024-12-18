@@ -31,6 +31,10 @@ impl PackageSet {
         self.packages.iter().find(|p| p.name() == name)
     }
 
+    pub(crate) fn into_package_by_name(self, name: &str) -> Option<Package> {
+        self.packages.into_iter().find(|p| p.name() == name)
+    }
+
     pub(crate) fn package_by_manifest_path(&self, manifest_path: &Path) -> Option<&Package> {
         self.packages
             .iter()

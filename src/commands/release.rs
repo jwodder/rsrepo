@@ -1,16 +1,16 @@
 use crate::changelog::{Changelog, ChangelogHeader, ChangelogSection};
 use crate::cmd::LoggedCommand;
 use crate::github::{CreateRelease, Topic};
-use crate::package::Package;
+use crate::project::Project;
 use crate::provider::Provider;
 use crate::readme::{Badge, Repostatus};
-use crate::util::{bump_version, move_dirtree_into, this_year, Bump};
+use crate::util::{bump_version, move_dirtree_into, this_year, workspace_tag_prefix, Bump};
 use anyhow::{bail, Context};
 use clap::Args;
-use fs_err::create_dir_all;
 use ghrepo::LocalRepo;
 use renamore::rename_exclusive;
 use semver::{Prerelease, Version};
+use std::borrow::Cow;
 use std::collections::HashSet;
 use std::io::{self, Write};
 use tempfile::NamedTempFile;
@@ -20,6 +20,12 @@ use tempfile::NamedTempFile;
 pub(crate) struct Release {
     #[command(flatten)]
     pub(crate) bumping: Bumping,
+
+    /// Release the package with the given name in the workspace.
+    ///
+    /// By default, the package for the current directory is released.
+    #[arg(short, long, value_name = "NAME")]
+    package: Option<String>,
 
     /// The version to release.  If neither this argument nor a bump option is
     /// specified, the Cargo.toml version is used without a prerelease or
@@ -31,7 +37,17 @@ pub(crate) struct Release {
 impl Release {
     pub(crate) fn run(self, provider: Provider) -> anyhow::Result<()> {
         let github = provider.github()?;
-        let package = Package::locate()?;
+        let project = Project::locate()?;
+        let is_workspace = project.project_type().is_workspace();
+        let pkgset = project.package_set()?;
+        let package = match self.package {
+            Some(name) => pkgset.into_package_by_name(&name).ok_or_else(|| {
+                anyhow::anyhow!("No package named {name:?} found in current project")
+            })?,
+            None => pkgset
+                .into_current_package()?
+                .ok_or_else(|| anyhow::anyhow!("Not currently located in a package"))?,
+        };
         let git = package.git();
         let readme_file = package.readme();
         let chlog_file = package.changelog();
@@ -47,24 +63,29 @@ impl Release {
             bail!("Could not determine repository's default branch");
         };
 
+        let tag_prefix = is_workspace.then(|| workspace_tag_prefix(package.name()));
         // Determine new version
         let new_version = if let Some(v) = self.version {
             v // Skips the checks from the other branch
         } else {
-            self.bumping
-                .bump(package.latest_tag_version()?, old_version)?
+            self.bumping.bump(
+                package.latest_tag_version(tag_prefix.as_deref())?,
+                old_version,
+            )?
         };
-        if git.tag_exists(&new_version.to_string())?
-            || git.tag_exists(&format!("v{new_version}"))?
+        let tag_prefix = tag_prefix.map_or_else(|| Cow::from(""), Cow::from);
+        if git.tag_exists(&format!("{tag_prefix}{new_version}"))?
+            || git.tag_exists(&format!("{tag_prefix}v{new_version}"))?
         {
-            bail!("New version v{new_version} already tagged");
+            bail!("New version already tagged: {tag_prefix}v{new_version}");
         }
 
         log::info!("Preparing version {new_version} ...");
 
+        let update_lock = project.path().join("Cargo.lock").exists();
         if &new_version != old_version {
             log::info!("Setting version in Cargo.toml ...");
-            package.set_cargo_version(new_version.clone())?;
+            package.set_cargo_version(new_version.clone(), update_lock)?;
         }
 
         let release_date = chrono::Local::now().date_naive();
@@ -124,8 +145,13 @@ impl Release {
         log::info!("Committing ...");
         {
             let mut template = NamedTempFile::new().context("could not create temporary file")?;
-            write_commit_template(template.as_file_mut(), &new_version, chlog_content)
-                .context("error writing to commit message template")?;
+            write_commit_template(
+                template.as_file_mut(),
+                is_workspace.then(|| package.name()),
+                &new_version,
+                chlog_content,
+            )
+            .context("error writing to commit message template")?;
             git.command()
                 .arg("commit")
                 .arg("-a")
@@ -137,12 +163,16 @@ impl Release {
         }
 
         log::info!("Tagging ...");
-        let tag_name = format!("v{new_version}");
+        let tag_name = format!("{tag_prefix}v{new_version}");
         git.command()
             .arg("tag")
             .arg("-s")
             .arg("-m")
-            .arg(format!("Version {new_version}"))
+            .arg(if is_workspace {
+                format!("{} version {new_version}", package.name())
+            } else {
+                format!("Version {new_version}")
+            })
             .arg(&tag_name)
             .status()?;
 
@@ -164,7 +194,7 @@ impl Release {
                     let src = toplevel.join(&path);
                     let dest = stash_dir.join(&path);
                     if let Some(p) = dest.parent() {
-                        create_dir_all(p)?;
+                        fs_err::create_dir_all(p)?;
                     }
                     log::debug!("Moving {src:?} to {dest:?}");
                     rename_exclusive(&src, &dest)
@@ -244,7 +274,7 @@ impl Release {
 
         // Update version in Cargo.toml
         log::info!("Setting next version in Cargo.toml ...");
-        package.set_cargo_version(dev_next)?;
+        package.set_cargo_version(dev_next, update_lock)?;
 
         // Ensure CHANGELOG is present and contains section for upcoming
         // version
@@ -346,15 +376,22 @@ fn parse_v_version(value: &str) -> Result<Version, semver::Error> {
 
 fn write_commit_template<W: Write>(
     mut fp: W,
+    package_name: Option<&str>,
     version: &Version,
     notes: Option<String>,
 ) -> io::Result<()> {
     writeln!(fp, "DELETE THIS LINE")?;
     writeln!(fp)?;
     if let Some(notes) = notes {
-        writeln!(fp, "v{version} — INSERT SHORT DESCRIPTION HERE")?;
+        if let Some(name) = package_name {
+            writeln!(fp, "{name} v{version} — INSERT SHORT DESCRIPTION HERE")?;
+        } else {
+            writeln!(fp, "v{version} — INSERT SHORT DESCRIPTION HERE")?;
+        }
         writeln!(fp)?;
         writeln!(fp, "{notes}")?;
+    } else if let Some(name) = package_name {
+        writeln!(fp, "{name} v{version} — Initial release")?;
     } else {
         writeln!(fp, "v{version} — Initial release")?;
     }

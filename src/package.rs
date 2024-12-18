@@ -59,10 +59,17 @@ impl Package {
             .any(|k| k == &TargetKind::Lib)
     }
 
-    pub(crate) fn latest_tag_version(&self) -> anyhow::Result<Option<Version>> {
-        if let Some(tag) = self.git().latest_tag()? {
-            tag.strip_prefix('v')
-                .unwrap_or(&tag)
+    pub(crate) fn latest_tag_version(
+        &self,
+        prefix: Option<&str>,
+    ) -> anyhow::Result<Option<Version>> {
+        if let Some(tag) = self.git().latest_tag(prefix)? {
+            let tagv = match prefix {
+                Some(pre) => tag.strip_prefix(pre).unwrap_or(&*tag),
+                None => &*tag,
+            };
+            tagv.strip_prefix('v')
+                .unwrap_or(tagv)
                 .parse::<Version>()
                 .with_context(|| format!("Failed to parse latest Git tag {tag:?} as a version"))
                 .map(Some)
@@ -128,10 +135,10 @@ impl Package {
         Ok(())
     }
 
-    pub(crate) fn set_cargo_version(&self, v: Version) -> anyhow::Result<()> {
+    pub(crate) fn set_cargo_version(&self, v: Version, update_lock: bool) -> anyhow::Result<()> {
         let vs = v.to_string();
         self.set_package_field("version", &vs)?;
-        if self.is_bin() && self.path().join("Cargo.lock").exists() {
+        if update_lock {
             LoggedCommand::new("cargo")
                 .arg("update")
                 .arg("-p")
@@ -259,7 +266,7 @@ mod tests {
             "[dependencies]\n",
         ));
         tpkg.package
-            .set_cargo_version(Version::new(1, 2, 3))
+            .set_cargo_version(Version::new(1, 2, 3), false)
             .unwrap();
         tpkg.manifest.assert(concat!(
             "[package]\n",
@@ -275,7 +282,7 @@ mod tests {
     fn set_cargo_version_inline() {
         let tpkg = TestPackage::new("package = { name = \"foobar\", version = \"0.1.0\", edition = \"2021\" }\ndependencies = {}\n");
         tpkg.package
-            .set_cargo_version(Version::new(1, 2, 3))
+            .set_cargo_version(Version::new(1, 2, 3), false)
             .unwrap();
         tpkg.manifest.assert("package = { name = \"foobar\", version = \"1.2.3\", edition = \"2021\" }\ndependencies = {}\n");
     }
@@ -290,7 +297,7 @@ mod tests {
             "[dependencies]\n",
         ));
         tpkg.package
-            .set_cargo_version(Version::new(1, 2, 3))
+            .set_cargo_version(Version::new(1, 2, 3), false)
             .unwrap();
         tpkg.manifest.assert(concat!(
             "[package]\n",
@@ -308,7 +315,7 @@ mod tests {
         let tpkg = TestPackage::new("[dependencies]\n");
         assert!(tpkg
             .package
-            .set_cargo_version(Version::new(1, 2, 3))
+            .set_cargo_version(Version::new(1, 2, 3), false)
             .is_err());
         tpkg.manifest.assert("[dependencies]\n");
     }
@@ -319,7 +326,7 @@ mod tests {
         let tpkg = TestPackage::new("package = 42\n");
         assert!(tpkg
             .package
-            .set_cargo_version(Version::new(1, 2, 3))
+            .set_cargo_version(Version::new(1, 2, 3), false)
             .is_err());
         tpkg.manifest.assert("package = 42\n");
     }
