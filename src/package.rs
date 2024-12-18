@@ -11,23 +11,18 @@ use in_place::InPlace;
 use semver::Version;
 use std::io::{BufRead, BufReader, ErrorKind, Write};
 use std::marker::PhantomData;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use toml_edit::DocumentMut;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub(crate) struct Package {
-    manifest_path: PathBuf,
     metadata: CargoPackage,
     is_root: bool,
 }
 
 impl Package {
-    pub(crate) fn new(manifest_path: PathBuf, metadata: CargoPackage, is_root: bool) -> Package {
-        Package {
-            manifest_path,
-            metadata,
-            is_root,
-        }
+    pub(crate) fn new(metadata: CargoPackage, is_root: bool) -> Package {
+        Package { metadata, is_root }
     }
 
     pub(crate) fn locate() -> anyhow::Result<Package> {
@@ -39,13 +34,13 @@ impl Package {
     }
 
     pub(crate) fn path(&self) -> &Path {
-        self.manifest_path
+        self.manifest_path()
             .parent()
-            .expect("manifest_path was verified to have a parent")
+            .expect("manifest_path should have a parent")
     }
 
     pub(crate) fn manifest_path(&self) -> &Path {
-        &self.manifest_path
+        self.metadata.manifest_path.as_std_path()
     }
 
     pub(crate) fn is_bin(&self) -> bool {
