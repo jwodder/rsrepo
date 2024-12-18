@@ -54,21 +54,25 @@ impl Project {
 
     pub(crate) fn package_set(&self) -> anyhow::Result<PackageSet> {
         log::debug!("Running `cargo metadata`");
+        let mut names = std::collections::HashSet::new();
         let package_metadata = MetadataCommand::new()
             .manifest_path(&self.manifest_path)
             .no_deps()
             .exec()
             .context("Failed to get project metadata")?
             .packages;
-        Ok(PackageSet::new(
-            package_metadata
-                .into_iter()
-                .map(|md| {
-                    let is_root = md.manifest_path == self.manifest_path;
-                    Package::new(md, is_root)
-                })
-                .collect(),
-        ))
+        let mut packages = Vec::with_capacity(package_metadata.len());
+        for md in package_metadata {
+            if !names.insert(md.name.clone()) {
+                anyhow::bail!(
+                    "Workspace contains multiple packages named {:?}; not proceeding",
+                    md.name
+                );
+            }
+            let is_root = md.manifest_path == self.manifest_path;
+            packages.push(Package::new(md, is_root));
+        }
+        Ok(PackageSet::new(packages))
     }
 }
 
