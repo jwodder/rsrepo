@@ -27,7 +27,7 @@ impl Package {
 
     pub(crate) fn locate() -> anyhow::Result<Package> {
         let project = Project::locate()?;
-        let Some(package) = project.current_package()? else {
+        let Some(package) = project.package_set()?.into_current_package()? else {
             bail!("no package in current directory");
         };
         Ok(package)
@@ -236,8 +236,9 @@ mod tests {
             tmpdir.child("src").child("main.rs").touch().unwrap();
             let package = Project::for_manifest_path(manifest.path())
                 .unwrap()
-                .root_package()
+                .package_set()
                 .unwrap()
+                .into_root_package()
                 .unwrap();
             TestPackage {
                 package,

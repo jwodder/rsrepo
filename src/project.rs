@@ -1,7 +1,8 @@
 use crate::package::Package;
+use crate::pkgset::PackageSet;
 use crate::util::locate_project;
 use anyhow::Context;
-use cargo_metadata::{MetadataCommand, Package as CargoPackage};
+use cargo_metadata::MetadataCommand;
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
@@ -51,65 +52,22 @@ impl Project {
         self.repository.as_deref()
     }
 
-    fn package_metadata(&self) -> anyhow::Result<Vec<CargoPackage>> {
-        Ok(MetadataCommand::new()
+    pub(crate) fn package_set(&self) -> anyhow::Result<PackageSet> {
+        let package_metadata = MetadataCommand::new()
             .manifest_path(&self.manifest_path)
             .no_deps()
             .exec()
             .context("Failed to get project metadata")?
-            .packages)
-    }
-
-    pub(crate) fn current_package(&self) -> anyhow::Result<Option<Package>> {
-        let manifest_path = locate_project(false)?;
-        let mut matches = self
-            .package_metadata()?
-            .into_iter()
-            .filter(|p| p.manifest_path == manifest_path)
-            .collect::<Vec<_>>();
-        if matches.len() == 1 {
-            let metadata = matches.pop().expect("one-length Vec should not be empty");
-            let is_root = manifest_path == self.manifest_path;
-            Ok(Some(Package::new(metadata, is_root)))
-        } else {
-            Ok(None)
-        }
-    }
-
-    pub(crate) fn packages(&self) -> anyhow::Result<Vec<Package>> {
-        Ok(self
-            .package_metadata()?
-            .into_iter()
-            .map(|md| {
-                let is_root = md.manifest_path == self.manifest_path;
-                Package::new(md, is_root)
-            })
-            .collect())
-    }
-
-    /*
-        pub(crate) fn package(&self, name: &str) -> anyhow::Result<Package> {
-            // Use `cargo metadata`
-            todo!()
-        }
-    */
-
-    #[allow(dead_code)] // TODO
-    pub(crate) fn root_package(&self) -> anyhow::Result<Option<Package>> {
-        if self.project_type == ProjectType::VirtualWorkspace {
-            return Ok(None);
-        }
-        let mut matches = self
-            .package_metadata()?
-            .into_iter()
-            .filter(|p| p.manifest_path == self.manifest_path)
-            .collect::<Vec<_>>();
-        let metadata = if matches.len() == 1 {
-            matches.pop().expect("one-length Vec should not be empty")
-        } else {
-            anyhow::bail!("failed to find root package in workspace");
-        };
-        Ok(Some(Package::new(metadata, true)))
+            .packages;
+        Ok(PackageSet::new(
+            package_metadata
+                .into_iter()
+                .map(|md| {
+                    let is_root = md.manifest_path == self.manifest_path;
+                    Package::new(md, is_root)
+                })
+                .collect(),
+        ))
     }
 }
 

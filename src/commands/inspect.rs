@@ -3,7 +3,7 @@ use crate::project::{Project, ProjectType};
 use crate::provider::Provider;
 use clap::Args;
 use serde::Serialize;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// Display details about current project/package
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
@@ -14,21 +14,13 @@ pub(crate) struct Inspect {
 }
 
 impl Inspect {
-    #[expect(clippy::if_then_some_else_none)] // invalid suggestion
     pub(crate) fn run(self, _provider: Provider) -> anyhow::Result<()> {
         let project = Project::locate()?;
-        let current_package = project.current_package()?.map(PackageDetails::from);
-        let packages = if self.workspace {
-            Some(
-                project
-                    .packages()?
-                    .into_iter()
-                    .map(PackageDetails::from)
-                    .collect::<Vec<_>>(),
-            )
-        } else {
-            None
-        };
+        let pkgset = project.package_set()?;
+        let current_package = pkgset.current_package()?.map(PackageDetails::from);
+        let packages = self
+            .workspace
+            .then(|| pkgset.iter().map(PackageDetails::from).collect());
         let details = Details {
             manifest_path: project.manifest_path(),
             is_workspace: project.project_type().is_workspace(),
@@ -51,25 +43,25 @@ struct Details<'a> {
     is_workspace: bool,
     is_virtual_workspace: bool,
     repository: Option<&'a str>,
-    current_package: Option<PackageDetails>,
+    current_package: Option<PackageDetails<'a>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    packages: Option<Vec<PackageDetails>>,
+    packages: Option<Vec<PackageDetails<'a>>>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-struct PackageDetails {
-    name: String,
-    manifest_path: PathBuf,
+struct PackageDetails<'a> {
+    name: &'a str,
+    manifest_path: &'a Path,
     bin: bool,
     lib: bool,
     root_package: bool,
 }
 
-impl From<Package> for PackageDetails {
-    fn from(p: Package) -> PackageDetails {
+impl<'a> From<&'a Package> for PackageDetails<'a> {
+    fn from(p: &'a Package) -> PackageDetails<'a> {
         PackageDetails {
-            name: p.name().to_owned(),
-            manifest_path: p.manifest_path().to_owned(),
+            name: p.name(),
+            manifest_path: p.manifest_path(),
             bin: p.is_bin(),
             lib: p.is_lib(),
             root_package: p.is_root_package(),
