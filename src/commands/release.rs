@@ -144,8 +144,13 @@ impl Release {
         log::info!("Committing ...");
         {
             let mut template = NamedTempFile::new().context("could not create temporary file")?;
-            write_commit_template(template.as_file_mut(), &new_version, chlog_content)
-                .context("error writing to commit message template")?;
+            write_commit_template(
+                template.as_file_mut(),
+                is_workspace.then(|| package.name()),
+                &new_version,
+                chlog_content,
+            )
+            .context("error writing to commit message template")?;
             git.command()
                 .arg("commit")
                 .arg("-a")
@@ -162,7 +167,11 @@ impl Release {
             .arg("tag")
             .arg("-s")
             .arg("-m")
-            .arg(format!("Version {new_version}"))
+            .arg(if is_workspace {
+                format!("{} version {new_version}", package.name())
+            } else {
+                format!("Version {new_version}")
+            })
             .arg(&tag_name)
             .status()?;
 
@@ -366,15 +375,22 @@ fn parse_v_version(value: &str) -> Result<Version, semver::Error> {
 
 fn write_commit_template<W: Write>(
     mut fp: W,
+    package_name: Option<&str>,
     version: &Version,
     notes: Option<String>,
 ) -> io::Result<()> {
     writeln!(fp, "DELETE THIS LINE")?;
     writeln!(fp)?;
     if let Some(notes) = notes {
-        writeln!(fp, "v{version} — INSERT SHORT DESCRIPTION HERE")?;
+        if let Some(name) = package_name {
+            writeln!(fp, "{name} v{version} — INSERT SHORT DESCRIPTION HERE")?;
+        } else {
+            writeln!(fp, "v{version} — INSERT SHORT DESCRIPTION HERE")?;
+        }
         writeln!(fp)?;
         writeln!(fp, "{notes}")?;
+    } else if let Some(name) = package_name {
+        writeln!(fp, "{name} v{version} — Initial release")?;
     } else {
         writeln!(fp, "v{version} — Initial release")?;
     }
