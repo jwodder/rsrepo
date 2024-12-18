@@ -82,9 +82,10 @@ impl Release {
 
         log::info!("Preparing version {new_version} ...");
 
+        let update_lock = project.path().join("Cargo.lock").exists();
         if &new_version != old_version {
             log::info!("Setting version in Cargo.toml ...");
-            package.set_cargo_version(new_version.clone())?;
+            package.set_cargo_version(new_version.clone(), update_lock)?;
         }
 
         let release_date = chrono::Local::now().date_naive();
@@ -273,7 +274,7 @@ impl Release {
 
         // Update version in Cargo.toml
         log::info!("Setting next version in Cargo.toml ...");
-        package.set_cargo_version(dev_next)?;
+        package.set_cargo_version(dev_next, update_lock)?;
 
         // Ensure CHANGELOG is present and contains section for upcoming
         // version

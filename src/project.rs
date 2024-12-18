@@ -40,6 +40,12 @@ impl Project {
         })
     }
 
+    pub(crate) fn path(&self) -> &Path {
+        self.manifest_path()
+            .parent()
+            .expect("manifest_path should have a parent")
+    }
+
     pub(crate) fn manifest_path(&self) -> &Path {
         &self.manifest_path
     }

@@ -5,6 +5,8 @@ v0.5.0 (in development)
     - Added `--package` option for selecting the package to release
     - When releasing in a workspace, tags are now prefixed with
       `{package_name}/`.
+- `release` now always updates `Cargo.lock` when the file is present,
+  regardless of package type
 
 v0.4.0 (2024-12-17)
 -------------------

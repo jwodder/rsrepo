@@ -222,7 +222,7 @@ Cargo semver version.
 This command performs the following operations in order:
 
 - The version field in `Cargo.toml` is set to the release version.  If the
-  package contains a binary crate, the version in `Cargo.lock` is set as well.
+  project contains a `Cargo.lock` file, the version therein is set as well.
 
 - If `CHANGELOG.md` exists, the header for the topmost section is edited to
   contain the release version and the current date.  It is an error if the
@@ -285,9 +285,9 @@ This command performs the following operations in order:
 
 - Development on the next version is started:
 
-    - The version field in `Cargo.toml` (and `Cargo.lock`, if the package
-      contains a binary crate) is set to the next minor version after the
-      just-released version, plus a "-dev" prerelease segment.
+    - The version field in `Cargo.toml` (and `Cargo.lock`, if present) is set
+      to the next minor version after the just-released version, plus a "-dev"
+      prerelease segment.
 
     - If a `CHANGELOG.md` file does not exist, one is created with a section
       for the release that was just made (with text set to "Initial release").
