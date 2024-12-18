@@ -17,8 +17,8 @@ Usage
     rsrepo [<global options>] <subcommand> ...
 
 All `rsrepo` subcommands other than `rsrepo new` must be run inside a Cargo
-package directory & Git repository (after processing the `--chdir` option, if
-given).  Cargo workspaces are currently not supported.
+project directory & Git repository (after processing the `--chdir` option, if
+given).
 
 Certain commands automatically edit packages' `README.md` and/or `CHANGELOG.md`
 files; these files are expected to adhere to specific formats, documented in
@@ -214,6 +214,11 @@ latest Git tag.  Except when an explicit version argument is given, it is an
 error for the latest Git tag to not be a Cargo semver version with optional
 leading `v`.
 
+When operating in a workspace, tags are prefixed with `{package_name}/`.  This
+prefix is used when searching for the most recently-created Git tag, and it is
+also stripped along with the optional leading `v` before checking for a valid
+Cargo semver version.
+
 This command performs the following operations in order:
 
 - The version field in `Cargo.toml` is set to the release version.  If the
@@ -245,7 +250,8 @@ This command performs the following operations in order:
     - The release can be cancelled at this point by either leaving the commit
       message unchanged or by deleting the entire commit message.
 
-- The commit is tagged (as `v{version}`) and signed.
+- The commit is tagged as `v{version}` (or `{package_name}/v{version}` if in a
+  workspace) and signed.
 
 - If `publish` in `Cargo.toml` is not `false`:
 
@@ -296,6 +302,10 @@ This command performs the following operations in order:
 
 - `--minor` — Set the release's version to the next minor version after the
   most recent Git tag
+
+- `-p <NAME>`, `--package <NAME>` — Release the package with the given name in
+  the workspace.  By default, the package for the current directory is
+  released.
 
 - `--patch` — Set the release's version to the next micro version after the
   most recent Git tag

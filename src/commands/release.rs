@@ -21,10 +21,10 @@ pub(crate) struct Release {
     #[command(flatten)]
     pub(crate) bumping: Bumping,
 
-    /// Publish the package with the given name.
+    /// Release the package with the given name in the workspace.
     ///
-    /// By default, the package in the current directory is published.
-    #[arg(short, long)]
+    /// By default, the package for the current directory is released.
+    #[arg(short, long, value_name = "NAME")]
     package: Option<String>,
 
     /// The version to release.  If neither this argument nor a bump option is

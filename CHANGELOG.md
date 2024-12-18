@@ -1,6 +1,10 @@
 v0.5.0 (in development)
 -----------------------
 - Added `inspect` command
+- Added workspace support to `release`
+    - Added `--package` option for selecting the package to release
+    - When releasing in a workspace, tags are now prefixed with
+      `{package_name}/`.
 
 v0.4.0 (2024-12-17)
 -------------------
