@@ -26,12 +26,14 @@ impl Project {
             .with_context(|| format!("failed to deserialize {}", manifest_path.display()))?;
         let (project_type, repository) = match data {
             Cargo::Package { package, .. } => (ProjectType::Package, package.repository),
-            Cargo::Workspace { workspace, .. } => {
-                (ProjectType::Workspace, workspace.package.repository)
-            }
-            Cargo::Virtual { workspace } => {
-                (ProjectType::VirtualWorkspace, workspace.package.repository)
-            }
+            Cargo::Workspace { workspace, .. } => (
+                ProjectType::Workspace,
+                workspace.package.and_then(|pkg| pkg.repository),
+            ),
+            Cargo::Virtual { workspace } => (
+                ProjectType::VirtualWorkspace,
+                workspace.package.and_then(|pkg| pkg.repository),
+            ),
         };
         Ok(Project {
             manifest_path,
@@ -165,7 +167,7 @@ struct PackageTbl {
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 struct Workspace {
-    package: WorkspacePackage,
+    package: Option<WorkspacePackage>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
