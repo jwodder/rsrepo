@@ -1243,6 +1243,7 @@ dependencies = [
  "assert_fs",
  "base64",
  "cargo_metadata",
+ "cfg-if",
  "chrono",
  "clap",
  "dryoc",

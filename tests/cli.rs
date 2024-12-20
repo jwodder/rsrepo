@@ -1,6 +1,7 @@
 mod util;
 use crate::util::{copytree, unzip, CmpDirtrees};
 use assert_cmd::Command;
+use cfg_if::cfg_if;
 use rstest::rstest;
 use std::path::{Path, PathBuf};
 use tempfile::tempdir;
@@ -335,12 +336,37 @@ fn inspect(
     let tmp_path = tempdir().unwrap();
     let projdir = Path::new(DATA_DIR).join("inspect").join(project);
     unzip(projdir.join("project.zip"), tmp_path.path()).unwrap();
-    let expected = fs_err::read_to_string(projdir.join(jsonfile))
-        .unwrap()
-        .replace(
-            "{root}",
-            tmp_path.path().canonicalize().unwrap().to_str().unwrap(),
-        );
+
+    cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            let rootpath = tmp_path.path().canonicalize().unwrap();
+        } else {
+            let rootpath = tmp_path.path();
+        }
+    }
+    let root = rootpath.to_str().unwrap();
+
+    let mut expected = fs_err::read_to_string(projdir.join(jsonfile)).unwrap();
+    cfg_if! {
+        if #[cfg(windows)] {
+            let root = root.replace('\\', "\\\\");
+            expected = {
+                let mut s = String::new();
+                for line in expected.lines() {
+                    if line.contains("{root}") {
+                        s.push_str(&line.replace("{root}", &root).replace('/', "\\\\"));
+                    } else {
+                        s.push_str(line);
+                    }
+                    s.push('\n');
+                }
+                s
+            }
+        } else {
+            expected = expected.replace("{root}", root);
+        }
+    }
+
     let mut cwd = PathBuf::from(tmp_path.path());
     if let Some(p) = subdir {
         cwd.push(p);
