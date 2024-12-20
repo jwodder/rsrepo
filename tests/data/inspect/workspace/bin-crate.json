@@ -1,0 +1,13 @@
+{
+  "manifest_path": "{root}/Cargo.toml",
+  "is_workspace": true,
+  "is_virtual_workspace": false,
+  "repository": null,
+  "current_package": {
+    "name": "fibonacci-cli",
+    "manifest_path": "{root}/cli/Cargo.toml",
+    "bin": true,
+    "lib": false,
+    "root_package": false
+  }
+}

@@ -51,10 +51,12 @@ winnow = "0.6.15"
 [dev-dependencies]
 assert_cmd = "2.0.14"
 assert_fs = "1.1.1"
+cfg-if = "1.0.0"
 predicates = { version = "3.1.0", default-features = false }
 rstest = { version = "0.23.0", default-features = false }
 similar = "2.5.0"
 tempfile = "3.10.1"
+zip = "2.2.2"
 
 [build-dependencies]
 anyhow = "1.0.82"

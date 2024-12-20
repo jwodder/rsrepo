@@ -1,8 +1,9 @@
 mod util;
-use crate::util::{copytree, CmpDirtrees};
+use crate::util::{copytree, unzip, CmpDirtrees};
 use assert_cmd::Command;
+use cfg_if::cfg_if;
 use rstest::rstest;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tempfile::tempdir;
 
 pub static DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data");
@@ -294,4 +295,90 @@ fn set_msrv(#[case] case: &str) {
         tmp_path.path(),
     )
     .assert_eq();
+}
+
+#[rstest]
+#[case("package", None, false, "root.json")]
+#[case("package", None, true, "root-workspace.json")]
+#[case("package-repo", None, false, "root.json")]
+#[case("package-repo", None, true, "root-workspace.json")]
+#[case("workspace", None, false, "root.json")]
+#[case("workspace", None, true, "root-workspace.json")]
+#[case("workspace", Some("cli"), false, "bin-crate.json")]
+#[case("workspace", Some("cli"), true, "bin-crate-workspace.json")]
+#[case("workspace-repo", None, false, "root.json")]
+#[case("workspace-repo", None, true, "root-workspace.json")]
+#[case("workspace-repo", Some("cli"), false, "bin-crate.json")]
+#[case("workspace-repo", Some("cli"), true, "bin-crate-workspace.json")]
+#[case("virtual", None, false, "root.json")]
+#[case("virtual", None, true, "root-workspace.json")]
+#[case("virtual", Some("crates/fibonacci"), false, "lib-crate.json")]
+#[case("virtual", Some("crates/fibonacci"), true, "lib-crate-workspace.json")]
+#[case("virtual", Some("crates/cli"), false, "bin-crate.json")]
+#[case("virtual", Some("crates/cli"), true, "bin-crate-workspace.json")]
+#[case("virtual-repo", None, false, "root.json")]
+#[case("virtual-repo", None, true, "root-workspace.json")]
+#[case("virtual-repo", Some("crates/fibonacci"), false, "lib-crate.json")]
+#[case(
+    "virtual-repo",
+    Some("crates/fibonacci"),
+    true,
+    "lib-crate-workspace.json"
+)]
+#[case("virtual-repo", Some("crates/cli"), false, "bin-crate.json")]
+#[case("virtual-repo", Some("crates/cli"), true, "bin-crate-workspace.json")]
+fn inspect(
+    #[case] project: &str,
+    #[case] subdir: Option<&str>,
+    #[case] workspace: bool,
+    #[case] jsonfile: &str,
+) {
+    let tmp_path = tempdir().unwrap();
+    let projdir = Path::new(DATA_DIR).join("inspect").join(project);
+    unzip(projdir.join("project.zip"), tmp_path.path()).unwrap();
+
+    cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            let rootpath = tmp_path.path().canonicalize().unwrap();
+        } else {
+            let rootpath = tmp_path.path();
+        }
+    }
+    let root = rootpath.to_str().unwrap();
+
+    let mut expected = fs_err::read_to_string(projdir.join(jsonfile)).unwrap();
+    cfg_if! {
+        if #[cfg(windows)] {
+            let root = root.replace('\\', "\\\\");
+            expected = {
+                let mut s = String::new();
+                for line in expected.lines() {
+                    if line.contains("{root}") {
+                        s.push_str(&line.replace("{root}", &root).replace('/', "\\\\"));
+                    } else {
+                        s.push_str(line);
+                    }
+                    s.push('\n');
+                }
+                s
+            }
+        } else {
+            expected = expected.replace("{root}", root);
+        }
+    }
+
+    let mut cwd = PathBuf::from(tmp_path.path());
+    if let Some(p) = subdir {
+        cwd.push(p);
+    }
+    let mut cmd = Command::cargo_bin("rsrepo").unwrap();
+    cmd.arg("--log-level=TRACE")
+        .arg("--config")
+        .arg(Path::new(DATA_DIR).join("config.toml"))
+        .arg("inspect");
+    if workspace {
+        cmd.arg("--workspace");
+    }
+    cmd.current_dir(cwd);
+    cmd.assert().stdout(expected);
 }

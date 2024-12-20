@@ -1,3 +1,4 @@
 /src/templates/** eol=lf
 /src/testdata/** eol=lf
 /tests/data/** eol=lf
+/tests/data/**/*.zip -text
