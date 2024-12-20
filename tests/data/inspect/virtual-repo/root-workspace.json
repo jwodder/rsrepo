@@ -1,0 +1,23 @@
+{
+  "manifest_path": "{root}/Cargo.toml",
+  "is_workspace": true,
+  "is_virtual_workspace": true,
+  "repository": "https://github.com/jwodder/rsrepo-test-factory",
+  "current_package": null,
+  "packages": [
+    {
+      "name": "fibonacci-cli",
+      "manifest_path": "{root}/crates/cli/Cargo.toml",
+      "bin": true,
+      "lib": false,
+      "root_package": false
+    },
+    {
+      "name": "fibonacci",
+      "manifest_path": "{root}/crates/fibonacci/Cargo.toml",
+      "bin": false,
+      "lib": true,
+      "root_package": false
+    }
+  ]
+}

@@ -148,3 +148,10 @@ pub(crate) fn copytree<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dest: Q) -> std::
     }
     Ok(())
 }
+
+pub(crate) fn unzip<P: Into<PathBuf>, Q: AsRef<Path>>(zippath: P, outdir: Q) -> anyhow::Result<()> {
+    let fp = fs_err::File::open(zippath)?;
+    let mut zip = zip::ZipArchive::new(fp)?;
+    zip.extract(outdir)?;
+    Ok(())
+}
