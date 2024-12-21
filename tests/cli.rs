@@ -371,14 +371,14 @@ fn inspect(
     if let Some(p) = subdir {
         cwd.push(p);
     }
-    let mut cmd = Command::cargo_bin("rsrepo").unwrap();
-    cmd.arg("--log-level=TRACE")
+    Command::cargo_bin("rsrepo")
+        .unwrap()
+        .arg("--log-level=TRACE")
         .arg("--config")
         .arg(Path::new(DATA_DIR).join("config.toml"))
-        .arg("inspect");
-    if workspace {
-        cmd.arg("--workspace");
-    }
-    cmd.current_dir(cwd);
-    cmd.assert().stdout(expected);
+        .arg("inspect")
+        .args(workspace.then_some("--workspace"))
+        .current_dir(cwd)
+        .assert()
+        .stdout(expected);
 }
