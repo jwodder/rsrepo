@@ -9,7 +9,7 @@ use std::path::Path;
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
 pub(crate) struct Inspect {
     /// List all packages in the workspace
-    #[arg(long)]
+    #[arg(short, long)]
     workspace: bool,
 }
 

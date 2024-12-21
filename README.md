@@ -147,7 +147,7 @@ the current directory.
 
 ### Options
 
-- `--workspace` — Also include details on all packages in the workspace
+- `-w`, `--workspace` — Also include details on all packages in the workspace
 
 `rsrepo mkgithub`
 -----------------
