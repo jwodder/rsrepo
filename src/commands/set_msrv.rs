@@ -1,4 +1,4 @@
-use crate::package::Package;
+use crate::project::Project;
 use crate::provider::Provider;
 use crate::util::RustVersion;
 use clap::Args;
@@ -7,6 +7,12 @@ use std::fmt::Write;
 /// Update package's MSRV
 #[derive(Args, Clone, Debug, Eq, PartialEq)]
 pub(crate) struct SetMsrv {
+    /// Update the MSRV of the package with the given name in the workspace.
+    ///
+    /// By default, the package for the current directory is updated.
+    #[arg(short, long, value_name = "NAME")]
+    package: Option<String>,
+
     /// New MSRV value
     #[arg(value_name = "VERSION")]
     msrv: RustVersion,
@@ -14,7 +20,9 @@ pub(crate) struct SetMsrv {
 
 impl SetMsrv {
     pub(crate) fn run(self, _provider: Provider) -> anyhow::Result<()> {
-        let package = Package::locate()?;
+        let project = Project::locate()?;
+        let pkgset = project.package_set()?;
+        let package = pkgset.get(self.package.as_deref())?;
 
         log::info!("Updating Cargo.toml ...");
         package.set_package_field("rust-version", self.msrv.to_string())?;

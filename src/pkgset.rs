@@ -16,6 +16,17 @@ impl PackageSet {
         self.packages.iter()
     }
 
+    pub(crate) fn get(&self, name: Option<&str>) -> anyhow::Result<&Package> {
+        match name {
+            Some(name) => self.package_by_name(name).ok_or_else(|| {
+                anyhow::anyhow!("No package named {name:?} found in current project")
+            }),
+            None => self
+                .current_package()?
+                .ok_or_else(|| anyhow::anyhow!("Not currently located in a package")),
+        }
+    }
+
     #[allow(dead_code)]
     pub(crate) fn root_package(&self) -> Option<&Package> {
         self.packages.iter().find(|p| p.is_root_package())
@@ -26,11 +37,11 @@ impl PackageSet {
         self.packages.into_iter().find(Package::is_root_package)
     }
 
-    #[allow(dead_code)]
     pub(crate) fn package_by_name(&self, name: &str) -> Option<&Package> {
         self.packages.iter().find(|p| p.name() == name)
     }
 
+    #[allow(dead_code)]
     pub(crate) fn into_package_by_name(self, name: &str) -> Option<Package> {
         self.packages.into_iter().find(|p| p.name() == name)
     }

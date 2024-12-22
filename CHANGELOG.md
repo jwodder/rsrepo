@@ -8,6 +8,8 @@ v0.5.0 (in development)
 - `release` now always updates `Cargo.lock` when the file is present,
   regardless of package type
 - Header links in README files are now optional
+- Added workspace support to `set-msrv`
+    - Added `--package` option for selecting the package to update
 
 v0.4.0 (2024-12-17)
 -------------------

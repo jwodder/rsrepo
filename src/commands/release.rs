@@ -40,14 +40,7 @@ impl Release {
         let project = Project::locate()?;
         let is_workspace = project.project_type().is_workspace();
         let pkgset = project.package_set()?;
-        let package = match self.package {
-            Some(name) => pkgset.into_package_by_name(&name).ok_or_else(|| {
-                anyhow::anyhow!("No package named {name:?} found in current project")
-            })?,
-            None => pkgset
-                .into_current_package()?
-                .ok_or_else(|| anyhow::anyhow!("Not currently located in a package"))?,
-        };
+        let package = pkgset.get(self.package.as_deref())?;
         let git = package.git();
         let readme_file = package.readme();
         let chlog_file = package.changelog();

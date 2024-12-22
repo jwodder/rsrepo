@@ -318,3 +318,8 @@ This command performs the following operations in order:
 Set the package's MSRV as declared in `Cargo.toml` and `README.md`'s badges to
 the given rustc version.  A basic attempt at updating `CHANGELOG.md` to mention
 the change is also performed.
+
+### Options
+
+- `-p <NAME>`, `--package <NAME>` — Update the package with the given name in
+  the workspace.  By default, the package for the current directory is updated.
