@@ -275,7 +275,7 @@ struct Image {
 fn parse_readme(input: &mut &str) -> PResult<Readme> {
     let badges =
         terminated(repeat(1.., terminated(badge, line_ending)), line_ending).parse_next(input)?;
-    let (links, text) = if input.lines().next().is_some_and(|s| s.contains(" | ")) {
+    let (links, text) = if input.lines().next().is_some_and(has_link_separator) {
         seq!(
             separated(1.., link, (space1, '|', space1)),
             _: line_ending,
@@ -291,6 +291,12 @@ fn parse_readme(input: &mut &str) -> PResult<Readme> {
         links,
         text,
     })
+}
+
+/// Does `s` match the regex `/[ \t]\|[ \t]/`?
+fn has_link_separator(s: &str) -> bool {
+    s.match_indices('|')
+        .any(|(i, _)| s[..i].ends_with([' ', '\t']) && s[(i + 1)..].starts_with([' ', '\t']))
 }
 
 fn badge(input: &mut &str) -> PResult<Badge> {
@@ -475,5 +481,19 @@ mod tests {
     #[case("https://img.shields.io/badge/MSRV-1.69-orange", None)]
     fn repostatus_for_url(#[case] url: &str, #[case] status: Option<Repostatus>) {
         assert_eq!(Repostatus::for_url(url), status);
+    }
+
+    #[rstest]
+    #[case("foo | bar", true)]
+    #[case("foo\t| bar", true)]
+    #[case("foo |\tbar", true)]
+    #[case("foo\t|\tbar", true)]
+    #[case("foo| bar", false)]
+    #[case("foo|bar", false)]
+    #[case("foo |bar", false)]
+    #[case("foo\x0C| bar", false)]
+    #[case("foo |\x0Cbar", false)]
+    fn test_has_link_separator(#[case] s: &str, #[case] yes: bool) {
+        assert_eq!(has_link_separator(s), yes);
     }
 }
