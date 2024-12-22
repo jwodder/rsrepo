@@ -16,18 +16,20 @@ Readme Format
 
 - A blank line
 
-- A line consisting of one or more *header links*, each one of which is a
-  Markdown link of the form `[Text](url)`.  Adjacent links are separated by
-  whitespace, a vertical bar (`|`), and whitespace.
+- Optional:
 
-    - Header links with the following text are recognized and treated specially
-      by `rsrepo`:
+    - A line consisting of one or more *header links*, each one of which is a
+      Markdown link of the form `[Text](url)`.  Adjacent links are separated by
+      whitespace, a vertical bar (`|`), and whitespace.
 
-        - "GitHub"
-        - "crates.io"
-        - "Documentation"
-        - "Changelog"
+        - Header links with the following text are recognized and treated
+          specially by `rsrepo`:
 
-- A blank line
+            - "GitHub"
+            - "crates.io"
+            - "Documentation"
+            - "Changelog"
+
+    - A blank line
 
 - Arbitrary freeform text

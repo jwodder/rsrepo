@@ -273,17 +273,28 @@ struct Image {
 }
 
 fn parse_readme(input: &mut &str) -> PResult<Readme> {
-    seq! {
-        Readme {
-            badges: repeat(1.., terminated(badge, line_ending)),
+    let (badges, text) = seq!(
+        repeat(1.., terminated(badge, line_ending)),
+        _: line_ending,
+        rest.map(String::from),
+    )
+    .parse_next(input)?;
+    let (links, text) = if text.lines().next().is_some_and(|s| s.contains(" | ")) {
+        seq!(
+            separated(1.., link, (space1, '|', space1)),
             _: line_ending,
-            links: separated(1.., link, (space1, '|', space1)),
             _: line_ending,
-            _: line_ending,
-            text: rest.map(String::from),
-        }
-    }
-    .parse_next(input)
+            rest.map(String::from),
+        )
+        .parse_next(&mut &*text)?
+    } else {
+        (Vec::new(), text)
+    };
+    Ok(Readme {
+        badges,
+        links,
+        text,
+    })
 }
 
 fn badge(input: &mut &str) -> PResult<Badge> {
@@ -370,6 +381,17 @@ mod tests {
         assert_eq!(readme, expected);
         assert_eq!(readme.to_string(), src);
         assert_eq!(readme.repostatus(), Some(Repostatus::Active));
+    }
+
+    #[test]
+    fn no_links_readme() {
+        let src = include_str!("testdata/readme/no-links.md");
+        let jsonsrc = include_str!("testdata/readme/no-links.json");
+        let readme = src.parse::<Readme>().unwrap();
+        let expected = serde_json::from_str::<Readme>(jsonsrc).unwrap();
+        assert_eq!(readme, expected);
+        assert_eq!(readme.to_string(), src);
+        assert_eq!(readme.repostatus(), Some(Repostatus::Concept));
     }
 
     #[test]
