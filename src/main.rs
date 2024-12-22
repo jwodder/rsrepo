@@ -5,8 +5,6 @@ mod config;
 mod git;
 mod github;
 mod http_util;
-mod package;
-mod pkgset;
 mod project;
 mod provider;
 mod readme;

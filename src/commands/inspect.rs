@@ -1,5 +1,4 @@
-use crate::package::Package;
-use crate::project::{Project, ProjectType};
+use crate::project::{Package, Project, ProjectType};
 use crate::provider::Provider;
 use clap::Args;
 use serde::Serialize;

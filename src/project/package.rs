@@ -1,3 +1,4 @@
+use super::textfile::TextFile;
 use crate::changelog::Changelog;
 use crate::cmd::LoggedCommand;
 use crate::git::Git;
@@ -6,11 +7,9 @@ use crate::readme::Readme;
 use crate::util::CopyrightLine;
 use anyhow::{bail, Context};
 use cargo_metadata::{Package as CargoPackage, TargetKind};
-use fs_err::{read_to_string, File};
 use in_place::InPlace;
 use semver::Version;
-use std::io::{BufRead, BufReader, ErrorKind, Write};
-use std::marker::PhantomData;
+use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 use toml_edit::DocumentMut;
 
@@ -95,27 +94,15 @@ impl Package {
     }
 
     pub(crate) fn readme(&self) -> TextFile<'_, Readme> {
-        TextFile {
-            dirpath: self.path(),
-            filename: "README.md",
-            _type: PhantomData,
-        }
+        TextFile::new(self.path(), "README.md")
     }
 
     pub(crate) fn changelog(&self) -> TextFile<'_, Changelog> {
-        TextFile {
-            dirpath: self.path(),
-            filename: "CHANGELOG.md",
-            _type: PhantomData,
-        }
+        TextFile::new(self.path(), "CHANGELOG.md")
     }
 
     pub(crate) fn manifest(&self) -> TextFile<'_, DocumentMut> {
-        TextFile {
-            dirpath: self.path(),
-            filename: "Cargo.toml",
-            _type: PhantomData,
-        }
+        TextFile::new(self.path(), "Cargo.toml")
     }
 
     pub(crate) fn set_package_field<V: Into<toml_edit::Value>>(
@@ -181,42 +168,6 @@ impl Package {
             bail!("copyright line not found in LICENSE");
         }
         inp.save().context("failed to save changed to LICENSE")?;
-        Ok(())
-    }
-}
-
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub(crate) struct TextFile<'a, T> {
-    dirpath: &'a Path,
-    filename: &'static str,
-    _type: PhantomData<T>,
-}
-
-impl<T> TextFile<'_, T> {
-    pub(crate) fn get(&self) -> anyhow::Result<Option<T>>
-    where
-        T: std::str::FromStr,
-        <T as std::str::FromStr>::Err: std::error::Error + Send + Sync + 'static,
-    {
-        match read_to_string(self.dirpath.join(self.filename)) {
-            Ok(s) => {
-                Ok(Some(s.parse::<T>().with_context(|| {
-                    format!("failed to parse {}", self.filename)
-                })?))
-            }
-            Err(e) if e.kind() == ErrorKind::NotFound => Ok(None),
-            Err(e) => Err(e.into()),
-        }
-    }
-
-    pub(crate) fn set(&self, content: T) -> anyhow::Result<()>
-    where
-        T: std::fmt::Display,
-    {
-        let mut fp = File::create(self.dirpath.join(self.filename))
-            .with_context(|| format!("failed to open {} for writing", self.filename))?;
-        write!(&mut fp, "{content}")
-            .with_context(|| format!("failed writing to {}", self.filename))?;
         Ok(())
     }
 }

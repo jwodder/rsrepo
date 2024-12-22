@@ -1,5 +1,5 @@
-use crate::package::Package;
-use crate::util::{locate_project, LocateError};
+use super::package::Package;
+use super::util::{locate_project, LocateError};
 use std::path::Path;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -64,5 +64,23 @@ impl PackageSet {
 
     pub(crate) fn into_current_package(self) -> Result<Option<Package>, LocateError> {
         locate_project(false).map(|path| self.into_package_by_manifest_path(&path))
+    }
+}
+
+impl IntoIterator for PackageSet {
+    type Item = Package;
+    type IntoIter = std::vec::IntoIter<Package>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.packages.into_iter()
+    }
+}
+
+impl<'a> IntoIterator for &'a PackageSet {
+    type Item = &'a Package;
+    type IntoIter = std::slice::Iter<'a, Package>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }

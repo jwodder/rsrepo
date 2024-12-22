@@ -1,6 +1,11 @@
-use crate::package::Package;
-use crate::pkgset::PackageSet;
-use crate::util::locate_project;
+mod package;
+mod pkgset;
+mod textfile;
+mod util;
+pub(crate) use self::package::Package;
+pub(crate) use self::pkgset::PackageSet;
+//pub(crate) use self::textfile::TextFile;
+use self::util::locate_project;
 use anyhow::Context;
 use cargo_metadata::MetadataCommand;
 use serde::Deserialize;
