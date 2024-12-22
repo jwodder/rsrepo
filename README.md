@@ -323,3 +323,10 @@ the change is also performed.
 
 - `-p <NAME>`, `--package <NAME>` — Update the package with the given name in
   the workspace.  By default, the package for the current directory is updated.
+
+- `-w`, `--workspace` — Instead of updating a single package's
+  `package.rust-version`, update `workspace.package.rust-version` in the
+  project's root `Cargo.toml` and then update the README and CHANGELOG for all
+  packages in the workspace that inherit this value.
+
+  This option is mutually exclusive with `--package`.

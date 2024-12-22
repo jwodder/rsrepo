@@ -138,6 +138,23 @@ impl Package {
         Ok(())
     }
 
+    pub(crate) fn package_key_inherits_workspace(&self, key: &str) -> anyhow::Result<bool> {
+        let manifest = self.manifest();
+        let Some(doc) = manifest.get()? else {
+            bail!("Package lacks Cargo.toml");
+        };
+        let Some(pkg) = doc.get("package").and_then(|it| it.as_table_like()) else {
+            bail!("No [package] table in Cargo.toml");
+        };
+        Ok(pkg
+            .get(key)
+            .and_then(|it| it.as_table_like())
+            .and_then(|tbl| tbl.get("workspace"))
+            .and_then(|it| it.as_value())
+            .and_then(toml_edit::Value::as_bool)
+            == Some(true))
+    }
+
     pub(crate) fn update_license_years<I>(&self, years: I) -> anyhow::Result<()>
     where
         I: IntoIterator<Item = i32>,

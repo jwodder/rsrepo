@@ -4,13 +4,14 @@ mod textfile;
 mod util;
 pub(crate) use self::package::Package;
 pub(crate) use self::pkgset::PackageSet;
-//pub(crate) use self::textfile::TextFile;
+pub(crate) use self::textfile::TextFile;
 use self::util::locate_project;
-use anyhow::Context;
+use anyhow::{bail, Context};
 use cargo_metadata::MetadataCommand;
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
+use toml_edit::DocumentMut;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub(crate) struct Project {
@@ -86,6 +87,32 @@ impl Project {
             packages.push(Package::new(md, is_root));
         }
         Ok(PackageSet::new(packages))
+    }
+
+    pub(crate) fn manifest(&self) -> TextFile<'_, DocumentMut> {
+        TextFile::new(self.path(), "Cargo.toml")
+    }
+
+    pub(crate) fn set_workspace_package_field<V: Into<toml_edit::Value>>(
+        &self,
+        key: &str,
+        value: V,
+    ) -> anyhow::Result<()> {
+        let manifest = self.manifest();
+        let Some(mut doc) = manifest.get()? else {
+            bail!("Project lacks Cargo.toml");
+        };
+        let Some(pkg) = doc
+            .get_mut("workspace")
+            .and_then(|it| it.as_table_like_mut())
+            .and_then(|tbl| tbl.get_mut("package"))
+            .and_then(|it| it.as_table_like_mut())
+        else {
+            bail!("No [workspace.package] table in Cargo.toml");
+        };
+        pkg.insert(key, toml_edit::value(value));
+        manifest.set(doc)?;
+        Ok(())
     }
 }
 
