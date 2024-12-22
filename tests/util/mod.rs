@@ -1,5 +1,5 @@
 #![cfg(test)]
-use fs_err::{copy, create_dir_all, read_dir, read_to_string};
+use fs_err::{read_dir, read_to_string};
 use similar::udiff::unified_diff;
 use similar::Algorithm;
 use std::collections::{HashMap, HashSet};
@@ -133,25 +133,16 @@ impl CmpDirtrees {
     }
 }
 
-pub(crate) fn copytree<P: AsRef<Path>, Q: AsRef<Path>>(src: P, dest: Q) -> std::io::Result<()> {
-    let src = src.as_ref();
-    let dest = dest.as_ref();
-    create_dir_all(dest)?;
-    for entry in read_dir(src)? {
-        let entry = entry?;
-        let filetype = entry.file_type()?;
-        if filetype.is_dir() {
-            copytree(entry.path(), dest.join(entry.file_name()))?;
-        } else {
-            copy(entry.path(), dest.join(entry.file_name()))?;
-        }
-    }
-    Ok(())
-}
-
 pub(crate) fn unzip<P: Into<PathBuf>, Q: AsRef<Path>>(zippath: P, outdir: Q) -> anyhow::Result<()> {
     let fp = fs_err::File::open(zippath)?;
     let mut zip = zip::ZipArchive::new(fp)?;
     zip.extract(outdir)?;
     Ok(())
+}
+
+pub(crate) fn opt_subdir<'a>(path: &'a Path, subdir: Option<&str>) -> std::borrow::Cow<'a, Path> {
+    match subdir {
+        Some(sub) => path.join(sub).into(),
+        None => path.into(),
+    }
 }

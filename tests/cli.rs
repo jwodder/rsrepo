@@ -1,9 +1,9 @@
 mod util;
-use crate::util::{copytree, unzip, CmpDirtrees};
+use crate::util::{opt_subdir, unzip, CmpDirtrees};
 use assert_cmd::Command;
 use cfg_if::cfg_if;
 use rstest::rstest;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tempfile::tempdir;
 
 pub static DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data");
@@ -265,17 +265,23 @@ fn new_description() {
 }
 
 #[rstest]
-#[case("plain")]
-#[case("no-entry")]
-#[case("big-chlog")]
-#[case("newly-set")]
-fn set_msrv(#[case] case: &str) {
+#[case("plain", Vec::new(), None)]
+#[case("no-entry", Vec::new(), None)]
+#[case("big-chlog", Vec::new(), None)]
+#[case("newly-set", Vec::new(), None)]
+#[case("workspace", vec!["--workspace"], None)]
+#[case("wrkspc-locate", Vec::new(), Some("crates/api-test"))]
+#[case("wrkspc-locate", vec!["-p", "sudoku-api-test"], Some("crates/sudoku"))]
+fn set_msrv(#[case] case: &str, #[case] opts: Vec<&str>, #[case] subdir: Option<&str>) {
     let tmp_path = tempdir().unwrap();
-    copytree(
+    let workdir = tmp_path.path().join("work");
+    let gooddir = tmp_path.path().join("good");
+    unzip(
         Path::new(DATA_DIR)
             .join("set-msrv")
-            .join(format!("{case}-before")),
-        tmp_path.path(),
+            .join(case)
+            .join("before.zip"),
+        &workdir,
     )
     .unwrap();
     Command::cargo_bin("rsrepo")
@@ -284,17 +290,20 @@ fn set_msrv(#[case] case: &str) {
         .arg("--config")
         .arg(Path::new(DATA_DIR).join("config.toml"))
         .arg("set-msrv")
-        .arg("1.66")
-        .current_dir(tmp_path.path())
+        .args(opts)
+        .arg("1.75")
+        .current_dir(opt_subdir(&workdir, subdir))
         .assert()
         .success();
-    CmpDirtrees::new(
+    unzip(
         Path::new(DATA_DIR)
             .join("set-msrv")
-            .join(format!("{case}-after")),
-        tmp_path.path(),
+            .join(case)
+            .join("after.zip"),
+        &gooddir,
     )
-    .assert_eq();
+    .unwrap();
+    CmpDirtrees::new(gooddir, workdir).assert_eq();
 }
 
 #[rstest]
@@ -367,10 +376,6 @@ fn inspect(
         }
     }
 
-    let mut cwd = PathBuf::from(tmp_path.path());
-    if let Some(p) = subdir {
-        cwd.push(p);
-    }
     Command::cargo_bin("rsrepo")
         .unwrap()
         .arg("--log-level=TRACE")
@@ -378,7 +383,7 @@ fn inspect(
         .arg(Path::new(DATA_DIR).join("config.toml"))
         .arg("inspect")
         .args(workspace.then_some("--workspace"))
-        .current_dir(cwd)
+        .current_dir(opt_subdir(tmp_path.path(), subdir))
         .assert()
         .stdout(expected);
 }
