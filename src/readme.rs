@@ -273,22 +273,18 @@ struct Image {
 }
 
 fn parse_readme(input: &mut &str) -> PResult<Readme> {
-    let (badges, text) = seq!(
-        repeat(1.., terminated(badge, line_ending)),
-        _: line_ending,
-        rest.map(String::from),
-    )
-    .parse_next(input)?;
-    let (links, text) = if text.lines().next().is_some_and(|s| s.contains(" | ")) {
+    let badges =
+        terminated(repeat(1.., terminated(badge, line_ending)), line_ending).parse_next(input)?;
+    let (links, text) = if input.lines().next().is_some_and(|s| s.contains(" | ")) {
         seq!(
             separated(1.., link, (space1, '|', space1)),
             _: line_ending,
             _: line_ending,
             rest.map(String::from),
         )
-        .parse_next(&mut &*text)?
+        .parse_next(input)?
     } else {
-        (Vec::new(), text)
+        (Vec::new(), rest(input).map(String::from)?)
     };
     Ok(Readme {
         badges,
