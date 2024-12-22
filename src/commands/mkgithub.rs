@@ -1,5 +1,5 @@
 use crate::github::{CreateRepoBody, Label, RequiredStatusChecks, SetBranchProtection, Topic};
-use crate::package::Package;
+use crate::project::{HasReadme, Package};
 use crate::provider::Provider;
 use crate::readme::Repostatus;
 use anyhow::bail;

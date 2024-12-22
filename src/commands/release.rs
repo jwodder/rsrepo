@@ -1,7 +1,7 @@
 use crate::changelog::{Changelog, ChangelogHeader, ChangelogSection};
 use crate::cmd::LoggedCommand;
 use crate::github::{CreateRelease, Topic};
-use crate::project::Project;
+use crate::project::{HasReadme, Project};
 use crate::provider::Provider;
 use crate::readme::{Badge, Repostatus};
 use crate::util::{bump_version, move_dirtree_into, this_year, workspace_tag_prefix, Bump};
@@ -40,14 +40,7 @@ impl Release {
         let project = Project::locate()?;
         let is_workspace = project.project_type().is_workspace();
         let pkgset = project.package_set()?;
-        let package = match self.package {
-            Some(name) => pkgset.into_package_by_name(&name).ok_or_else(|| {
-                anyhow::anyhow!("No package named {name:?} found in current project")
-            })?,
-            None => pkgset
-                .into_current_package()?
-                .ok_or_else(|| anyhow::anyhow!("Not currently located in a package"))?,
-        };
+        let package = pkgset.get(self.package.as_deref())?;
         let git = package.git();
         let readme_file = package.readme();
         let chlog_file = package.changelog();
