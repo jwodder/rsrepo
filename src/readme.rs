@@ -273,17 +273,30 @@ struct Image {
 }
 
 fn parse_readme(input: &mut &str) -> PResult<Readme> {
-    seq! {
-        Readme {
-            badges: repeat(1.., terminated(badge, line_ending)),
+    let badges =
+        terminated(repeat(1.., terminated(badge, line_ending)), line_ending).parse_next(input)?;
+    let (links, text) = if input.lines().next().is_some_and(has_link_separator) {
+        seq!(
+            separated(1.., link, (space1, '|', space1)),
             _: line_ending,
-            links: separated(1.., link, (space1, '|', space1)),
             _: line_ending,
-            _: line_ending,
-            text: rest.map(String::from),
-        }
-    }
-    .parse_next(input)
+            rest.map(String::from),
+        )
+        .parse_next(input)?
+    } else {
+        (Vec::new(), rest(input).map(String::from)?)
+    };
+    Ok(Readme {
+        badges,
+        links,
+        text,
+    })
+}
+
+/// Does `s` match the regex `/[ \t]\|[ \t]/`?
+fn has_link_separator(s: &str) -> bool {
+    s.match_indices('|')
+        .any(|(i, _)| s[..i].ends_with([' ', '\t']) && s[(i + 1)..].starts_with([' ', '\t']))
 }
 
 fn badge(input: &mut &str) -> PResult<Badge> {
@@ -373,6 +386,17 @@ mod tests {
     }
 
     #[test]
+    fn no_links_readme() {
+        let src = include_str!("testdata/readme/no-links.md");
+        let jsonsrc = include_str!("testdata/readme/no-links.json");
+        let readme = src.parse::<Readme>().unwrap();
+        let expected = serde_json::from_str::<Readme>(jsonsrc).unwrap();
+        assert_eq!(readme, expected);
+        assert_eq!(readme.to_string(), src);
+        assert_eq!(readme.repostatus(), Some(Repostatus::Concept));
+    }
+
+    #[test]
     fn set_repostatus_badge() {
         let mut readme = include_str!("testdata/readme/new.md")
             .parse::<Readme>()
@@ -457,5 +481,19 @@ mod tests {
     #[case("https://img.shields.io/badge/MSRV-1.69-orange", None)]
     fn repostatus_for_url(#[case] url: &str, #[case] status: Option<Repostatus>) {
         assert_eq!(Repostatus::for_url(url), status);
+    }
+
+    #[rstest]
+    #[case("foo | bar", true)]
+    #[case("foo\t| bar", true)]
+    #[case("foo |\tbar", true)]
+    #[case("foo\t|\tbar", true)]
+    #[case("foo| bar", false)]
+    #[case("foo|bar", false)]
+    #[case("foo |bar", false)]
+    #[case("foo\x0C| bar", false)]
+    #[case("foo |\x0Cbar", false)]
+    fn test_has_link_separator(#[case] s: &str, #[case] yes: bool) {
+        assert_eq!(has_link_separator(s), yes);
     }
 }

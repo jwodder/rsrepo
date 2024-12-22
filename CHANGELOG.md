@@ -7,6 +7,7 @@ v0.5.0 (in development)
       `{package_name}/`.
 - `release` now always updates `Cargo.lock` when the file is present,
   regardless of package type
+- Header links in README files are now optional
 
 v0.4.0 (2024-12-17)
 -------------------
