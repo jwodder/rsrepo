@@ -1,11 +1,14 @@
 mod package;
 mod pkgset;
 mod textfile;
+mod traits;
 mod util;
 pub(crate) use self::package::Package;
 pub(crate) use self::pkgset::PackageSet;
 pub(crate) use self::textfile::TextFile;
+pub(crate) use self::traits::HasReadme;
 use self::util::locate_project;
+use crate::readme::Readme;
 use anyhow::{bail, Context};
 use cargo_metadata::MetadataCommand;
 use serde::Deserialize;
@@ -113,6 +116,12 @@ impl Project {
         pkg.insert(key, toml_edit::value(value));
         manifest.set(doc)?;
         Ok(())
+    }
+}
+
+impl HasReadme for Project {
+    fn readme(&self) -> TextFile<'_, Readme> {
+        TextFile::new(self.path(), "README.md")
     }
 }
 

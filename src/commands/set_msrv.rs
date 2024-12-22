@@ -1,4 +1,4 @@
-use crate::project::{Package, Project};
+use crate::project::{HasReadme, Package, Project};
 use crate::provider::Provider;
 use crate::util::RustVersion;
 use clap::Args;
@@ -13,9 +13,10 @@ pub(crate) struct SetMsrv {
     #[arg(short, long, value_name = "NAME")]
     package: Option<String>,
 
-    /// Update workspace.package.rust-version in the project's root Cargo.toml
-    /// and update the README and CHANGELOG for all packages in the workspace
-    /// that inherit this value
+    /// Update `workspace.package.rust-version` in the project's root
+    /// `Cargo.toml`, update the README in the project root, and update the
+    /// README and CHANGELOG for all packages in the workspace that inherit the
+    /// workspace MSRV.
     #[arg(short, long, conflicts_with = "package")]
     workspace: bool,
 
@@ -31,6 +32,7 @@ impl SetMsrv {
         if self.workspace {
             log::info!("Updating workspace.package.rust-version");
             project.set_workspace_package_field("rust-version", self.msrv.to_string())?;
+            update_readme(&project, self.msrv)?;
             for package in &pkgset {
                 if package.package_key_inherits_workspace("rust-version")? {
                     log::info!("Updating {} ...", package.name());
@@ -48,13 +50,22 @@ impl SetMsrv {
 }
 
 fn update_extras(package: &Package, msrv: RustVersion) -> anyhow::Result<()> {
-    let readme_file = package.readme();
+    update_readme(package, msrv)?;
+    update_chlog(package, msrv)?;
+    Ok(())
+}
+
+fn update_readme<P: HasReadme>(p: &P, msrv: RustVersion) -> anyhow::Result<()> {
+    let readme_file = p.readme();
     if let Some(mut readme) = readme_file.get()? {
         log::info!("Updating README.md ...");
         readme.set_msrv(msrv);
         readme_file.set(readme)?;
     }
+    Ok(())
+}
 
+fn update_chlog(package: &Package, msrv: RustVersion) -> anyhow::Result<()> {
     let chlog_file = package.changelog();
     if let Some(mut chlog) = chlog_file.get()? {
         log::info!("Updating CHANGELOG.md ...");

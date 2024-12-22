@@ -1,4 +1,5 @@
 use super::textfile::TextFile;
+use super::traits::HasReadme;
 use crate::changelog::Changelog;
 use crate::cmd::LoggedCommand;
 use crate::git::Git;
@@ -93,10 +94,6 @@ impl Package {
         self.is_root
     }
 
-    pub(crate) fn readme(&self) -> TextFile<'_, Readme> {
-        TextFile::new(self.path(), "README.md")
-    }
-
     pub(crate) fn changelog(&self) -> TextFile<'_, Changelog> {
         TextFile::new(self.path(), "CHANGELOG.md")
     }
@@ -186,6 +183,12 @@ impl Package {
         }
         inp.save().context("failed to save changed to LICENSE")?;
         Ok(())
+    }
+}
+
+impl HasReadme for Package {
+    fn readme(&self) -> TextFile<'_, Readme> {
+        TextFile::new(self.path(), "README.md")
     }
 }
 

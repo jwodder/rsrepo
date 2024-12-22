@@ -326,7 +326,8 @@ the change is also performed.
 
 - `-w`, `--workspace` — Instead of updating a single package's
   `package.rust-version`, update `workspace.package.rust-version` in the
-  project's root `Cargo.toml` and then update the README and CHANGELOG for all
-  packages in the workspace that inherit this value.
+  project's root `Cargo.toml`, update the README in the project root, and
+  update the README and CHANGELOG for all packages in the workspace that
+  inherit the workspace MSRV.
 
   This option is mutually exclusive with `--package`.
