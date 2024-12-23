@@ -5,7 +5,7 @@ edition = "2021"
 rust-version = "1.69"
 #description = ???
 authors = ["Simon \"Some Rustacean\" McRustowicz <rustacean+foobar@test.nil>"]
-repository = "https://github.com/rs.test/foobar"
+repository = "https://github.com/jwodder-test/foobar"
 license = "MIT"
 keywords = []
 # See <https://crates.io/category_slugs> for a list of categories

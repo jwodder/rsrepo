@@ -385,5 +385,58 @@ fn inspect(
         .args(workspace.then_some("--workspace"))
         .current_dir(opt_subdir(tmp_path.path(), subdir))
         .assert()
+        .success()
+        .stdout(expected);
+}
+
+#[rstest]
+#[case("lib.zip", vec!["--no-codecov-token"], "lib.json")]
+#[case("lib.zip", vec!["--codecov-token=hunter2", "fibseqlib"], "lib-cli-name.json")]
+#[case("bin.zip", vec!["--no-codecov-token"], "bin.json")]
+#[case("bin.zip", vec!["--no-codecov-token", "fibseqcli"], "bin-cli-name.json")]
+#[case("workspace.zip", vec!["--no-codecov-token"], "workspace.json")]
+#[case("workspace.zip", vec!["--no-codecov-token", "fibstuff"], "workspace-cli-name.json")]
+#[case("virtual.zip", vec!["--no-codecov-token"], "virtual.json")]
+#[case("virtual.zip", vec!["--no-codecov-token", "fib"], "virtual-cli-name.json")]
+fn mkgithub(#[case] zipfile: &str, #[case] args: Vec<&str>, #[case] jsonfile: &str) {
+    let tmp_path = tempdir().unwrap();
+    unzip(
+        Path::new(DATA_DIR).join("mkgithub").join(zipfile),
+        tmp_path.path(),
+    )
+    .unwrap();
+    Command::new("git")
+        .arg("init")
+        .arg("-b")
+        .arg("main")
+        .current_dir(tmp_path.path())
+        .assert()
+        .success();
+    Command::new("git")
+        .arg("add")
+        .arg(".")
+        .current_dir(tmp_path.path())
+        .assert()
+        .success();
+    Command::new("git")
+        .arg("commit")
+        .arg("-m")
+        .arg("Ensure that default branch exists")
+        .current_dir(tmp_path.path())
+        .assert()
+        .success();
+    let expected =
+        fs_err::read_to_string(Path::new(DATA_DIR).join("mkgithub").join(jsonfile)).unwrap();
+    Command::cargo_bin("rsrepo")
+        .unwrap()
+        .arg("--log-level=TRACE")
+        .arg("--config")
+        .arg(Path::new(DATA_DIR).join("config.toml"))
+        .arg("mkgithub")
+        .arg("--plan-only")
+        .args(args)
+        .current_dir(tmp_path.path())
+        .assert()
+        .success()
         .stdout(expected);
 }

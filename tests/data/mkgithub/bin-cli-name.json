@@ -1,0 +1,22 @@
+{
+  "repo_name": "fibseqcli",
+  "metadata_repo_url": null,
+  "default_branch": "main",
+  "description": null,
+  "topics": [
+    "rust"
+  ],
+  "private": false,
+  "required_checks": [
+    "test (ubuntu-latest, msrv)",
+    "test (ubuntu-latest, stable)",
+    "test (ubuntu-latest, beta)",
+    "test (ubuntu-latest, nightly)",
+    "test (macos-latest, stable)",
+    "test (windows-latest, stable)",
+    "minimal-versions",
+    "lint",
+    "coverage"
+  ],
+  "codecov_token": null
+}

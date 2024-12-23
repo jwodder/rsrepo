@@ -5,6 +5,7 @@ use crate::readme::Repostatus;
 use anyhow::bail;
 use clap::Args;
 use ghrepo::GHRepo;
+use serde::{ser::Serializer, Serialize};
 use std::borrow::Cow;
 
 /// Create a GitHub repository for the project and push
@@ -23,6 +24,10 @@ pub(crate) struct Mkgithub {
     #[arg(long)]
     no_codecov_token: bool,
 
+    /// Print a description of what would be created without actually doing so
+    #[arg(long)]
+    plan_only: bool,
+
     /// Make the new repository private
     #[arg(short = 'P', long)]
     private: bool,
@@ -37,19 +42,81 @@ pub(crate) struct Mkgithub {
 
 impl Mkgithub {
     pub(crate) fn run(self, provider: Provider) -> anyhow::Result<()> {
-        let github = provider.github()?;
+        let cts = match (self.no_codecov_token, self.codecov_token) {
+            (true, _) => CodecovTokenSource::None,
+            (false, Some(token)) => CodecovTokenSource::Cli(token),
+            (false, None) => CodecovTokenSource::Config,
+        };
         let project = Project::locate()?;
+        let ghmaker = GitHubMaker::new(project, provider)?
+            .with_repo_name(self.repo_name)
+            .with_private(self.private)
+            .with_codecov_token_source(cts);
+        let plan = ghmaker.plan()?;
+        if self.plan_only {
+            println!("{}", serde_json::to_string_pretty(&plan)?);
+        } else {
+            ghmaker.execute(plan)?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug)]
+struct GitHubMaker {
+    project: Project,
+    provider: Provider,
+    has_lib: bool,
+    root_package: Option<Package>,
+    repo_name: Option<String>,
+    private: bool,
+    codecov_token_source: CodecovTokenSource,
+}
+
+impl GitHubMaker {
+    fn new(project: Project, provider: Provider) -> anyhow::Result<GitHubMaker> {
         let pkgset = project.package_set()?;
-        let root_package = pkgset.root_package();
-        let flavor = root_package.map_or_else(|| project.flavor().clone(), Package::flavor);
-        let name = if let Some(s) = self.repo_name {
+        let has_lib = pkgset.iter().any(Package::is_lib);
+        let root_package = pkgset.into_root_package();
+        Ok(GitHubMaker {
+            project,
+            provider,
+            has_lib,
+            root_package,
+            repo_name: None,
+            private: false,
+            codecov_token_source: CodecovTokenSource::None,
+        })
+    }
+
+    fn with_repo_name(mut self, repo_name: Option<String>) -> Self {
+        self.repo_name = repo_name;
+        self
+    }
+
+    fn with_private(mut self, private: bool) -> Self {
+        self.private = private;
+        self
+    }
+
+    fn with_codecov_token_source(mut self, codecov_token_source: CodecovTokenSource) -> Self {
+        self.codecov_token_source = codecov_token_source;
+        self
+    }
+
+    fn plan(&self) -> anyhow::Result<Plan> {
+        let flavor = self
+            .root_package
+            .as_ref()
+            .map_or_else(|| self.project.flavor().clone(), Package::flavor);
+        let repo_name = if let Some(s) = self.repo_name.clone() {
             s
         } else {
             match flavor.repository.as_ref().map(|s| s.parse::<GHRepo>()) {
                 Some(Ok(r)) => {
-                    let github_user = match provider.config()?.github_user.as_ref() {
+                    let github_user = match self.provider.config()?.github_user.as_ref() {
                         Some(user) => Cow::Borrowed(user),
-                        None => Cow::Owned(github.whoami()?),
+                        None => Cow::Owned(self.provider.github()?.whoami()?),
                     };
                     if r.owner() != *github_user {
                         bail!("Project repository URL does not belong to GitHub user");
@@ -63,23 +130,6 @@ impl Mkgithub {
             }
         };
 
-        let repo = github.create_repository(CreateRepoBody {
-            name,
-            description: flavor.description.clone(),
-            private: Some(self.private),
-            delete_branch_on_merge: Some(true),
-            allow_auto_merge: Some(true),
-        })?;
-        log::info!("Created GitHub repository {}", repo.html_url);
-
-        log::info!("Setting remote and pushing");
-        let git = project.git();
-        if git.remotes()?.contains("origin") {
-            git.rm_remote("origin")?;
-        }
-        git.add_remote("origin", &repo.ssh_url)?;
-        git.run("push", ["-u", "origin", "refs/heads/*", "refs/tags/*"])?;
-
         let mut topics = Vec::from([Topic::new("rust")]);
         for keyword in &flavor.keywords {
             let tp = Topic::new(keyword);
@@ -88,18 +138,15 @@ impl Mkgithub {
             }
             topics.push(tp);
         }
-        let readme = root_package.map_or_else(|| project.readme(), HasReadme::readme);
+        let readme = self
+            .root_package
+            .as_ref()
+            .map_or_else(|| self.project.readme(), HasReadme::readme);
         if readme.get()?.and_then(|r| r.repostatus()) == Some(Repostatus::Wip) {
             topics.push(Topic::new("work-in-progress"));
         }
-        log::info!(
-            "Setting repository topics to: {}",
-            itertools::join(&topics, " ")
-        );
-        github.set_topics(&repo, topics)?;
 
-        log::info!("Setting protection rules for default branch ...");
-        let mut contexts = vec![
+        let mut required_checks = vec![
             // This needs to be kept in sync with the tests in test.yml.tt:
             "test (ubuntu-latest, msrv)",
             "test (ubuntu-latest, stable)",
@@ -111,19 +158,62 @@ impl Mkgithub {
             "lint",
             "coverage",
         ];
-        if pkgset.iter().any(Package::is_lib) {
-            contexts.push("docs");
+        if self.has_lib {
+            required_checks.push("docs");
         }
-        let Some(default_branch) = git.default_branch()? else {
+
+        let Some(default_branch) = self.project.git().default_branch()? else {
             bail!("Could not determine repository's default branch");
         };
+
+        let codecov_token = self.codecov_token_source.resolve(&self.provider)?;
+
+        Ok(Plan {
+            repo_name,
+            description: flavor.description,
+            private: self.private,
+            topics,
+            required_checks,
+            default_branch,
+            codecov_token,
+            metadata_repo_url: flavor.repository,
+        })
+    }
+
+    fn execute(&self, plan: Plan) -> anyhow::Result<()> {
+        let github = self.provider.github()?;
+        let repo = github.create_repository(CreateRepoBody {
+            name: plan.repo_name,
+            description: plan.description,
+            private: Some(plan.private),
+            delete_branch_on_merge: Some(true),
+            allow_auto_merge: Some(true),
+        })?;
+        log::info!("Created GitHub repository {}", repo.html_url);
+
+        log::info!("Setting remote and pushing");
+        let git = self.project.git();
+        if git.remotes()?.contains("origin") {
+            git.rm_remote("origin")?;
+        }
+        git.add_remote("origin", &repo.ssh_url)?;
+        git.run("push", ["-u", "origin", "refs/heads/*", "refs/tags/*"])?;
+
+        let topics = plan.topics;
+        log::info!(
+            "Setting repository topics to: {}",
+            itertools::join(&topics, " ")
+        );
+        github.set_topics(&repo, topics)?;
+
+        log::info!("Setting protection rules for default branch ...");
         github.set_branch_protection(
             &repo,
-            default_branch,
+            plan.default_branch,
             SetBranchProtection {
                 required_status_checks: Some(RequiredStatusChecks {
                     strict: false,
-                    contexts,
+                    contexts: plan.required_checks,
                 }),
                 allow_force_pushes: Some(true),
                 enforce_admins: Some(false),
@@ -154,35 +244,24 @@ impl Mkgithub {
             ),
         )?;
 
-        if !self.no_codecov_token {
-            let token = match self.codecov_token.as_deref() {
-                Some(t) => t,
-                None => provider
-                    .config()?
-                    .codecov_token
-                    .as_deref()
-                    .unwrap_or_default(),
-            };
-            if !token.is_empty() {
-                log::info!("Setting CODECOV_TOKEN secret");
-                github.set_actions_secret(&repo, "CODECOV_TOKEN", token)?;
-            } else {
-                log::warn!("CODECOV_TOKEN value not set; not setting secret");
-            }
+        if let Some(token) = plan.codecov_token {
+            log::info!("Setting CODECOV_TOKEN secret");
+            github.set_actions_secret(&repo, "CODECOV_TOKEN", &token)?;
         }
 
-        if flavor.repository.is_none() {
-            if let Some(pkg) = root_package {
+        if plan.metadata_repo_url.is_none() {
+            if let Some(ref pkg) = self.root_package {
                 log::info!("Setting 'package.repository' field in Cargo.toml ...");
                 pkg.set_package_field("repository", repo.html_url)?;
             } else {
                 log::info!("Setting 'workspace.package.repository' field in Cargo.toml ...");
-                project.set_workspace_package_field("repository", repo.html_url)?;
+                self.project
+                    .set_workspace_package_field("repository", repo.html_url)?;
             }
-        } else if flavor.repository != Some(repo.html_url) {
+        } else if plan.metadata_repo_url != Some(repo.html_url) {
             log::warn!(
                 "'{}package.repository' field in Cargo.toml differs from GitHub repository URL",
-                if root_package.is_some() {
+                if self.root_package.is_some() {
                     ""
                 } else {
                     "workspace."
@@ -191,5 +270,43 @@ impl Mkgithub {
         }
 
         Ok(())
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+struct Plan {
+    repo_name: String,
+    metadata_repo_url: Option<String>,
+    default_branch: &'static str,
+    description: Option<String>,
+    topics: Vec<Topic>,
+    private: bool,
+    required_checks: Vec<&'static str>,
+    #[serde(serialize_with = "maybe_redact")]
+    codecov_token: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum CodecovTokenSource {
+    Cli(String),
+    Config,
+    None,
+}
+
+impl CodecovTokenSource {
+    fn resolve(&self, provider: &Provider) -> anyhow::Result<Option<String>> {
+        match self {
+            CodecovTokenSource::Cli(token) => Ok(Some(token.clone())),
+            CodecovTokenSource::Config => Ok(provider.config()?.codecov_token.clone()),
+            CodecovTokenSource::None => Ok(None),
+        }
+    }
+}
+
+fn maybe_redact<S: Serializer>(secret: &Option<String>, serializer: S) -> Result<S::Ok, S::Error> {
+    if secret.is_some() {
+        serializer.serialize_some("--- SECRET ---")
+    } else {
+        serializer.serialize_none()
     }
 }

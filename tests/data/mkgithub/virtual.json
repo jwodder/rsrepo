@@ -1,0 +1,25 @@
+{
+  "repo_name": "fibbles",
+  "metadata_repo_url": "https://github.com/jwodder-test/fibbles",
+  "default_branch": "main",
+  "description": "Compute the Fibonacci sequence",
+  "topics": [
+    "rust",
+    "fibonacci-sequence",
+    "mathematics"
+  ],
+  "private": false,
+  "required_checks": [
+    "test (ubuntu-latest, msrv)",
+    "test (ubuntu-latest, stable)",
+    "test (ubuntu-latest, beta)",
+    "test (ubuntu-latest, nightly)",
+    "test (macos-latest, stable)",
+    "test (windows-latest, stable)",
+    "minimal-versions",
+    "lint",
+    "coverage",
+    "docs"
+  ],
+  "codecov_token": null
+}
