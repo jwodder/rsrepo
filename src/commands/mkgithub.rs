@@ -1,5 +1,5 @@
 use crate::github::{CreateRepoBody, Label, RequiredStatusChecks, SetBranchProtection, Topic};
-use crate::project::{HasReadme, Package, Project, ProjectType};
+use crate::project::{HasReadme, Package, Project};
 use crate::provider::Provider;
 use crate::readme::Repostatus;
 use anyhow::bail;
@@ -40,16 +40,8 @@ impl Mkgithub {
         let github = provider.github()?;
         let project = Project::locate()?;
         let pkgset = project.package_set()?;
-        let root_package = (project.project_type() != ProjectType::VirtualWorkspace).then(|| {
-            pkgset
-                .root_package()
-                .expect("non-virtual workspace should have a root package")
-        });
-        let flavor = match root_package {
-            Some(pkg) => pkg.flavor(),
-            None => project.flavor().clone(),
-        };
-
+        let root_package = pkgset.root_package();
+        let flavor = root_package.map_or_else(|| project.flavor().clone(), Package::flavor);
         let name = if let Some(s) = self.repo_name {
             s
         } else {
@@ -96,10 +88,7 @@ impl Mkgithub {
             }
             topics.push(tp);
         }
-        let readme = match root_package {
-            Some(pkg) => pkg.readme(),
-            None => project.readme(),
-        };
+        let readme = root_package.map_or_else(|| project.readme(), HasReadme::readme);
         if readme.get()?.and_then(|r| r.repostatus()) == Some(Repostatus::Wip) {
             topics.push(Topic::new("work-in-progress"));
         }
