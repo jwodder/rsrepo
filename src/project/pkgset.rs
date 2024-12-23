@@ -27,7 +27,6 @@ impl PackageSet {
         }
     }
 
-    #[allow(dead_code)]
     pub(crate) fn root_package(&self) -> Option<&Package> {
         self.packages.iter().find(|p| p.is_root_package())
     }

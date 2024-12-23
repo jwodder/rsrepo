@@ -1,5 +1,5 @@
 use crate::github::{CreateRepoBody, Label, RequiredStatusChecks, SetBranchProtection, Topic};
-use crate::project::{HasReadme, Package};
+use crate::project::{HasReadme, Package, Project, ProjectType};
 use crate::provider::Provider;
 use crate::readme::Repostatus;
 use anyhow::bail;
@@ -38,30 +38,42 @@ pub(crate) struct Mkgithub {
 impl Mkgithub {
     pub(crate) fn run(self, provider: Provider) -> anyhow::Result<()> {
         let github = provider.github()?;
-        let package = Package::locate()?;
-        let metadata = package.metadata();
+        let project = Project::locate()?;
+        let pkgset = project.package_set()?;
+        let root_package = (project.project_type() != ProjectType::VirtualWorkspace).then(|| {
+            pkgset
+                .root_package()
+                .expect("non-virtual workspace should have a root package")
+        });
+        let flavor = match root_package {
+            Some(pkg) => pkg.flavor(),
+            None => project.flavor().clone(),
+        };
+
         let name = if let Some(s) = self.repo_name {
             s
         } else {
-            match metadata.repository.as_ref().map(|s| s.parse::<GHRepo>()) {
+            match flavor.repository.as_ref().map(|s| s.parse::<GHRepo>()) {
                 Some(Ok(r)) => {
                     let github_user = match provider.config()?.github_user.as_ref() {
                         Some(user) => Cow::Borrowed(user),
                         None => Cow::Owned(github.whoami()?),
                     };
                     if r.owner() != *github_user {
-                        bail!("Package repository URL does not belong to GitHub user");
+                        bail!("Project repository URL does not belong to GitHub user");
                     }
                     r.name().to_string()
                 }
-                Some(Err(_)) => bail!("Package repository URL does not point to GitHub"),
-                None => metadata.name.clone(),
+                Some(Err(_)) => bail!("Project repository URL does not point to GitHub"),
+                None => flavor.name.clone().ok_or_else(|| {
+                    anyhow::anyhow!("No repository URL found to determine repository name from")
+                })?,
             }
         };
 
         let repo = github.create_repository(CreateRepoBody {
             name,
-            description: metadata.description.clone(),
+            description: flavor.description.clone(),
             private: Some(self.private),
             delete_branch_on_merge: Some(true),
             allow_auto_merge: Some(true),
@@ -69,7 +81,7 @@ impl Mkgithub {
         log::info!("Created GitHub repository {}", repo.html_url);
 
         log::info!("Setting remote and pushing");
-        let git = package.git();
+        let git = project.git();
         if git.remotes()?.contains("origin") {
             git.rm_remote("origin")?;
         }
@@ -77,14 +89,18 @@ impl Mkgithub {
         git.run("push", ["-u", "origin", "refs/heads/*", "refs/tags/*"])?;
 
         let mut topics = Vec::from([Topic::new("rust")]);
-        for keyword in &metadata.keywords {
+        for keyword in &flavor.keywords {
             let tp = Topic::new(keyword);
             if tp != keyword {
                 log::warn!("Keyword {keyword:?} sanitized to \"{tp}\" for use as GitHub topic");
             }
             topics.push(tp);
         }
-        if package.readme().get()?.and_then(|r| r.repostatus()) == Some(Repostatus::Wip) {
+        let readme = match root_package {
+            Some(pkg) => pkg.readme(),
+            None => project.readme(),
+        };
+        if readme.get()?.and_then(|r| r.repostatus()) == Some(Repostatus::Wip) {
             topics.push(Topic::new("work-in-progress"));
         }
         log::info!(
@@ -106,7 +122,7 @@ impl Mkgithub {
             "lint",
             "coverage",
         ];
-        if package.is_lib() {
+        if pkgset.iter().any(Package::is_lib) {
             contexts.push("docs");
         }
         let Some(default_branch) = git.default_branch()? else {
@@ -166,12 +182,22 @@ impl Mkgithub {
             }
         }
 
-        if metadata.repository.is_none() {
-            log::info!("Setting 'package.repository' field in Cargo.toml ...");
-            package.set_package_field("repository", repo.html_url)?;
-        } else if metadata.repository != Some(repo.html_url) {
+        if flavor.repository.is_none() {
+            if let Some(pkg) = root_package {
+                log::info!("Setting 'package.repository' field in Cargo.toml ...");
+                pkg.set_package_field("repository", repo.html_url)?;
+            } else {
+                log::info!("Setting 'workspace.package.repository' field in Cargo.toml ...");
+                project.set_workspace_package_field("repository", repo.html_url)?;
+            }
+        } else if flavor.repository != Some(repo.html_url) {
             log::warn!(
-                "'package.repository' field in Cargo.toml differs from GitHub repository URL"
+                "'{}package.repository' field in Cargo.toml differs from GitHub repository URL",
+                if root_package.is_some() {
+                    ""
+                } else {
+                    "workspace."
+                }
             );
         }
 
