@@ -3,7 +3,6 @@ use super::traits::HasReadme;
 use super::Flavor;
 use crate::changelog::Changelog;
 use crate::cmd::LoggedCommand;
-use crate::git::Git;
 use crate::project::Project;
 use crate::readme::Readme;
 use crate::util::CopyrightLine;
@@ -59,29 +58,6 @@ impl Package {
             .iter()
             .flat_map(|t| t.kind.iter())
             .any(|k| k == &TargetKind::Lib)
-    }
-
-    pub(crate) fn latest_tag_version(
-        &self,
-        prefix: Option<&str>,
-    ) -> anyhow::Result<Option<Version>> {
-        if let Some(tag) = self.git().latest_tag(prefix)? {
-            let tagv = match prefix {
-                Some(pre) => tag.strip_prefix(pre).unwrap_or(&*tag),
-                None => &*tag,
-            };
-            tagv.strip_prefix('v')
-                .unwrap_or(tagv)
-                .parse::<Version>()
-                .with_context(|| format!("Failed to parse latest Git tag {tag:?} as a version"))
-                .map(Some)
-        } else {
-            Ok(None)
-        }
-    }
-
-    pub(crate) fn git(&self) -> Git<'_> {
-        Git::new(self.path())
     }
 
     pub(crate) fn metadata(&self) -> &CargoPackage {

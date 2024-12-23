@@ -1,6 +1,7 @@
 use crate::cmd::{CommandError, CommandOutputError, LoggedCommand};
 use crate::util::StringLines;
 use anyhow::Context;
+use semver::Version;
 use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
@@ -86,6 +87,25 @@ impl<'a> Git<'a> {
             args.push(format!("{pre}*"));
         }
         Ok(self.readlines("tag", args)?.next())
+    }
+
+    pub(crate) fn latest_tag_version(
+        &self,
+        prefix: Option<&str>,
+    ) -> anyhow::Result<Option<Version>> {
+        if let Some(tag) = self.latest_tag(prefix)? {
+            let tagv = match prefix {
+                Some(pre) => tag.strip_prefix(pre).unwrap_or(&*tag),
+                None => &*tag,
+            };
+            tagv.strip_prefix('v')
+                .unwrap_or(tagv)
+                .parse::<Version>()
+                .with_context(|| format!("Failed to parse latest Git tag {tag:?} as a version"))
+                .map(Some)
+        } else {
+            Ok(None)
+        }
     }
 
     pub(crate) fn current_branch(&self) -> Result<Option<String>, CommandOutputError> {
