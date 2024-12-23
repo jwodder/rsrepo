@@ -41,7 +41,7 @@ impl Release {
         let is_workspace = project.project_type().is_workspace();
         let pkgset = project.package_set()?;
         let package = pkgset.get(self.package.as_deref())?;
-        let git = package.git();
+        let git = project.git();
         let readme_file = package.readme();
         let chlog_file = package.changelog();
 
@@ -61,10 +61,8 @@ impl Release {
         let new_version = if let Some(v) = self.version {
             v // Skips the checks from the other branch
         } else {
-            self.bumping.bump(
-                package.latest_tag_version(tag_prefix.as_deref())?,
-                old_version,
-            )?
+            self.bumping
+                .bump(git.latest_tag_version(tag_prefix.as_deref())?, old_version)?
         };
         let tag_prefix = tag_prefix.map_or_else(|| Cow::from(""), Cow::from);
         if git.tag_exists(&format!("{tag_prefix}{new_version}"))?
