@@ -27,11 +27,11 @@ impl PackageSet {
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn root_package(&self) -> Option<&Package> {
         self.packages.iter().find(|p| p.is_root_package())
     }
 
-    #[allow(dead_code)]
     pub(crate) fn into_root_package(self) -> Option<Package> {
         self.packages.into_iter().find(Package::is_root_package)
     }
