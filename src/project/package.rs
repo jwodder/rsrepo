@@ -1,5 +1,6 @@
 use super::textfile::TextFile;
 use super::traits::HasReadme;
+use super::Flavor;
 use crate::changelog::Changelog;
 use crate::cmd::LoggedCommand;
 use crate::git::Git;
@@ -25,6 +26,7 @@ impl Package {
         Package { metadata, is_root }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn locate() -> anyhow::Result<Package> {
         let project = Project::locate()?;
         let Some(package) = project.package_set()?.into_current_package()? else {
@@ -183,6 +185,15 @@ impl Package {
         }
         inp.save().context("failed to save changed to LICENSE")?;
         Ok(())
+    }
+
+    pub(crate) fn flavor(&self) -> Flavor {
+        Flavor {
+            name: Some(self.metadata.name.clone()),
+            description: self.metadata.description.clone(),
+            repository: self.metadata.repository.clone(),
+            keywords: self.metadata.keywords.clone(),
+        }
     }
 }
 

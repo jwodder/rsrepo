@@ -8,6 +8,7 @@ pub(crate) use self::pkgset::PackageSet;
 pub(crate) use self::textfile::TextFile;
 pub(crate) use self::traits::HasReadme;
 use self::util::locate_project;
+use crate::git::Git;
 use crate::readme::Readme;
 use anyhow::{bail, Context};
 use cargo_metadata::MetadataCommand;
@@ -16,11 +17,11 @@ use std::path::{Path, PathBuf};
 use thiserror::Error;
 use toml_edit::DocumentMut;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct Project {
     manifest_path: PathBuf,
     project_type: ProjectType,
-    repository: Option<String>,
+    flavor: Flavor,
 }
 
 impl Project {
@@ -33,21 +34,26 @@ impl Project {
         let src = fs_err::read_to_string(&manifest_path)?;
         let data = toml::from_str::<Cargo>(&src)
             .with_context(|| format!("failed to deserialize {}", manifest_path.display()))?;
-        let (project_type, repository) = match data {
-            Cargo::Package { package, .. } => (ProjectType::Package, package.repository),
+        let (project_type, flavor) = match data {
+            Cargo::Package { package } => {
+                let PackageTbl { name, flavor } = package;
+                let mut flavor = flavor.map(Flavor::from).unwrap_or_default();
+                flavor.name = Some(name);
+                (ProjectType::Package, flavor)
+            }
             Cargo::Workspace { workspace, .. } => (
                 ProjectType::Workspace,
-                workspace.package.and_then(|pkg| pkg.repository),
+                workspace.package.map(Flavor::from).unwrap_or_default(),
             ),
             Cargo::Virtual { workspace } => (
                 ProjectType::VirtualWorkspace,
-                workspace.package.and_then(|pkg| pkg.repository),
+                workspace.package.map(Flavor::from).unwrap_or_default(),
             ),
         };
         Ok(Project {
             manifest_path,
             project_type,
-            repository,
+            flavor,
         })
     }
 
@@ -66,7 +72,11 @@ impl Project {
     }
 
     pub(crate) fn repository(&self) -> Option<&str> {
-        self.repository.as_deref()
+        self.flavor.repository.as_deref()
+    }
+
+    pub(crate) fn git(&self) -> Git<'_> {
+        Git::new(self.path())
     }
 
     pub(crate) fn package_set(&self) -> anyhow::Result<PackageSet> {
@@ -117,6 +127,10 @@ impl Project {
         manifest.set(doc)?;
         Ok(())
     }
+
+    pub(crate) fn flavor(&self) -> &Flavor {
+        &self.flavor
+    }
 }
 
 impl HasReadme for Project {
@@ -138,6 +152,14 @@ impl ProjectType {
     }
 }
 
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub(crate) struct Flavor {
+    pub(crate) name: Option<String>,
+    pub(crate) description: Option<String>,
+    pub(crate) repository: Option<String>,
+    pub(crate) keywords: Vec<String>,
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(try_from = "RawCargo")]
 enum Cargo {
@@ -152,18 +174,6 @@ enum Cargo {
         workspace: Workspace,
     },
 }
-
-/*
-impl Cargo {
-    fn name(&self) -> &str {
-        match self {
-            Cargo::Workspace { package, .. } => &package.name,
-            Cargo::Virtual { workspace } => workspace.package.repository.name(),
-            Cargo::Package { package } => &package.name,
-        }
-    }
-}
-*/
 
 impl TryFrom<RawCargo> for Cargo {
     type Error = FromRawCargoError;
@@ -203,15 +213,29 @@ struct RawCargo {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 struct PackageTbl {
     name: String,
-    repository: Option<String>,
+    #[serde(flatten)]
+    flavor: Option<PackageFlavor>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 struct Workspace {
-    package: Option<WorkspacePackage>,
+    package: Option<PackageFlavor>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
-struct WorkspacePackage {
+struct PackageFlavor {
+    description: Option<String>,
     repository: Option<String>,
+    keywords: Option<Vec<String>>,
+}
+
+impl From<PackageFlavor> for Flavor {
+    fn from(value: PackageFlavor) -> Flavor {
+        Flavor {
+            name: None,
+            description: value.description,
+            repository: value.repository,
+            keywords: value.keywords.unwrap_or_default(),
+        }
+    }
 }

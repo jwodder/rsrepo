@@ -11,6 +11,7 @@ v0.5.0 (in development)
 - Added workspace support to `set-msrv`
     - Added `--package` option for selecting the package to update
     - Added `--workspace` option for setting MSRV workspace-wide
+- Added workspace support to `mkgithub`
 
 v0.4.0 (2024-12-17)
 -------------------
