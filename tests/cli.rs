@@ -392,6 +392,12 @@ fn inspect(
 #[rstest]
 #[case("lib.zip", vec!["--no-codecov-token"], "lib.json")]
 #[case("lib.zip", vec!["--codecov-token=hunter2", "fibseqlib"], "lib-cli-name.json")]
+#[case("bin.zip", vec!["--no-codecov-token"], "bin.json")]
+#[case("bin.zip", vec!["--no-codecov-token", "fibseqcli"], "bin-cli-name.json")]
+#[case("workspace.zip", vec!["--no-codecov-token"], "workspace.json")]
+#[case("workspace.zip", vec!["--no-codecov-token", "fibstuff"], "workspace-cli-name.json")]
+#[case("virtual.zip", vec!["--no-codecov-token"], "virtual.json")]
+#[case("virtual.zip", vec!["--no-codecov-token", "fib"], "virtual-cli-name.json")]
 fn mkgithub(#[case] zipfile: &str, #[case] args: Vec<&str>, #[case] jsonfile: &str) {
     let tmp_path = tempdir().unwrap();
     unzip(
