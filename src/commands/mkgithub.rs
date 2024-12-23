@@ -176,7 +176,7 @@ impl GitHubMaker {
             required_checks,
             default_branch,
             codecov_token,
-            expected_repo_url: flavor.repository,
+            metadata_repo_url: flavor.repository,
         })
     }
 
@@ -249,7 +249,7 @@ impl GitHubMaker {
             github.set_actions_secret(&repo, "CODECOV_TOKEN", &token)?;
         }
 
-        if plan.expected_repo_url.is_none() {
+        if plan.metadata_repo_url.is_none() {
             if let Some(ref pkg) = self.root_package {
                 log::info!("Setting 'package.repository' field in Cargo.toml ...");
                 pkg.set_package_field("repository", repo.html_url)?;
@@ -258,7 +258,7 @@ impl GitHubMaker {
                 self.project
                     .set_workspace_package_field("repository", repo.html_url)?;
             }
-        } else if plan.expected_repo_url != Some(repo.html_url) {
+        } else if plan.metadata_repo_url != Some(repo.html_url) {
             log::warn!(
                 "'{}package.repository' field in Cargo.toml differs from GitHub repository URL",
                 if self.root_package.is_some() {
@@ -276,7 +276,7 @@ impl GitHubMaker {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 struct Plan {
     repo_name: String,
-    expected_repo_url: Option<String>,
+    metadata_repo_url: Option<String>,
     default_branch: &'static str,
     description: Option<String>,
     topics: Vec<Topic>,
