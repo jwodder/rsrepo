@@ -175,18 +175,6 @@ enum Cargo {
     },
 }
 
-/*
-impl Cargo {
-    fn name(&self) -> &str {
-        match self {
-            Cargo::Workspace { package, .. } => &package.name,
-            Cargo::Virtual { workspace } => workspace.package.repository.name(),
-            Cargo::Package { package } => &package.name,
-        }
-    }
-}
-*/
-
 impl TryFrom<RawCargo> for Cargo {
     type Error = FromRawCargoError;
 
