@@ -202,6 +202,9 @@ value.
 
 - `--no-codecov-token` — Do not set the `CODECOV_TOKEN` secret
 
+- `--plan-only` — Do not create a GitHub repository, but do print a JSON object
+  describing what would be created
+
 - `-P`, `--private` — Make the new repository private
 
 `rsrepo release`

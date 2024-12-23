@@ -24,6 +24,10 @@ pub(crate) struct Mkgithub {
     #[arg(long)]
     no_codecov_token: bool,
 
+    /// Print a description of what would be created without actually doing so
+    #[arg(long)]
+    plan_only: bool,
+
     /// Make the new repository private
     #[arg(short = 'P', long)]
     private: bool,
@@ -49,7 +53,11 @@ impl Mkgithub {
             .with_private(self.private)
             .with_codecov_token_source(cts);
         let plan = ghmaker.plan()?;
-        ghmaker.execute(plan)?;
+        if self.plan_only {
+            println!("{}", serde_json::to_string_pretty(&plan)?);
+        } else {
+            ghmaker.execute(plan)?;
+        }
         Ok(())
     }
 }
@@ -269,11 +277,11 @@ impl GitHubMaker {
 struct Plan {
     repo_name: String,
     expected_repo_url: Option<String>,
-    description: Option<String>,
-    private: bool,
-    topics: Vec<Topic>,
-    required_checks: Vec<&'static str>,
     default_branch: &'static str,
+    description: Option<String>,
+    topics: Vec<Topic>,
+    private: bool,
+    required_checks: Vec<&'static str>,
     #[serde(serialize_with = "maybe_redact")]
     codecov_token: Option<String>,
 }

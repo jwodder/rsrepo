@@ -28,10 +28,7 @@ impl Inspect {
             current_package,
             packages,
         };
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&details).expect("serialization should not fail")
-        );
+        println!("{}", serde_json::to_string_pretty(&details)?);
         Ok(())
     }
 }
