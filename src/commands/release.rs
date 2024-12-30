@@ -78,6 +78,17 @@ impl Release {
         if &new_version != old_version {
             log::info!("Setting version in Cargo.toml ...");
             package.set_cargo_version(new_version.clone(), update_lock)?;
+            let thisname = package.name();
+            for (rpkgname, req) in package.dependents() {
+                if !req.matches(&new_version) {
+                    let Some(rpkg) = pkgset.package_by_name(rpkgname) else {
+                        // TODO: Error? Warn?
+                        continue;
+                    };
+                    log::info!("Updating {rpkgname}'s dependency on {thisname} ...");
+                    rpkg.set_dependency_version(thisname, new_version.to_string())?;
+                }
+            }
         }
 
         let release_date = chrono::Local::now().date_naive();

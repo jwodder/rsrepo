@@ -127,6 +127,39 @@ impl Package {
         Ok(())
     }
 
+    pub(crate) fn set_dependency_version<V: Into<toml_edit::Value> + Clone>(
+        &self,
+        package: &str,
+        req: V,
+    ) -> anyhow::Result<()> {
+        let manifest = self.manifest();
+        let Some(mut doc) = manifest.get()? else {
+            bail!("Package lacks Cargo.toml");
+        };
+        for tblname in ["dependencies", "dev-dependencies", "build-dependencies"] {
+            let Some(tbl) = doc.get_mut(tblname) else {
+                continue;
+            };
+            let Some(tbl) = tbl.as_table_like_mut() else {
+                bail!("{tblname:?} field in Cargo.toml is not a table");
+            };
+            let Some(reqitem) = tbl.get_mut(package) else {
+                continue;
+            };
+            match reqitem {
+                toml_edit::Item::Value(toml_edit::Value::String(_)) => {
+                    tbl.insert(package, toml_edit::value(req.clone()));
+                }
+                toml_edit::Item::Table(t) => {
+                    t.insert("version", toml_edit::value(req.clone()));
+                }
+                _ => bail!("{tblname}.{package} in Cargo.toml is not a string or table"),
+            }
+        }
+        manifest.set(doc)?;
+        Ok(())
+    }
+
     pub(crate) fn package_key_inherits_workspace(&self, key: &str) -> anyhow::Result<bool> {
         let manifest = self.manifest();
         let Some(doc) = manifest.get()? else {
