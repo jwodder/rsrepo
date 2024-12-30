@@ -236,6 +236,10 @@ This command performs the following operations in order:
 - The version field in `Cargo.toml` is set to the release version.  If the
   project contains a `Cargo.lock` file, the version therein is set as well.
 
+    - If operating in a workspace, any packages in the workspace that depend on
+      the package being released have their dependency requirements updated to
+      the new version if they're not already compatible with it.
+
 - If `CHANGELOG.md` exists, the header for the topmost section is edited to
   contain the release version and the current date.  It is an error if the
   topmost section header already contains a date.
@@ -299,7 +303,8 @@ This command performs the following operations in order:
 
     - The version field in `Cargo.toml` (and `Cargo.lock`, if present) is set
       to the next minor version after the just-released version, plus a "-dev"
-      prerelease segment.
+      prerelease segment.  In a workspace, versions required by dependent
+      packages are updated as well.
 
     - If a `CHANGELOG.md` file does not exist, one is created with a section
       for the release that was just made (with text set to "Initial release").

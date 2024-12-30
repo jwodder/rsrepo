@@ -13,6 +13,9 @@ v0.5.0 (in development)
     - Added `--workspace` option for setting MSRV workspace-wide
 - Added workspace support to `mkgithub`
 - `mkgithub`: Added `--plan-only` option
+- When running `release` in a workspace, dependents with version requirements
+  that are incompatible with the new or post-release version have their version
+  requirements updated
 
 v0.4.0 (2024-12-17)
 -------------------
