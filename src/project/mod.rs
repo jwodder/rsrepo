@@ -12,7 +12,9 @@ use crate::git::Git;
 use crate::readme::Readme;
 use anyhow::{bail, Context};
 use cargo_metadata::MetadataCommand;
+use semver::VersionReq;
 use serde::Deserialize;
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 use toml_edit::DocumentMut;
@@ -81,25 +83,46 @@ impl Project {
 
     pub(crate) fn package_set(&self) -> anyhow::Result<PackageSet> {
         log::debug!("Running `cargo metadata`");
-        let mut names = std::collections::HashSet::new();
         let package_metadata = MetadataCommand::new()
             .manifest_path(&self.manifest_path)
             .no_deps()
             .exec()
             .context("Failed to get project metadata")?
             .packages;
-        let mut packages = Vec::with_capacity(package_metadata.len());
+        let mut packages = BTreeMap::new();
+        // Mapping from package names to the names of the packages that depend
+        // on them and their version reqs
+        let mut rdeps: BTreeMap<String, BTreeMap<String, VersionReq>> = BTreeMap::new();
         for md in package_metadata {
-            if !names.insert(md.name.clone()) {
+            if packages.contains_key(&md.name) {
                 anyhow::bail!(
                     "Workspace contains multiple packages named {:?}; not proceeding",
                     md.name
                 );
             }
             let is_root = md.manifest_path == self.manifest_path;
-            packages.push(Package::new(md, is_root));
+            for dep in &md.dependencies {
+                if dep
+                    .path
+                    .as_ref()
+                    .is_some_and(|p| p.starts_with(self.path()))
+                {
+                    rdeps
+                        .entry(dep.name.clone())
+                        .or_default()
+                        .insert(md.name.clone(), dep.req.clone());
+                }
+            }
+            let pkg = Package::new(md, is_root);
+            let name = pkg.name().to_owned();
+            packages.insert(name, pkg);
         }
-        Ok(PackageSet::new(packages))
+        for (pkgname, dependents) in rdeps {
+            if let Some(pkg) = packages.get_mut(&pkgname) {
+                pkg.set_dependents(dependents);
+            }
+        }
+        Ok(PackageSet::new(packages.into_values().collect()))
     }
 
     pub(crate) fn manifest(&self) -> TextFile<'_, DocumentMut> {

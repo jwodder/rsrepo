@@ -9,7 +9,8 @@ use crate::util::CopyrightLine;
 use anyhow::{bail, Context};
 use cargo_metadata::{Package as CargoPackage, TargetKind};
 use in_place::InPlace;
-use semver::Version;
+use semver::{Version, VersionReq};
+use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 use toml_edit::DocumentMut;
@@ -18,11 +19,20 @@ use toml_edit::DocumentMut;
 pub(crate) struct Package {
     metadata: CargoPackage,
     is_root: bool,
+    dependents: BTreeMap<String, VersionReq>,
 }
 
 impl Package {
     pub(crate) fn new(metadata: CargoPackage, is_root: bool) -> Package {
-        Package { metadata, is_root }
+        Package {
+            metadata,
+            is_root,
+            dependents: BTreeMap::new(),
+        }
+    }
+
+    pub(super) fn set_dependents(&mut self, dependents: BTreeMap<String, VersionReq>) {
+        self.dependents = dependents;
     }
 
     #[allow(dead_code)]
@@ -70,6 +80,10 @@ impl Package {
 
     pub(crate) fn is_root_package(&self) -> bool {
         self.is_root
+    }
+
+    pub(crate) fn dependents(&self) -> &BTreeMap<String, VersionReq> {
+        &self.dependents
     }
 
     pub(crate) fn changelog(&self) -> TextFile<'_, Changelog> {

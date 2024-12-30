@@ -1,7 +1,9 @@
 use crate::project::{Package, Project, ProjectType};
 use crate::provider::Provider;
 use clap::Args;
+use semver::VersionReq;
 use serde::Serialize;
+use std::collections::BTreeMap;
 use std::path::Path;
 
 /// Display details about current project/package
@@ -51,6 +53,7 @@ struct PackageDetails<'a> {
     bin: bool,
     lib: bool,
     root_package: bool,
+    dependents: &'a BTreeMap<String, VersionReq>,
 }
 
 impl<'a> From<&'a Package> for PackageDetails<'a> {
@@ -61,6 +64,7 @@ impl<'a> From<&'a Package> for PackageDetails<'a> {
             bin: p.is_bin(),
             lib: p.is_lib(),
             root_package: p.is_root_package(),
+            dependents: p.dependents(),
         }
     }
 }

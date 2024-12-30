@@ -8,22 +8,29 @@
     "manifest_path": "{root}/Cargo.toml",
     "bin": false,
     "lib": true,
-    "root_package": true
+    "root_package": true,
+    "dependents": {
+      "fibonacci-cli": "^0.1.0"
+    }
   },
   "packages": [
-    {
-      "name": "fibonacci-cli",
-      "manifest_path": "{root}/cli/Cargo.toml",
-      "bin": true,
-      "lib": false,
-      "root_package": false
-    },
     {
       "name": "fibonacci",
       "manifest_path": "{root}/Cargo.toml",
       "bin": false,
       "lib": true,
-      "root_package": true
+      "root_package": true,
+      "dependents": {
+        "fibonacci-cli": "^0.1.0"
+      }
+    },
+    {
+      "name": "fibonacci-cli",
+      "manifest_path": "{root}/cli/Cargo.toml",
+      "bin": true,
+      "lib": false,
+      "root_package": false,
+      "dependents": {}
     }
   ]
 }
