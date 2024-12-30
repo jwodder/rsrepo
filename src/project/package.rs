@@ -23,16 +23,16 @@ pub(crate) struct Package {
 }
 
 impl Package {
-    pub(crate) fn new(metadata: CargoPackage, is_root: bool) -> Package {
+    pub(super) fn new(
+        metadata: CargoPackage,
+        is_root: bool,
+        dependents: BTreeMap<String, VersionReq>,
+    ) -> Package {
         Package {
             metadata,
             is_root,
-            dependents: BTreeMap::new(),
+            dependents,
         }
-    }
-
-    pub(super) fn set_dependents(&mut self, dependents: BTreeMap<String, VersionReq>) {
-        self.dependents = dependents;
     }
 
     #[allow(dead_code)]

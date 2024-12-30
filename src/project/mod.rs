@@ -113,16 +113,16 @@ impl Project {
                         .insert(md.name.clone(), dep.req.clone());
                 }
             }
-            let pkg = Package::new(md, is_root);
-            let name = pkg.name().to_owned();
-            packages.insert(name, pkg);
+            let name = md.name.clone();
+            packages.insert(name, (md, is_root));
         }
-        for (pkgname, dependents) in rdeps {
-            if let Some(pkg) = packages.get_mut(&pkgname) {
-                pkg.set_dependents(dependents);
-            }
+        let mut package_vec = Vec::with_capacity(packages.len());
+        for (pkgname, (md, root)) in packages {
+            let dependents = rdeps.remove(&pkgname).unwrap_or_default();
+            package_vec.push(Package::new(md, root, dependents));
         }
-        Ok(PackageSet::new(packages.into_values().collect()))
+        // TODO: Warn if `rdeps` is non-empty?
+        Ok(PackageSet::new(package_vec))
     }
 
     pub(crate) fn manifest(&self) -> TextFile<'_, DocumentMut> {
