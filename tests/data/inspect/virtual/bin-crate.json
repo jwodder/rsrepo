@@ -8,6 +8,7 @@
     "manifest_path": "{root}/crates/cli/Cargo.toml",
     "bin": true,
     "lib": false,
-    "root_package": false
+    "root_package": false,
+    "dependents": {}
   }
 }

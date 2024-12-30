@@ -8,6 +8,7 @@
     "manifest_path": "{root}/Cargo.toml",
     "bin": false,
     "lib": true,
-    "root_package": true
+    "root_package": true,
+    "dependents": {}
   }
 }
