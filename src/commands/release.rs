@@ -1,7 +1,7 @@
 use crate::changelog::{Changelog, ChangelogHeader, ChangelogSection};
 use crate::cmd::LoggedCommand;
 use crate::github::{CreateRelease, Topic};
-use crate::project::{HasReadme, Project};
+use crate::project::{HasReadme, Package, PackageSet, Project};
 use crate::provider::Provider;
 use crate::readme::{Badge, Repostatus};
 use crate::util::{bump_version, move_dirtree_into, this_year, workspace_tag_prefix, Bump};
@@ -79,16 +79,7 @@ impl Release {
         if &new_version != old_version {
             log::info!("Setting version in Cargo.toml ...");
             package.set_cargo_version(new_version.clone(), update_lock)?;
-            for (rpkgname, req) in package.dependents() {
-                if !req.matches(&new_version) {
-                    let Some(rpkg) = pkgset.package_by_name(rpkgname) else {
-                        // TODO: Error? Warn?
-                        continue;
-                    };
-                    log::info!("Updating {rpkgname}'s dependency on {name} ...");
-                    rpkg.set_dependency_version(name, new_version.to_string())?;
-                }
-            }
+            bump_dependents(&pkgset, package, &new_version)?;
         }
 
         let release_date = chrono::Local::now().date_naive();
@@ -277,17 +268,8 @@ impl Release {
 
         // Update version in Cargo.toml
         log::info!("Setting next version in Cargo.toml ...");
-        package.set_cargo_version(dev_next, update_lock)?;
-        for (rpkgname, req) in package.dependents() {
-            if !req.matches(&new_version) {
-                let Some(rpkg) = pkgset.package_by_name(rpkgname) else {
-                    // TODO: Error? Warn?
-                    continue;
-                };
-                log::info!("Updating {rpkgname}'s dependency on {name} ...");
-                rpkg.set_dependency_version(name, new_version.to_string())?;
-            }
-        }
+        package.set_cargo_version(dev_next.clone(), update_lock)?;
+        bump_dependents(&pkgset, package, &dev_next)?;
 
         // Ensure CHANGELOG is present and contains section for upcoming
         // version
@@ -385,6 +367,25 @@ impl Bumping {
 fn parse_v_version(value: &str) -> Result<Version, semver::Error> {
     let value = value.strip_prefix('v').unwrap_or(value);
     value.parse::<Version>()
+}
+
+fn bump_dependents(
+    pkgset: &PackageSet,
+    package: &Package,
+    version: &Version,
+) -> anyhow::Result<()> {
+    let name = package.name();
+    for (rname, req) in package.dependents() {
+        if !req.matches(version) {
+            let Some(rpkg) = pkgset.package_by_name(rname) else {
+                // TODO: Error? Warn?
+                continue;
+            };
+            log::info!("Updating {rname}'s dependency on {name} ...");
+            rpkg.set_dependency_version(name, version.to_string())?;
+        }
+    }
+    Ok(())
 }
 
 fn write_commit_template<W: Write>(
