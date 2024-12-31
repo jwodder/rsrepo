@@ -20,6 +20,7 @@ use log::{Level, LevelFilter};
 use std::env::set_current_dir;
 use std::io;
 use std::path::PathBuf;
+use std::process::ExitCode;
 
 /// Manage Cargo project boilerplate
 #[derive(Debug, Eq, Parser, PartialEq)]
@@ -56,8 +57,14 @@ impl Arguments {
     }
 }
 
-fn main() -> anyhow::Result<()> {
-    Arguments::parse().run()
+fn main() -> ExitCode {
+    match Arguments::parse().run() {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            log::error!("{e:?}");
+            ExitCode::FAILURE
+        }
+    }
 }
 
 fn init_logging(log_level: LevelFilter) {
