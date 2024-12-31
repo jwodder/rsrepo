@@ -378,8 +378,7 @@ fn bump_dependents(
     for (rname, req) in package.dependents() {
         if !req.matches(version) {
             let Some(rpkg) = pkgset.package_by_name(rname) else {
-                // TODO: Error? Warn?
-                continue;
+                bail!("Inconsistent project metadata: {name} is depended on by {rname}, but the latter was not found");
             };
             log::info!("Updating {rname}'s dependency on {name} ...");
             rpkg.set_dependency_version(name, version.to_string())?;
