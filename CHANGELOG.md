@@ -1,5 +1,5 @@
-v0.5.0 (in development)
------------------------
+v0.5.0 (2025-01-01)
+-------------------
 - Added `inspect` command
 - Added workspace support to `release`
     - Added `--package` option for selecting the package to release
