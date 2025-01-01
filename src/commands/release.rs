@@ -65,10 +65,11 @@ impl Release {
                 .bump(git.latest_tag_version(tag_prefix.as_deref())?, old_version)?
         };
         let tag_prefix = tag_prefix.map_or_else(|| Cow::from(""), Cow::from);
-        if git.tag_exists(&format!("{tag_prefix}{new_version}"))?
-            || git.tag_exists(&format!("{tag_prefix}v{new_version}"))?
-        {
-            bail!("New version already tagged: {tag_prefix}v{new_version}");
+        for v in ["", "v"] {
+            let tagname = format!("{tag_prefix}{v}{new_version}");
+            if git.tag_exists(&tagname)? {
+                bail!("New version already tagged: {tagname}");
+            }
         }
 
         log::info!("Preparing version {new_version} ...");
