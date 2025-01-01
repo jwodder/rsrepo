@@ -1,7 +1,7 @@
 use crate::changelog::{Changelog, ChangelogHeader, ChangelogSection};
 use crate::cmd::LoggedCommand;
 use crate::github::{CreateRelease, Topic};
-use crate::project::{HasReadme, Project};
+use crate::project::{HasReadme, Package, PackageSet, Project};
 use crate::provider::Provider;
 use crate::readme::{Badge, Repostatus};
 use crate::util::{bump_version, move_dirtree_into, this_year, workspace_tag_prefix, Bump};
@@ -41,6 +41,7 @@ impl Release {
         let is_workspace = project.project_type().is_workspace();
         let pkgset = project.package_set()?;
         let package = pkgset.get(self.package.as_deref())?;
+        let name = package.name();
         let git = project.git();
         let readme_file = package.readme();
         let chlog_file = package.changelog();
@@ -56,7 +57,7 @@ impl Release {
             bail!("Could not determine repository's default branch");
         };
 
-        let tag_prefix = is_workspace.then(|| workspace_tag_prefix(package.name()));
+        let tag_prefix = is_workspace.then(|| workspace_tag_prefix(name));
         // Determine new version
         let new_version = if let Some(v) = self.version {
             v // Skips the checks from the other branch
@@ -78,6 +79,7 @@ impl Release {
         if &new_version != old_version {
             log::info!("Setting version in Cargo.toml ...");
             package.set_cargo_version(new_version.clone(), update_lock)?;
+            bump_dependents(&pkgset, package, &new_version)?;
         }
 
         let release_date = chrono::Local::now().date_naive();
@@ -121,7 +123,7 @@ impl Release {
         } else {
             false
         };
-        if publish && readme.ensure_crates_links(&metadata.name, is_lib) {
+        if publish && readme.ensure_crates_links(name, is_lib) {
             log::info!("Adding crates.io links to README.md ...");
             changed = true;
         }
@@ -139,7 +141,7 @@ impl Release {
             let mut template = NamedTempFile::new().context("could not create temporary file")?;
             write_commit_template(
                 template.as_file_mut(),
-                is_workspace.then(|| package.name()),
+                is_workspace.then_some(name),
                 &new_version,
                 chlog_content,
             )
@@ -161,7 +163,7 @@ impl Release {
             .arg("-s")
             .arg("-m")
             .arg(if is_workspace {
-                format!("{} version {new_version}", package.name())
+                format!("{name} version {new_version}")
             } else {
                 format!("Version {new_version}")
             })
@@ -266,7 +268,8 @@ impl Release {
 
         // Update version in Cargo.toml
         log::info!("Setting next version in Cargo.toml ...");
-        package.set_cargo_version(dev_next, update_lock)?;
+        package.set_cargo_version(dev_next.clone(), update_lock)?;
+        bump_dependents(&pkgset, package, &dev_next)?;
 
         // Ensure CHANGELOG is present and contains section for upcoming
         // version
@@ -364,6 +367,24 @@ impl Bumping {
 fn parse_v_version(value: &str) -> Result<Version, semver::Error> {
     let value = value.strip_prefix('v').unwrap_or(value);
     value.parse::<Version>()
+}
+
+fn bump_dependents(
+    pkgset: &PackageSet,
+    package: &Package,
+    version: &Version,
+) -> anyhow::Result<()> {
+    let name = package.name();
+    for (rname, req) in package.dependents() {
+        if !req.matches(version) {
+            let Some(rpkg) = pkgset.package_by_name(rname) else {
+                bail!("Inconsistent project metadata: {name} is depended on by {rname}, but the latter was not found");
+            };
+            log::info!("Updating {rname}'s dependency on {name} ...");
+            rpkg.set_dependency_version(name, version.to_string())?;
+        }
+    }
+    Ok(())
 }
 
 fn write_commit_template<W: Write>(

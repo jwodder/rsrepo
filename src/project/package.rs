@@ -127,6 +127,39 @@ impl Package {
         Ok(())
     }
 
+    pub(crate) fn set_dependency_version<V: Into<toml_edit::Value> + Clone>(
+        &self,
+        package: &str,
+        req: V,
+    ) -> anyhow::Result<()> {
+        let manifest = self.manifest();
+        let Some(mut doc) = manifest.get()? else {
+            bail!("Package lacks Cargo.toml");
+        };
+        for tblname in ["dependencies", "dev-dependencies", "build-dependencies"] {
+            let Some(tbl) = doc.get_mut(tblname) else {
+                continue;
+            };
+            let Some(tbl) = tbl.as_table_like_mut() else {
+                bail!("{tblname:?} field in Cargo.toml is not a table");
+            };
+            let Some(reqitem) = tbl.get_mut(package) else {
+                continue;
+            };
+            match reqitem {
+                toml_edit::Item::Value(toml_edit::Value::String(_)) => {
+                    tbl.insert(package, toml_edit::value(req.clone()));
+                }
+                toml_edit::Item::Value(toml_edit::Value::InlineTable(t)) => {
+                    t.insert("version", req.clone().into());
+                }
+                _ => bail!("{tblname}.{package} in Cargo.toml is not a string or table"),
+            }
+        }
+        manifest.set(doc)?;
+        Ok(())
+    }
+
     pub(crate) fn package_key_inherits_workspace(&self, key: &str) -> anyhow::Result<bool> {
         let manifest = self.manifest();
         let Some(doc) = manifest.get()? else {
@@ -197,8 +230,8 @@ impl HasReadme for Package {
 mod tests {
     use super::*;
     use crate::project::Project;
-    use assert_fs::prelude::*;
-    use assert_fs::{fixture::ChildPath, TempDir};
+    use assert_fs::{fixture::ChildPath, prelude::*, TempDir};
+    use indoc::indoc;
 
     struct TestPackage {
         package: Package,
@@ -227,111 +260,277 @@ mod tests {
         }
     }
 
-    #[test]
-    fn set_cargo_version() {
-        let tpkg = TestPackage::new(concat!(
-            "[package]\n",
-            "name = \"foobar\"\n",
-            "version = \"0.1.0\"\n",
-            "edition = \"2021\"\n",
-            "\n",
-            "[dependencies]\n",
-        ));
-        tpkg.package
-            .set_cargo_version(Version::new(1, 2, 3), false)
-            .unwrap();
-        tpkg.manifest.assert(concat!(
-            "[package]\n",
-            "name = \"foobar\"\n",
-            "version = \"1.2.3\"\n",
-            "edition = \"2021\"\n",
-            "\n",
-            "[dependencies]\n",
-        ));
-    }
+    mod set_cargo_version {
+        use super::*;
 
-    #[test]
-    fn set_cargo_version_inline() {
-        let tpkg = TestPackage::new("package = { name = \"foobar\", version = \"0.1.0\", edition = \"2021\" }\ndependencies = {}\n");
-        tpkg.package
-            .set_cargo_version(Version::new(1, 2, 3), false)
-            .unwrap();
-        tpkg.manifest.assert("package = { name = \"foobar\", version = \"1.2.3\", edition = \"2021\" }\ndependencies = {}\n");
-    }
+        #[test]
+        fn normal() {
+            let tpkg = TestPackage::new(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
 
-    #[test]
-    fn set_cargo_version_unset() {
-        let tpkg = TestPackage::new(concat!(
-            "[package]\n",
-            "name = \"foobar\"\n",
-            "edition = \"2021\"\n",
-            "\n",
-            "[dependencies]\n",
-        ));
-        tpkg.package
-            .set_cargo_version(Version::new(1, 2, 3), false)
-            .unwrap();
-        tpkg.manifest.assert(concat!(
-            "[package]\n",
-            "name = \"foobar\"\n",
-            "edition = \"2021\"\n",
-            "version = \"1.2.3\"\n",
-            "\n",
-            "[dependencies]\n",
-        ));
-    }
+                [dependencies]
+            "#});
+            tpkg.package
+                .set_cargo_version(Version::new(1, 2, 3), false)
+                .unwrap();
+            tpkg.manifest.assert(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "1.2.3"
+                edition = "2021"
 
-    #[test]
-    #[ignore] // TODO: Update or remove
-    fn set_cargo_version_no_package() {
-        let tpkg = TestPackage::new("[dependencies]\n");
-        assert!(tpkg
-            .package
-            .set_cargo_version(Version::new(1, 2, 3), false)
-            .is_err());
-        tpkg.manifest.assert("[dependencies]\n");
-    }
+                [dependencies]
+            "#});
+        }
 
-    #[test]
-    #[ignore] // TODO: Update or remove
-    fn set_cargo_version_package_not_table() {
-        let tpkg = TestPackage::new("package = 42\n");
-        assert!(tpkg
-            .package
-            .set_cargo_version(Version::new(1, 2, 3), false)
-            .is_err());
-        tpkg.manifest.assert("package = 42\n");
+        #[test]
+        fn inline() {
+            let tpkg = TestPackage::new("package = { name = \"foobar\", version = \"0.1.0\", edition = \"2021\" }\ndependencies = {}\n");
+            tpkg.package
+                .set_cargo_version(Version::new(1, 2, 3), false)
+                .unwrap();
+            tpkg.manifest.assert("package = { name = \"foobar\", version = \"1.2.3\", edition = \"2021\" }\ndependencies = {}\n");
+        }
+
+        #[test]
+        fn unset() {
+            let tpkg = TestPackage::new(indoc! {r#"
+                [package]
+                name = "foobar"
+                edition = "2021"
+
+                [dependencies]
+            "#});
+            tpkg.package
+                .set_cargo_version(Version::new(1, 2, 3), false)
+                .unwrap();
+            tpkg.manifest.assert(indoc! {r#"
+                [package]
+                name = "foobar"
+                edition = "2021"
+                version = "1.2.3"
+
+                [dependencies]
+            "#});
+        }
     }
 
     #[test]
     fn update_license_years() {
-        let tpkg = TestPackage::new(concat!(
-            "[package]\n",
-            "name = \"foobar\"\n",
-            "version = \"0.1.0\"\n",
-            "edition = \"2021\"\n",
-            "\n",
-            "[dependencies]\n",
-        ));
+        let tpkg = TestPackage::new(indoc! {r#"
+            [package]
+            name = "foobar"
+            version = "0.1.0"
+            edition = "2021"
+
+            [dependencies]
+        "#});
         let license = tpkg.tmpdir.child("LICENSE");
         license
-            .write_str(concat!(
-                "The Foobar License\n",
-                "\n",
-                "Copyright (c) 2021-2022 John T. Wodder II\n",
-                "Copyright (c) 2020 The Prime Mover and their Agents\n",
-                "\n",
-                "Permission is not granted.\n",
-            ))
+            .write_str(indoc! {"
+                The Foobar License
+
+                Copyright (c) 2021-2022 John T. Wodder II
+                Copyright (c) 2020 The Prime Mover and their Agents
+
+                Permission is not granted.
+            "})
             .unwrap();
         tpkg.package.update_license_years([2023]).unwrap();
-        license.assert(concat!(
-            "The Foobar License\n",
-            "\n",
-            "Copyright (c) 2021-2023 John T. Wodder II\n",
-            "Copyright (c) 2020 The Prime Mover and their Agents\n",
-            "\n",
-            "Permission is not granted.\n",
-        ));
+        license.assert(indoc! {"
+            The Foobar License
+
+            Copyright (c) 2021-2023 John T. Wodder II
+            Copyright (c) 2020 The Prime Mover and their Agents
+
+            Permission is not granted.
+        "});
+    }
+
+    mod set_dependency_version {
+        use super::*;
+
+        #[test]
+        fn normal_dep() {
+            let tpkg = TestPackage::new(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies]
+                quux = "0.1.0"
+            "#});
+            tpkg.package
+                .set_dependency_version("quux", "1.2.3")
+                .unwrap();
+            tpkg.manifest.assert(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies]
+                quux = "1.2.3"
+            "#});
+        }
+
+        #[test]
+        fn dev_dep() {
+            let tpkg = TestPackage::new(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies]
+                quux = "0.1.0"
+
+                [dev-dependencies]
+                glarch = "1.2.3"
+            "#});
+            tpkg.package
+                .set_dependency_version("glarch", "42.0")
+                .unwrap();
+            tpkg.manifest.assert(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies]
+                quux = "0.1.0"
+
+                [dev-dependencies]
+                glarch = "42.0"
+            "#});
+        }
+
+        #[test]
+        fn build_dep() {
+            let tpkg = TestPackage::new(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies]
+                quux = "0.1.0"
+
+                [build-dependencies]
+                glarch = "1.2.3"
+            "#});
+            tpkg.package
+                .set_dependency_version("glarch", "42.0")
+                .unwrap();
+            tpkg.manifest.assert(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies]
+                quux = "0.1.0"
+
+                [build-dependencies]
+                glarch = "42.0"
+            "#});
+        }
+
+        #[test]
+        fn every_dep_type() {
+            let tpkg = TestPackage::new(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies]
+                glarch = "1.2.3"
+                quux = "0.1.0"
+
+                [dev-dependencies]
+                glarch = "1.2.3"
+                quux = "0.1.0"
+
+                [build-dependencies]
+                glarch = "1.2.3"
+                quux = "0.1.0"
+            "#});
+            tpkg.package
+                .set_dependency_version("glarch", "42.0")
+                .unwrap();
+            tpkg.manifest.assert(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies]
+                glarch = "42.0"
+                quux = "0.1.0"
+
+                [dev-dependencies]
+                glarch = "42.0"
+                quux = "0.1.0"
+
+                [build-dependencies]
+                glarch = "42.0"
+                quux = "0.1.0"
+            "#});
+        }
+
+        #[test]
+        fn table_dep() {
+            let tpkg = TestPackage::new(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies]
+                quux = { version = "0.1.0", default-features = false }
+            "#});
+            tpkg.package
+                .set_dependency_version("quux", "1.2.3")
+                .unwrap();
+            tpkg.manifest.assert(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies]
+                quux = { version = "1.2.3", default-features = false }
+            "#});
+        }
+
+        #[test]
+        fn table_dep_no_version() {
+            let tpkg = TestPackage::new(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies]
+                quux = { path = "../quux", default-features = false }
+            "#});
+            tpkg.package
+                .set_dependency_version("quux", "1.2.3")
+                .unwrap();
+            tpkg.manifest.assert(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies]
+                quux = { path = "../quux", default-features = false , version = "1.2.3" }
+            "#});
+        }
     }
 }
