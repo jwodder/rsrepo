@@ -1,7 +1,6 @@
 use std::ffi::OsStr;
 use std::path::Path;
-use std::process::Command;
-use std::process::{ExitStatus, Stdio};
+use std::process::{Command, ExitStatus, Stdio};
 use thiserror::Error;
 
 #[derive(Debug)]
@@ -33,10 +32,7 @@ impl LoggedCommand {
         S: AsRef<OsStr>,
     {
         for arg in args {
-            let arg = arg.as_ref();
-            self.cmdline.push(' ');
-            self.cmdline.push_str(&quote_osstr(arg));
-            self.cmd.arg(arg);
+            self.arg(arg);
         }
         self
     }

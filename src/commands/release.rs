@@ -45,7 +45,6 @@ impl Release {
         let git = project.git();
         let readme_file = package.readme();
         let chlog_file = package.changelog();
-
         let metadata = package.metadata();
         let old_version = &metadata.version;
         let ghrepo = LocalRepo::new(package.path())
