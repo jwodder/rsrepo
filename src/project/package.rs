@@ -146,14 +146,12 @@ impl Package {
             let Some(reqitem) = tbl.get_mut(package) else {
                 continue;
             };
-            match reqitem {
-                toml_edit::Item::Value(toml_edit::Value::String(_)) => {
-                    tbl.insert(package, toml_edit::value(req.clone()));
-                }
-                toml_edit::Item::Value(toml_edit::Value::InlineTable(t)) => {
-                    t.insert("version", req.clone().into());
-                }
-                _ => bail!("{tblname}.{package} in Cargo.toml is not a string or table"),
+            if reqitem.is_str() {
+                tbl.insert(package, toml_edit::value(req.clone()));
+            } else if let Some(t) = reqitem.as_table_like_mut() {
+                t.insert("version", toml_edit::value(req.clone()));
+            } else {
+                bail!("{tblname}.{package} in Cargo.toml is not a string or table");
             }
         }
         manifest.set(doc)?;
@@ -484,7 +482,7 @@ mod tests {
         }
 
         #[test]
-        fn table_dep() {
+        fn inline_table_dep() {
             let tpkg = TestPackage::new(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -509,7 +507,7 @@ mod tests {
         }
 
         #[test]
-        fn table_dep_no_version() {
+        fn inline_table_dep_no_version() {
             let tpkg = TestPackage::new(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -530,6 +528,61 @@ mod tests {
 
                 [dependencies]
                 quux = { path = "../quux", default-features = false , version = "1.2.3" }
+            "#});
+        }
+
+        #[test]
+        fn table_dep() {
+            let tpkg = TestPackage::new(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies.quux]
+                version = "0.1.0"
+                default-features = false
+            "#});
+            tpkg.package
+                .set_dependency_version("quux", "1.2.3")
+                .unwrap();
+            tpkg.manifest.assert(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies.quux]
+                version = "1.2.3"
+                default-features = false
+            "#});
+        }
+
+        #[test]
+        fn table_dep_no_version() {
+            let tpkg = TestPackage::new(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies.quux]
+                path = "../quux"
+                default-features = false
+            "#});
+            tpkg.package
+                .set_dependency_version("quux", "1.2.3")
+                .unwrap();
+            tpkg.manifest.assert(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies.quux]
+                path = "../quux"
+                default-features = false
+                version = "1.2.3"
             "#});
         }
     }

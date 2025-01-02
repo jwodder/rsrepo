@@ -1,3 +1,8 @@
+v0.6.0 (in development)
+-----------------------
+- Fix support for updating versions of dependencies declared in non-inline
+  tables
+
 v0.5.0 (2025-01-01)
 -------------------
 - Added `inspect` command
