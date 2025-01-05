@@ -23,7 +23,7 @@ dryoc = "0.6.0"
 fern = "0.7.0"
 fs-err = "3.0.0"
 gh-token = "0.1.7"
-ghrepo = { version = "0.6.0", default-features = false }
+ghrepo = "0.7.0"
 home = "0.5.9"
 in-place = "0.2.0"
 include_dir = "0.7.3"
