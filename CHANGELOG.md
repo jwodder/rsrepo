@@ -2,6 +2,8 @@ v0.6.0 (in development)
 -----------------------
 - Fix support for updating versions of dependencies declared in non-inline
   tables
+- `Cargo.toml` template:
+    - Set rustc's `renamed_and_removed_lints` lint back to "warn" level
 
 v0.5.0 (2025-01-01)
 -------------------
