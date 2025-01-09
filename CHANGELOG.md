@@ -4,6 +4,8 @@ v0.6.0 (in development)
   tables
 - `Cargo.toml` template:
     - Set rustc's `renamed_and_removed_lints` lint back to "warn" level
+    - Rename `temporary_cstring_as_ptr` lint to
+      `dangling_pointers_from_temporaries`
 
 v0.5.0 (2025-01-01)
 -------------------
