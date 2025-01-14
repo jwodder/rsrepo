@@ -6,6 +6,8 @@ v0.6.0 (in development)
     - Set rustc's `renamed_and_removed_lints` lint back to "warn" level
     - Rename `temporary_cstring_as_ptr` lint to
       `dangling_pointers_from_temporaries`
+    - Update lints for Rust 1.84
+    - Remove lints relating to pointers & FFI
 
 v0.5.0 (2025-01-01)
 -------------------
