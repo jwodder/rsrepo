@@ -22,7 +22,7 @@ use toml_edit::DocumentMut;
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct Project {
     manifest_path: PathBuf,
-    project_type: ProjectType,
+    projtype: ProjectType,
     flavor: Flavor,
 }
 
@@ -36,7 +36,7 @@ impl Project {
         let src = fs_err::read_to_string(&manifest_path)?;
         let data = toml::from_str::<Cargo>(&src)
             .with_context(|| format!("failed to deserialize {}", manifest_path.display()))?;
-        let (project_type, flavor) = match data {
+        let (projtype, flavor) = match data {
             Cargo::Package { package } => {
                 let PackageTbl { name, flavor } = package;
                 let mut flavor = flavor.map(Flavor::from).unwrap_or_default();
@@ -54,7 +54,7 @@ impl Project {
         };
         Ok(Project {
             manifest_path,
-            project_type,
+            projtype,
             flavor,
         })
     }
@@ -70,7 +70,7 @@ impl Project {
     }
 
     pub(crate) fn project_type(&self) -> ProjectType {
-        self.project_type
+        self.projtype
     }
 
     pub(crate) fn repository(&self) -> Option<&str> {
