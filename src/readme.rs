@@ -7,10 +7,10 @@ use thiserror::Error;
 use url::Url;
 use winnow::{
     ascii::{line_ending, space1},
-    combinator::{delimited, preceded, repeat, rest, separated, terminated},
+    combinator::{delimited, preceded, repeat, separated, terminated},
     error::ParserError,
     seq,
-    token::take_till,
+    token::{rest, take_till},
     PResult, Parser,
 };
 

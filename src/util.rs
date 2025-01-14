@@ -16,8 +16,10 @@ use std::str::FromStr;
 use thiserror::Error;
 use winnow::{
     ascii::{dec_uint, digit1, space0, space1},
-    combinator::{opt, preceded, rest, separated},
-    seq, PResult, Parser,
+    combinator::{opt, preceded, separated},
+    seq,
+    token::rest,
+    PResult, Parser,
 };
 
 pub(crate) fn this_year() -> i32 {
