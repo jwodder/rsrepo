@@ -17,9 +17,10 @@ use thiserror::Error;
 use winnow::{
     ascii::{dec_uint, digit1, space0, space1},
     combinator::{opt, preceded, separated},
+    error::ModalResult,
     seq,
     token::rest,
-    PResult, Parser,
+    Parser,
 };
 
 pub(crate) fn this_year() -> i32 {
@@ -128,7 +129,7 @@ impl Visitor<'_> for RustVersionVisitor {
 #[error("invalid Rust version/MSRV")]
 pub(crate) struct ParseRustVersionError;
 
-fn rust_version(input: &mut &str) -> PResult<RustVersion> {
+fn rust_version(input: &mut &str) -> ModalResult<RustVersion> {
     seq! {
         RustVersion {
             _: opt('v'),
@@ -200,7 +201,7 @@ impl fmt::Display for CopyrightLine {
 #[error("invalid copyright line")]
 pub(crate) struct ParseCopyrightError;
 
-fn copyright(input: &mut &str) -> PResult<CopyrightLine> {
+fn copyright(input: &mut &str) -> ModalResult<CopyrightLine> {
     seq! {
         CopyrightLine {
             prefix: (space0, "Copyright", space1, opt(("(c)", space1))).take().map(String::from),
@@ -211,7 +212,7 @@ fn copyright(input: &mut &str) -> PResult<CopyrightLine> {
     }.parse_next(input)
 }
 
-fn year_range(input: &mut &str) -> PResult<RangeInclusive<i32>> {
+fn year_range(input: &mut &str) -> ModalResult<RangeInclusive<i32>> {
     let (start, end) = (
         digit1.parse_to(),
         opt(preceded((space0, '-', space0), digit1.parse_to())),

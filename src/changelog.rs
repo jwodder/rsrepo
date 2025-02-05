@@ -7,9 +7,10 @@ use thiserror::Error;
 use winnow::{
     ascii::{space1, Caseless},
     combinator::alt,
+    error::ModalResult,
     stream::AsChar,
     token::{take_till, take_while},
-    PResult, Parser,
+    Parser,
 };
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -168,11 +169,11 @@ impl<'a> SectionBuilder<'a> {
     }
 }
 
-fn parse_header(input: &mut &str) -> PResult<ChangelogHeader> {
+fn parse_header(input: &mut &str) -> ModalResult<ChangelogHeader> {
     alt((versioned_header, in_development)).parse_next(input)
 }
 
-fn versioned_header(input: &mut &str) -> PResult<ChangelogHeader> {
+fn versioned_header(input: &mut &str) -> ModalResult<ChangelogHeader> {
     let (_, version, _, _, parenthed, _) = (
         'v',
         take_till(1.., AsChar::is_space).try_map(|s: &str| s.parse::<Version>()),
@@ -189,7 +190,7 @@ fn versioned_header(input: &mut &str) -> PResult<ChangelogHeader> {
     }
 }
 
-fn ymd(input: &mut &str) -> PResult<NaiveDate> {
+fn ymd(input: &mut &str) -> ModalResult<NaiveDate> {
     (
         take_while(4, AsChar::is_dec_digit),
         '-',
@@ -202,7 +203,7 @@ fn ymd(input: &mut &str) -> PResult<NaiveDate> {
         .parse_next(input)
 }
 
-fn in_development(input: &mut &str) -> PResult<ChangelogHeader> {
+fn in_development(input: &mut &str) -> ModalResult<ChangelogHeader> {
     Caseless("in development")
         .map(|_| ChangelogHeader::InDevelopment)
         .parse_next(input)
