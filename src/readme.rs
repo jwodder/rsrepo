@@ -8,10 +8,10 @@ use url::Url;
 use winnow::{
     ascii::{line_ending, space1},
     combinator::{delimited, preceded, repeat, separated, terminated},
-    error::ParserError,
+    error::{ModalResult, ParserError},
     seq,
     token::{rest, take_till},
-    PResult, Parser,
+    Parser,
 };
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -272,7 +272,7 @@ struct Image {
     alt: String,
 }
 
-fn parse_readme(input: &mut &str) -> PResult<Readme> {
+fn parse_readme(input: &mut &str) -> ModalResult<Readme> {
     let badges =
         terminated(repeat(1.., terminated(badge, line_ending)), line_ending).parse_next(input)?;
     let (links, text) = if input.lines().next().is_some_and(has_link_separator) {
@@ -299,7 +299,7 @@ fn has_link_separator(s: &str) -> bool {
         .any(|(i, _)| s[..i].ends_with([' ', '\t']) && s[(i + 1)..].starts_with([' ', '\t']))
 }
 
-fn badge(input: &mut &str) -> PResult<Badge> {
+fn badge(input: &mut &str) -> ModalResult<Badge> {
     let (image, url) = (delimited('[', image, ']'), bracketed1('(', ')')).parse_next(input)?;
     Ok(Badge {
         url: image.url,
@@ -308,7 +308,7 @@ fn badge(input: &mut &str) -> PResult<Badge> {
     })
 }
 
-fn image(input: &mut &str) -> PResult<Image> {
+fn image(input: &mut &str) -> ModalResult<Image> {
     preceded('!', link)
         .map(|lnk| Image {
             alt: lnk.text,
@@ -317,7 +317,7 @@ fn image(input: &mut &str) -> PResult<Image> {
         .parse_next(input)
 }
 
-fn link(input: &mut &str) -> PResult<Link> {
+fn link(input: &mut &str) -> ModalResult<Link> {
     seq! {
         Link {
             text: bracketed1('[', ']').map(String::from),
