@@ -11,6 +11,7 @@ v0.6.0 (in development)
 - `test.yml` template:
     - Improve `clippy` invocation
     - Add `--cfg docsrs` to `RUSTDOCFLAGS`
+    - Assume project is always a workspace with features
 
 v0.5.0 (2025-01-01)
 -------------------
