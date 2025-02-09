@@ -8,6 +8,8 @@ v0.6.0 (in development)
       `dangling_pointers_from_temporaries`
     - Update lints for Rust 1.84
     - Remove lints relating to pointers & FFI
+- `test.yml` template:
+    - Improve `clippy` invocation
 
 v0.5.0 (2025-01-01)
 -------------------
