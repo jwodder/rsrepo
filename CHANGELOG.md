@@ -10,6 +10,7 @@ v0.6.0 (in development)
     - Remove lints relating to pointers & FFI
 - `test.yml` template:
     - Improve `clippy` invocation
+    - Add `--cfg docsrs` to `RUSTDOCFLAGS`
 
 v0.5.0 (2025-01-01)
 -------------------
