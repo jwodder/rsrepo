@@ -172,6 +172,6 @@ jobs:
       - name: Check docs
         run: cargo doc --no-deps --all-features
         env:
-          RUSTDOCFLAGS: -Dwarnings
+          RUSTDOCFLAGS: -Dwarnings --cfg docsrs
 
 # vim:set et sts=2:
