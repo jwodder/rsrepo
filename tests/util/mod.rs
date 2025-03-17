@@ -134,6 +134,7 @@ impl CmpDirtrees {
 }
 
 pub(crate) fn unzip<P: Into<PathBuf>, Q: AsRef<Path>>(zippath: P, outdir: Q) -> anyhow::Result<()> {
+    fs_err::create_dir_all(&outdir)?;
     let fp = fs_err::File::open(zippath)?;
     let mut zip = zip::ZipArchive::new(fp)?;
     zip.extract(outdir)?;
