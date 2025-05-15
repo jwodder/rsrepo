@@ -3,13 +3,13 @@ use std::io::ErrorKind;
 use std::process::{Command, Stdio};
 
 fn main() -> anyhow::Result<()> {
-    println!("cargo:rerun-if-changed=.git/HEAD");
-    println!("cargo:rerun-if-changed=.git/refs");
+    println!("cargo::rerun-if-changed=.git/HEAD");
+    println!("cargo::rerun-if-changed=.git/refs");
     let pkg_version = getenv("CARGO_PKG_VERSION")?;
     if let Some(commit) = get_commit_hash()? {
-        println!("cargo:rustc-env=VERSION_WITH_GIT={pkg_version} (commit: {commit})");
+        println!("cargo::rustc-env=VERSION_WITH_GIT={pkg_version} (commit: {commit})");
     } else {
-        println!("cargo:rustc-env=VERSION_WITH_GIT={pkg_version}");
+        println!("cargo::rustc-env=VERSION_WITH_GIT={pkg_version}");
     }
     Ok(())
 }
