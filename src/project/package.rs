@@ -75,7 +75,7 @@ impl Package {
     }
 
     pub(crate) fn name(&self) -> &str {
-        &self.metadata.name
+        self.metadata.name.as_ref()
     }
 
     pub(crate) fn is_root_package(&self) -> bool {
@@ -210,7 +210,7 @@ impl Package {
 
     pub(crate) fn flavor(&self) -> Flavor {
         Flavor {
-            name: Some(self.metadata.name.clone()),
+            name: Some(self.metadata.name.to_string()),
             description: self.metadata.description.clone(),
             repository: self.metadata.repository.clone(),
             keywords: self.metadata.keywords.clone(),
