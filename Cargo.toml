@@ -57,7 +57,7 @@ predicates = { version = "3.1.0", default-features = false }
 rstest = { version = "0.25.0", default-features = false }
 similar = "2.5.0"
 tempfile = "3.10.1"
-zip = "3.0.0"
+zip = "4.0.0"
 
 [build-dependencies]
 anyhow = "1.0.82"
