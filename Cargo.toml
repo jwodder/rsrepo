@@ -16,7 +16,7 @@ anstream = "0.6.14"
 anstyle = "1.0.7"
 anyhow = "1.0.82"
 base64 = "0.22.1"
-cargo_metadata = "0.19.0"
+cargo_metadata = "0.20.0"
 chrono = { version = "0.4.38", default-features = false, features = ["clock", "serde"] }
 clap = { version = "4.5.4", default-features = false, features = ["derive", "env", "error-context", "help", "std", "suggestions", "usage", "wrap_help"] }
 dryoc = "0.7.0"
