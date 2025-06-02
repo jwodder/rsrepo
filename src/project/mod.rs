@@ -94,7 +94,7 @@ impl Project {
         // on them and their version reqs
         let mut rdeps: BTreeMap<String, BTreeMap<String, VersionReq>> = BTreeMap::new();
         for md in package_metadata {
-            if packages.contains_key(&md.name) {
+            if packages.contains_key(md.name.as_ref()) {
                 anyhow::bail!(
                     "Workspace contains multiple packages named {:?}; not proceeding",
                     md.name
@@ -110,10 +110,10 @@ impl Project {
                     rdeps
                         .entry(dep.name.clone())
                         .or_default()
-                        .insert(md.name.clone(), dep.req.clone());
+                        .insert(md.name.to_string(), dep.req.clone());
                 }
             }
-            let name = md.name.clone();
+            let name = md.name.to_string();
             packages.insert(name, (md, is_root));
         }
         let mut package_vec = Vec::with_capacity(packages.len());
