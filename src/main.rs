@@ -4,7 +4,6 @@ mod commands;
 mod config;
 mod git;
 mod github;
-mod http_util;
 mod project;
 mod provider;
 mod readme;
@@ -61,7 +60,11 @@ fn main() -> ExitCode {
     match Arguments::parse().run() {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
-            log::error!("{e:?}");
+            if let Some(minigh::RequestError::Status(stat)) = e.downcast_ref() {
+                log::error!("{stat:#}");
+            } else {
+                log::error!("{e:?}");
+            }
             ExitCode::FAILURE
         }
     }
@@ -88,6 +91,7 @@ fn init_logging(log_level: LevelFilter) {
             ));
         })
         .level(LevelFilter::Info)
+        .level_for("minigh", log_level)
         .level_for("rsrepo", log_level)
         .chain(stderr)
         .apply()
