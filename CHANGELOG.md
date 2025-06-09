@@ -12,6 +12,7 @@ v0.6.0 (in development)
     - Improve `clippy` invocation
     - Add `--cfg docsrs` to `RUSTDOCFLAGS`
     - Assume project is always a workspace with features
+- `mkgithub`: Handle creating repositories without descriptions
 
 v0.5.0 (2025-01-01)
 -------------------

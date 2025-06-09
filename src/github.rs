@@ -160,7 +160,7 @@ pub(crate) struct Repository {
     pub(crate) full_name: String,
     pub(crate) private: bool,
     pub(crate) html_url: String,
-    pub(crate) description: String,
+    pub(crate) description: Option<String>,
     pub(crate) url: String,
     pub(crate) ssh_url: String,
     pub(crate) topics: Vec<String>,
