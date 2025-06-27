@@ -256,7 +256,8 @@ This command performs the following operations in order:
 
     - If operating in a workspace, any packages in the workspace that depend on
       the package being released have their dependency requirements updated to
-      the new version if they're not already compatible with it.
+      the new version if they're not already compatible with it, and their
+      changelogs (if they have one) will be updated.
 
 - If `CHANGELOG.md` exists, the header for the topmost section is edited to
   contain the release version and the current date.  It is an error if the

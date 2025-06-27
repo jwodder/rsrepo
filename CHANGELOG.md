@@ -8,6 +8,8 @@ v0.7.0 (in development)
     - Set `package.edition` to 2024
 - Added `begin-dev` command
 - `set-msrv`: Run `begin-dev` before updating CHANGELOG
+- `release`: When bumping local workspace inter-dependencies, update dependent
+  packages' changelogs
 
 v0.6.0 (2025-06-27)
 -------------------
