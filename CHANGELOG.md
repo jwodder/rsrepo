@@ -13,12 +13,14 @@ v0.6.0 (in development)
     - Add `--cfg docsrs` to `RUSTDOCFLAGS`
     - Assume project is always a workspace with features
 - `mkgithub`: Handle creating repositories without descriptions
-- **Bugfix**: Don't panic when `release` is run on a project whose README lacks
-  header links
-- `release`: When bumping local workspace inter-dependencies:
-    - Don't add `version` keys to specifiers that lack them
-    - Don't treat `^x.y.z-dev` as accepting `x.y.z`
-- `release`: Unstash files in `{dir}.stash/` if `cargo publish` fails
+- `release`:
+    - **Bugfix**: Don't panic when run on a project whose README lacks header
+      links
+    - **Bugfix**: When bumping local workspace inter-dependencies:
+        - Don't add `version` keys to specifiers that lack them
+        - Don't treat `^x.y.z-dev` as accepting `x.y.z`
+        - Don't update `Cargo.lock` until after dependents are updated
+    - Unstash files in `{dir}.stash/` if `cargo publish` fails
 
 v0.5.0 (2025-01-01)
 -------------------
