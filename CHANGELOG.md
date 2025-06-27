@@ -1,5 +1,5 @@
-v0.6.0 (in development)
------------------------
+v0.6.0 (2025-06-27)
+-------------------
 - Fix support for updating versions of dependencies declared in non-inline
   tables
 - `Cargo.toml` template:
