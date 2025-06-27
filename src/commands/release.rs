@@ -380,7 +380,7 @@ fn bump_dependents(
                 bail!("Inconsistent project metadata: {name} is depended on by {rname}, but the latter was not found");
             };
             log::info!("Updating {rname}'s dependency on {name} ...");
-            rpkg.set_dependency_version(name, version.to_string())?;
+            rpkg.set_dependency_version(name, version.to_string(), false)?;
         }
     }
     Ok(())
