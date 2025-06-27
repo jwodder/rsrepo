@@ -13,6 +13,8 @@ v0.6.0 (in development)
     - Add `--cfg docsrs` to `RUSTDOCFLAGS`
     - Assume project is always a workspace with features
 - `mkgithub`: Handle creating repositories without descriptions
+- **Bugfix**: Don't panic when `release` is run on a project whose README lacks
+  header links
 
 v0.5.0 (2025-01-01)
 -------------------

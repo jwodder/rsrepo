@@ -70,24 +70,24 @@ impl Readme {
     // Returns `true` if changed
     pub(crate) fn ensure_crates_links(&mut self, package: &str, docs: bool) -> bool {
         let mut changed = false;
-        let github_index = self
+        let insertion_point = self
             .links
             .iter()
             .position(|lnk| lnk.text == "GitHub")
-            .unwrap_or(0);
+            .map_or(0, |i| i + 1);
         let crates_index =
             if let Some(i) = self.links.iter().position(|lnk| lnk.text == "crates.io") {
                 i
             } else {
                 self.links.insert(
-                    github_index + 1,
+                    insertion_point,
                     Link {
                         url: format!("https://crates.io/crates/{package}"),
                         text: "crates.io".into(),
                     },
                 );
                 changed = true;
-                github_index + 1
+                insertion_point
             };
         if docs && !self.links.iter().any(|lnk| lnk.text == "Documentation") {
             self.links.insert(
@@ -416,6 +416,18 @@ mod tests {
             .parse::<Readme>()
             .unwrap();
         let expected = include_str!("testdata/readme/with-crates.md");
+        assert!(readme.ensure_crates_links("foobar", true));
+        assert_eq!(readme.to_string(), expected);
+        assert!(!readme.ensure_crates_links("foobar", true));
+        assert_eq!(readme.to_string(), expected);
+    }
+
+    #[test]
+    fn ensure_crates_links_no_prior_links() {
+        let mut readme = include_str!("testdata/readme/no-links.md")
+            .parse::<Readme>()
+            .unwrap();
+        let expected = include_str!("testdata/readme/crates-only.md");
         assert!(readme.ensure_crates_links("foobar", true));
         assert_eq!(readme.to_string(), expected);
         assert!(!readme.ensure_crates_links("foobar", true));
