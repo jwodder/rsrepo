@@ -151,7 +151,7 @@ impl Package {
             if reqitem.is_str() {
                 tbl.insert(package, toml_edit::value(req.clone()));
             } else if let Some(t) = reqitem.as_table_like_mut() {
-                if create || t.contains_key(package) {
+                if create || t.contains_key("version") {
                     t.insert("version", toml_edit::value(req.clone()));
                 }
             } else {
@@ -498,6 +498,31 @@ mod tests {
             "#});
             tpkg.package
                 .set_dependency_version("quux", "1.2.3", true)
+                .unwrap();
+            tpkg.manifest.assert(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies]
+                quux = { version = "1.2.3", default-features = false }
+            "#});
+        }
+
+        #[test]
+        fn inline_table_dep_no_create() {
+            let tpkg = TestPackage::new(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies]
+                quux = { version = "0.1.0", default-features = false }
+            "#});
+            tpkg.package
+                .set_dependency_version("quux", "1.2.3", false)
                 .unwrap();
             tpkg.manifest.assert(indoc! {r#"
                 [package]
