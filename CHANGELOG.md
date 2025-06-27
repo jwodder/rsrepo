@@ -17,6 +17,7 @@ v0.6.0 (in development)
   header links
 - When bumping local workspace inter-dependencies, don't add `version` keys to
   specifiers that lack them
+- `release`: Unstash files in `{dir}.stash/` if `cargo publish` fails
 
 v0.5.0 (2025-01-01)
 -------------------
