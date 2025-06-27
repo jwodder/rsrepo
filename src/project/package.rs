@@ -131,6 +131,7 @@ impl Package {
         &self,
         package: &str,
         req: V,
+        create: bool,
     ) -> anyhow::Result<()> {
         let manifest = self.manifest();
         let Some(mut doc) = manifest.get()? else {
@@ -149,7 +150,9 @@ impl Package {
             if reqitem.is_str() {
                 tbl.insert(package, toml_edit::value(req.clone()));
             } else if let Some(t) = reqitem.as_table_like_mut() {
-                t.insert("version", toml_edit::value(req.clone()));
+                if create || t.contains_key(package) {
+                    t.insert("version", toml_edit::value(req.clone()));
+                }
             } else {
                 bail!("{tblname}.{package} in Cargo.toml is not a string or table");
             }
@@ -363,7 +366,7 @@ mod tests {
                 quux = "0.1.0"
             "#});
             tpkg.package
-                .set_dependency_version("quux", "1.2.3")
+                .set_dependency_version("quux", "1.2.3", true)
                 .unwrap();
             tpkg.manifest.assert(indoc! {r#"
                 [package]
@@ -391,7 +394,7 @@ mod tests {
                 glarch = "1.2.3"
             "#});
             tpkg.package
-                .set_dependency_version("glarch", "42.0")
+                .set_dependency_version("glarch", "42.0", true)
                 .unwrap();
             tpkg.manifest.assert(indoc! {r#"
                 [package]
@@ -422,7 +425,7 @@ mod tests {
                 glarch = "1.2.3"
             "#});
             tpkg.package
-                .set_dependency_version("glarch", "42.0")
+                .set_dependency_version("glarch", "42.0", true)
                 .unwrap();
             tpkg.manifest.assert(indoc! {r#"
                 [package]
@@ -459,7 +462,7 @@ mod tests {
                 quux = "0.1.0"
             "#});
             tpkg.package
-                .set_dependency_version("glarch", "42.0")
+                .set_dependency_version("glarch", "42.0", true)
                 .unwrap();
             tpkg.manifest.assert(indoc! {r#"
                 [package]
@@ -493,7 +496,7 @@ mod tests {
                 quux = { version = "0.1.0", default-features = false }
             "#});
             tpkg.package
-                .set_dependency_version("quux", "1.2.3")
+                .set_dependency_version("quux", "1.2.3", true)
                 .unwrap();
             tpkg.manifest.assert(indoc! {r#"
                 [package]
@@ -518,7 +521,7 @@ mod tests {
                 quux = { path = "../quux", default-features = false }
             "#});
             tpkg.package
-                .set_dependency_version("quux", "1.2.3")
+                .set_dependency_version("quux", "1.2.3", true)
                 .unwrap();
             tpkg.manifest.assert(indoc! {r#"
                 [package]
@@ -528,6 +531,31 @@ mod tests {
 
                 [dependencies]
                 quux = { path = "../quux", default-features = false , version = "1.2.3" }
+            "#});
+        }
+
+        #[test]
+        fn inline_table_dep_no_version_no_create() {
+            let tpkg = TestPackage::new(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies]
+                quux = { path = "../quux", default-features = false }
+            "#});
+            tpkg.package
+                .set_dependency_version("quux", "1.2.3", false)
+                .unwrap();
+            tpkg.manifest.assert(indoc! {r#"
+                [package]
+                name = "foobar"
+                version = "0.1.0"
+                edition = "2021"
+
+                [dependencies]
+                quux = { path = "../quux", default-features = false }
             "#});
         }
 
@@ -544,7 +572,7 @@ mod tests {
                 default-features = false
             "#});
             tpkg.package
-                .set_dependency_version("quux", "1.2.3")
+                .set_dependency_version("quux", "1.2.3", true)
                 .unwrap();
             tpkg.manifest.assert(indoc! {r#"
                 [package]
@@ -571,7 +599,7 @@ mod tests {
                 default-features = false
             "#});
             tpkg.package
-                .set_dependency_version("quux", "1.2.3")
+                .set_dependency_version("quux", "1.2.3", true)
                 .unwrap();
             tpkg.manifest.assert(indoc! {r#"
                 [package]

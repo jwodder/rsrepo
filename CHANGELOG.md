@@ -15,6 +15,8 @@ v0.6.0 (in development)
 - `mkgithub`: Handle creating repositories without descriptions
 - **Bugfix**: Don't panic when `release` is run on a project whose README lacks
   header links
+- When bumping local workspace inter-dependencies, don't add `version` keys to
+  specifiers that lack them
 
 v0.5.0 (2025-01-01)
 -------------------
