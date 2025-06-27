@@ -111,20 +111,21 @@ impl Package {
         Ok(())
     }
 
-    pub(crate) fn set_cargo_version(&self, v: Version, update_lock: bool) -> anyhow::Result<()> {
-        let vs = v.to_string();
-        self.set_package_field("version", &vs)?;
-        if update_lock {
-            LoggedCommand::new("cargo")
-                .arg("update")
-                .arg("-p")
-                .arg(self.name())
-                .arg("--precise")
-                .arg(vs)
-                .current_dir(self.path())
-                .status()?;
-        }
+    pub(crate) fn set_cargo_version(&self, v: &Version) -> anyhow::Result<()> {
+        self.set_package_field("version", v.to_string())?;
         Ok(())
+    }
+
+    pub(crate) fn update_lockfile(&self, v: &Version) -> anyhow::Result<()> {
+        LoggedCommand::new("cargo")
+            .arg("update")
+            .arg("-p")
+            .arg(self.name())
+            .arg("--precise")
+            .arg(v.to_string())
+            .current_dir(self.path())
+            .status()
+            .map_err(Into::into)
     }
 
     pub(crate) fn set_dependency_version<V: Into<toml_edit::Value> + Clone>(
@@ -275,7 +276,7 @@ mod tests {
                 [dependencies]
             "#});
             tpkg.package
-                .set_cargo_version(Version::new(1, 2, 3), false)
+                .set_cargo_version(&Version::new(1, 2, 3))
                 .unwrap();
             tpkg.manifest.assert(indoc! {r#"
                 [package]
@@ -291,7 +292,7 @@ mod tests {
         fn inline() {
             let tpkg = TestPackage::new("package = { name = \"foobar\", version = \"0.1.0\", edition = \"2021\" }\ndependencies = {}\n");
             tpkg.package
-                .set_cargo_version(Version::new(1, 2, 3), false)
+                .set_cargo_version(&Version::new(1, 2, 3))
                 .unwrap();
             tpkg.manifest.assert("package = { name = \"foobar\", version = \"1.2.3\", edition = \"2021\" }\ndependencies = {}\n");
         }
@@ -306,7 +307,7 @@ mod tests {
                 [dependencies]
             "#});
             tpkg.package
-                .set_cargo_version(Version::new(1, 2, 3), false)
+                .set_cargo_version(&Version::new(1, 2, 3))
                 .unwrap();
             tpkg.manifest.assert(indoc! {r#"
                 [package]
