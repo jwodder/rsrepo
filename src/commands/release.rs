@@ -9,7 +9,7 @@ use anyhow::{bail, Context};
 use clap::Args;
 use ghrepo::LocalRepo;
 use renamore::rename_exclusive;
-use semver::{Prerelease, Version};
+use semver::{Op, Prerelease, Version, VersionReq};
 use std::borrow::Cow;
 use std::collections::HashSet;
 use std::io::{self, Write};
@@ -385,7 +385,12 @@ fn bump_dependents(
 ) -> anyhow::Result<()> {
     let name = package.name();
     for (rname, req) in package.dependents() {
-        if !req.matches(version) {
+        // When a package `foo`'s version is bumped from `0.3.0-dev` to
+        // `0.3.0`, any package `bar` that depends on `foo 0.3.0-dev` should
+        // have its version requirement bumped to `0.3.0`, but Cargo's semver
+        // rules mean that `^0.3.0-dev` accepts `0.3.0`.  Thus, if `req` using
+        // a prelease does not equal `version` being a prerelease, bump.
+        if !req.matches(version) || uses_prerelease(req) == version.pre.is_empty() {
             let Some(rpkg) = pkgset.package_by_name(rname) else {
                 bail!("Inconsistent project metadata: {name} is depended on by {rname}, but the latter was not found");
             };
@@ -394,6 +399,12 @@ fn bump_dependents(
         }
     }
     Ok(())
+}
+
+fn uses_prerelease(req: &VersionReq) -> bool {
+    req.comparators
+        .iter()
+        .any(|c| c.op == Op::Caret && !c.pre.is_empty())
 }
 
 fn write_commit_template<W: Write>(
