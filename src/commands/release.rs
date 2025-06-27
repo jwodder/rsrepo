@@ -196,19 +196,29 @@ impl Release {
             }
 
             log::info!("Publishing ...");
-            LoggedCommand::new("cargo")
+            let mut r = LoggedCommand::new("cargo")
                 .arg("publish")
                 .arg("--manifest-path")
                 .arg(package.manifest_path())
-                .status()?;
+                .status()
+                .map_err(anyhow::Error::from);
 
             if stash_dir.exists() {
                 log::info!(
                     "Moving untracked files back from {} ...",
                     stash_dir.display()
                 );
-                move_dirtree_into(&stash_dir, &toplevel)?;
+                let r2 = move_dirtree_into(&stash_dir, &toplevel).map_err(anyhow::Error::from);
+                if r.is_err() {
+                    if let Err(e) = r2 {
+                        log::warn!("{e:?}");
+                    }
+                } else {
+                    r = r2;
+                }
             }
+
+            r?;
         }
 
         log::info!("Pushing tag to GitHub ...");
