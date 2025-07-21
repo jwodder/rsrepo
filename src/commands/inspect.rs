@@ -1,7 +1,7 @@
 use crate::project::{Package, Project, ProjectType};
 use crate::provider::Provider;
+use cargo_metadata::semver::VersionReq;
 use clap::Args;
-use semver::VersionReq;
 use serde::Serialize;
 use std::collections::BTreeMap;
 use std::path::Path;

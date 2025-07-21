@@ -33,7 +33,6 @@ minigh = "0.1.0"
 once_cell = "1.19.0"
 rangemap = "1.5.1"
 renamore = "0.3.2"
-semver = "1.0.22"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
 shell-words = "1.1.0"

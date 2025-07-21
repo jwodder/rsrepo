@@ -6,10 +6,10 @@ use crate::provider::Provider;
 use crate::readme::{Badge, Repostatus};
 use crate::util::{bump_version, move_dirtree_into, this_year, workspace_tag_prefix, Bump};
 use anyhow::{bail, Context};
+use cargo_metadata::semver::{Op, Prerelease, Version, VersionReq};
 use clap::Args;
 use ghrepo::LocalRepo;
 use renamore::rename_exclusive;
-use semver::{Op, Prerelease, Version, VersionReq};
 use std::borrow::Cow;
 use std::collections::HashSet;
 use std::io::{self, Write};
@@ -381,7 +381,7 @@ impl Bumping {
     }
 }
 
-fn parse_v_version(value: &str) -> Result<Version, semver::Error> {
+fn parse_v_version(value: &str) -> Result<Version, cargo_metadata::semver::Error> {
     let value = value.strip_prefix('v').unwrap_or(value);
     value.parse::<Version>()
 }

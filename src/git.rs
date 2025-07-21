@@ -1,7 +1,7 @@
 use crate::cmd::{CommandError, CommandOutputError, LoggedCommand};
 use crate::util::StringLines;
 use anyhow::Context;
-use semver::Version;
+use cargo_metadata::semver::Version;
 use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};

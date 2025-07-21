@@ -1379,7 +1379,6 @@ dependencies = [
  "rangemap",
  "renamore",
  "rstest",
- "semver",
  "serde",
  "serde_json",
  "shell-words",
