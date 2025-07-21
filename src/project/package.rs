@@ -7,9 +7,11 @@ use crate::project::Project;
 use crate::readme::Readme;
 use crate::util::CopyrightLine;
 use anyhow::{bail, Context};
-use cargo_metadata::{Package as CargoPackage, TargetKind};
+use cargo_metadata::{
+    semver::{Version, VersionReq},
+    Package as CargoPackage, TargetKind,
+};
 use in_place::InPlace;
-use semver::{Version, VersionReq};
 use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader, Write};
 use std::path::Path;

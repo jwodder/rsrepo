@@ -1,5 +1,5 @@
+use cargo_metadata::semver::Version;
 use chrono::naive::NaiveDate;
-use semver::Version;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;

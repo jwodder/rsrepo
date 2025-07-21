@@ -1,8 +1,8 @@
+use cargo_metadata::semver::Version;
 use chrono::Datelike;
 use fs_err::{create_dir_all, read_dir, remove_dir};
 use rangemap::RangeInclusiveSet;
 use renamore::rename_exclusive;
-use semver::Version;
 use serde::de::{Deserializer, Unexpected, Visitor};
 use serde::ser::Serializer;
 use serde::{Deserialize, Serialize};
