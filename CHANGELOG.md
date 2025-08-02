@@ -16,10 +16,11 @@ v0.6.0 (2025-06-27)
 - `release`:
     - **Bugfix**: Don't panic when run on a project whose README lacks header
       links
-    - **Bugfix**: When bumping local workspace inter-dependencies:
-        - Don't add `version` keys to specifiers that lack them
-        - Don't treat `^x.y.z-dev` as accepting `x.y.z`
-        - Don't update `Cargo.lock` until after dependents are updated
+    - When bumping local workspace inter-dependencies:
+        - **Bugfix**: Don't add `version` keys to specifiers that lack them
+        - **Bugfix**: Don't treat `^x.y.z-dev` as accepting `x.y.z`
+        - **Bugfix**: Don't update `Cargo.lock` until after dependents are updated
+        - Update dependent packages' changelogs
     - Unstash files in `{dir}.stash/` if `cargo publish` fails
 
 v0.5.0 (2025-01-01)
