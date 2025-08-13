@@ -1,3 +1,8 @@
+v0.7.0 (in development)
+-----------------------
+- `test.yml` template:
+    - Update `actions/checkout` to v5
+
 v0.6.0 (2025-06-27)
 -------------------
 - Fix support for updating versions of dependencies declared in non-inline
