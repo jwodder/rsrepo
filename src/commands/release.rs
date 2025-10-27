@@ -12,6 +12,7 @@ use ghrepo::LocalRepo;
 use renamore::rename_exclusive;
 use std::borrow::Cow;
 use std::collections::HashSet;
+use std::fmt::Write as _;
 use std::io::{self, Write};
 use tempfile::NamedTempFile;
 
@@ -404,6 +405,30 @@ fn bump_dependents(
             };
             log::info!("Updating {rname}'s dependency on {name} ...");
             rpkg.set_dependency_version(name, version.to_string(), false)?;
+            if version.pre.is_empty() {
+                let chlog_file = rpkg.changelog();
+                if let Some(mut chlog) = chlog_file.get()? {
+                    if let Some(most_recent) = chlog.sections.iter_mut().next() {
+                        log::info!("Updating CHANGELOG.md for {rname} ...");
+                        let prefix = format!("- Increase `{name}` dependency to ");
+                        let mut new_content = String::with_capacity(most_recent.content.len());
+                        let mut changed = false;
+                        for ln in most_recent.content.lines() {
+                            if !changed && ln.starts_with(&prefix) {
+                                writeln!(&mut new_content, "{prefix}`{version}`").unwrap();
+                                changed = true;
+                            } else {
+                                writeln!(&mut new_content, "{ln}").unwrap();
+                            }
+                        }
+                        if !changed {
+                            writeln!(&mut new_content, "{prefix}`{version}`").unwrap();
+                        }
+                        most_recent.content = new_content;
+                        chlog_file.set(chlog)?;
+                    }
+                }
+            }
         }
     }
     Ok(())
