@@ -2,6 +2,7 @@ v0.7.0 (in development)
 -----------------------
 - `test.yml` template:
     - Update `actions/checkout` to v5
+- Update `.pre-commit-config.yaml` template
 
 v0.6.0 (2025-06-27)
 -------------------
