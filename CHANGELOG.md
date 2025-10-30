@@ -3,6 +3,8 @@ v0.7.0 (in development)
 - `test.yml` template:
     - Update `actions/checkout` to v5
 - Update `.pre-commit-config.yaml` template
+- `Cargo.toml` template:
+    - Update lints for Rust 1.91
 
 v0.6.0 (2025-06-27)
 -------------------
@@ -12,7 +14,7 @@ v0.6.0 (2025-06-27)
     - Set rustc's `renamed_and_removed_lints` lint back to "warn" level
     - Rename `temporary_cstring_as_ptr` lint to
       `dangling_pointers_from_temporaries`
-    - Update lints for Rust 1.84
+    - Update lints for Rust 1.87
     - Remove lints relating to pointers & FFI
 - `test.yml` template:
     - Improve `clippy` invocation
