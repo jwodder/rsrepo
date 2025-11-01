@@ -5,6 +5,7 @@ v0.7.0 (in development)
 - Update `.pre-commit-config.yaml` template
 - `Cargo.toml` template:
     - Update lints for Rust 1.91
+    - Set `package.edition` to 2024
 
 v0.6.0 (2025-06-27)
 -------------------

@@ -1,7 +1,7 @@
 [package]
 name = "{name}"
 version = "0.1.0-dev"
-edition = "2021"
+edition = "2024"
 rust-version = "{msrv}"
 {{ if description -}}
 description = "{description|toml_escape}"
