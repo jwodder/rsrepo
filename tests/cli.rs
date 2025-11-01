@@ -1,6 +1,6 @@
 mod util;
 use crate::util::{opt_subdir, unzip, CmpDirtrees};
-use assert_cmd::Command;
+use assert_cmd::{cargo::cargo_bin_cmd, Command};
 use cfg_if::cfg_if;
 use rstest::rstest;
 use std::path::Path;
@@ -12,8 +12,7 @@ pub static DATA_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data");
 fn new_implicit_lib() {
     let tmp_path = tempdir().unwrap();
     let repo = tmp_path.path().join("foobar");
-    Command::cargo_bin("rsrepo")
-        .unwrap()
+    cargo_bin_cmd!("rsrepo")
         .arg("--log-level=TRACE")
         .arg("--config")
         .arg(Path::new(DATA_DIR).join("config.toml"))
@@ -41,8 +40,7 @@ fn new_implicit_lib() {
 fn new_explicit_lib() {
     let tmp_path = tempdir().unwrap();
     let repo = tmp_path.path().join("foobar");
-    Command::cargo_bin("rsrepo")
-        .unwrap()
+    cargo_bin_cmd!("rsrepo")
         .arg("--log-level=TRACE")
         .arg("--config")
         .arg(Path::new(DATA_DIR).join("config.toml"))
@@ -71,8 +69,7 @@ fn new_explicit_lib() {
 fn new_bin() {
     let tmp_path = tempdir().unwrap();
     let repo = tmp_path.path().join("foobar");
-    Command::cargo_bin("rsrepo")
-        .unwrap()
+    cargo_bin_cmd!("rsrepo")
         .arg("--log-level=TRACE")
         .arg("--config")
         .arg(Path::new(DATA_DIR).join("config.toml"))
@@ -101,8 +98,7 @@ fn new_bin() {
 fn new_bin_lib() {
     let tmp_path = tempdir().unwrap();
     let repo = tmp_path.path().join("foobar");
-    Command::cargo_bin("rsrepo")
-        .unwrap()
+    cargo_bin_cmd!("rsrepo")
         .arg("--log-level=TRACE")
         .arg("--config")
         .arg(Path::new(DATA_DIR).join("config.toml"))
@@ -132,8 +128,7 @@ fn new_bin_lib() {
 fn new_custom_project_name() {
     let tmp_path = tempdir().unwrap();
     let repo = tmp_path.path().join("foobar");
-    Command::cargo_bin("rsrepo")
-        .unwrap()
+    cargo_bin_cmd!("rsrepo")
         .arg("--log-level=TRACE")
         .arg("--config")
         .arg(Path::new(DATA_DIR).join("config.toml"))
@@ -166,8 +161,7 @@ fn new_custom_project_name() {
 fn new_custom_repo_name() {
     let tmp_path = tempdir().unwrap();
     let repo = tmp_path.path().join("foobar");
-    Command::cargo_bin("rsrepo")
-        .unwrap()
+    cargo_bin_cmd!("rsrepo")
         .arg("--log-level=TRACE")
         .arg("--config")
         .arg(Path::new(DATA_DIR).join("config.toml"))
@@ -200,8 +194,7 @@ fn new_custom_repo_name() {
 fn new_custom_project_repo_name() {
     let tmp_path = tempdir().unwrap();
     let repo = tmp_path.path().join("foobar");
-    Command::cargo_bin("rsrepo")
-        .unwrap()
+    cargo_bin_cmd!("rsrepo")
         .arg("--log-level=TRACE")
         .arg("--config")
         .arg(Path::new(DATA_DIR).join("config.toml"))
@@ -237,8 +230,7 @@ fn new_custom_project_repo_name() {
 fn new_description() {
     let tmp_path = tempdir().unwrap();
     let repo = tmp_path.path().join("foobar");
-    Command::cargo_bin("rsrepo")
-        .unwrap()
+    cargo_bin_cmd!("rsrepo")
         .arg("--log-level=TRACE")
         .arg("--config")
         .arg(Path::new(DATA_DIR).join("config.toml"))
@@ -284,8 +276,7 @@ fn set_msrv(#[case] case: &str, #[case] opts: Vec<&str>, #[case] subdir: Option<
         &workdir,
     )
     .unwrap();
-    Command::cargo_bin("rsrepo")
-        .unwrap()
+    cargo_bin_cmd!("rsrepo")
         .arg("--log-level=TRACE")
         .arg("--config")
         .arg(Path::new(DATA_DIR).join("config.toml"))
@@ -376,8 +367,7 @@ fn inspect(
         }
     }
 
-    Command::cargo_bin("rsrepo")
-        .unwrap()
+    cargo_bin_cmd!("rsrepo")
         .arg("--log-level=TRACE")
         .arg("--config")
         .arg(Path::new(DATA_DIR).join("config.toml"))
@@ -427,8 +417,7 @@ fn mkgithub(#[case] zipfile: &str, #[case] args: Vec<&str>, #[case] jsonfile: &s
         .success();
     let expected =
         fs_err::read_to_string(Path::new(DATA_DIR).join("mkgithub").join(jsonfile)).unwrap();
-    Command::cargo_bin("rsrepo")
-        .unwrap()
+    cargo_bin_cmd!("rsrepo")
         .arg("--log-level=TRACE")
         .arg("--config")
         .arg(Path::new(DATA_DIR).join("config.toml"))
