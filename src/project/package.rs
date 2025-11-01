@@ -1,15 +1,15 @@
+use super::Flavor;
 use super::textfile::TextFile;
 use super::traits::HasReadme;
-use super::Flavor;
 use crate::changelog::Changelog;
 use crate::cmd::LoggedCommand;
 use crate::project::Project;
 use crate::readme::Readme;
 use crate::util::CopyrightLine;
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use cargo_metadata::{
-    semver::{Version, VersionReq},
     Package as CargoPackage, TargetKind,
+    semver::{Version, VersionReq},
 };
 use in_place::InPlace;
 use std::collections::BTreeMap;
@@ -234,7 +234,7 @@ impl HasReadme for Package {
 mod tests {
     use super::*;
     use crate::project::Project;
-    use assert_fs::{fixture::ChildPath, prelude::*, TempDir};
+    use assert_fs::{TempDir, fixture::ChildPath, prelude::*};
     use indoc::indoc;
 
     struct TestPackage {
@@ -292,7 +292,9 @@ mod tests {
 
         #[test]
         fn inline() {
-            let tpkg = TestPackage::new("package = { name = \"foobar\", version = \"0.1.0\", edition = \"2021\" }\ndependencies = {}\n");
+            let tpkg = TestPackage::new(
+                "package = { name = \"foobar\", version = \"0.1.0\", edition = \"2021\" }\ndependencies = {}\n",
+            );
             tpkg.package
                 .set_cargo_version(&Version::new(1, 2, 3))
                 .unwrap();

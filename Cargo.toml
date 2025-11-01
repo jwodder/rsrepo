@@ -1,7 +1,7 @@
 [package]
 name = "rsrepo"
 version = "0.7.0-dev"
-edition = "2021"
+edition = "2024"
 description = "Rust project templater & releaser"
 authors = ["John Thorvald Wodder II <rsrepo@varonathe.org>"]
 repository = "https://github.com/jwodder/rsrepo"

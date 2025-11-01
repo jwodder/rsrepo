@@ -5,7 +5,7 @@ use crate::readme::Repostatus;
 use anyhow::bail;
 use clap::Args;
 use ghrepo::GHRepo;
-use serde::{ser::Serializer, Serialize};
+use serde::{Serialize, ser::Serializer};
 use std::borrow::Cow;
 
 /// Create a GitHub repository for the project and push

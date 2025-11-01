@@ -1,5 +1,5 @@
 use anyhow::Context;
-use base64::{engine::general_purpose::STANDARD, Engine};
+use base64::{Engine, engine::general_purpose::STANDARD};
 use dryoc::{constants::CRYPTO_BOX_PUBLICKEYBYTES, dryocbox::VecBox};
 use ghrepo::GHRepo;
 use serde::{Deserialize, Serialize};

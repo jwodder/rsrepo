@@ -1,7 +1,7 @@
 #![cfg(test)]
 use fs_err::{read_dir, read_to_string};
-use similar::udiff::unified_diff;
 use similar::Algorithm;
+use similar::udiff::unified_diff;
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
 use std::fs::FileType;
