@@ -15,12 +15,12 @@ use std::path::{Path, PathBuf, StripPrefixError};
 use std::str::FromStr;
 use thiserror::Error;
 use winnow::{
+    Parser,
     ascii::{dec_uint, digit1, space0, space1},
     combinator::{opt, preceded, separated},
     error::ModalResult,
     seq,
     token::rest,
-    Parser,
 };
 
 pub(crate) fn this_year() -> i32 {
@@ -233,7 +233,7 @@ pub(crate) fn move_dirtree_into(src: &Path, dest: &Path) -> Result<(), MoveDirtr
                         source,
                         path: entry,
                         base: src.into(),
-                    })
+                    });
                 }
             };
             let target = dest.join(relpath);
@@ -305,8 +305,8 @@ pub(crate) fn workspace_tag_prefix(package_name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use assert_fs::prelude::*;
     use assert_fs::TempDir;
+    use assert_fs::prelude::*;
     use predicates::prelude::*;
     use rstest::rstest;
 

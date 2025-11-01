@@ -1,5 +1,5 @@
 use super::package::Package;
-use super::util::{locate_project, LocateError};
+use super::util::{LocateError, locate_project};
 use std::path::Path;
 
 #[derive(Clone, Debug, Eq, PartialEq)]

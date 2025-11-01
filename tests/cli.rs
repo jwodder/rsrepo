@@ -1,6 +1,6 @@
 mod util;
-use crate::util::{opt_subdir, unzip, CmpDirtrees};
-use assert_cmd::{cargo::cargo_bin_cmd, Command};
+use crate::util::{CmpDirtrees, opt_subdir, unzip};
+use assert_cmd::{Command, cargo::cargo_bin_cmd};
 use cfg_if::cfg_if;
 use rstest::rstest;
 use std::path::Path;

@@ -1,5 +1,5 @@
 use anyhow::Context;
-use fs_err::{read_to_string, File};
+use fs_err::{File, read_to_string};
 use std::io::{ErrorKind, Write};
 use std::marker::PhantomData;
 use std::path::Path;

@@ -102,8 +102,8 @@ fn init_logging(log_level: LevelFilter) {
 mod tests {
     use super::*;
     use crate::util::Bump;
-    use clap::error::ErrorKind;
     use clap::CommandFactory;
+    use clap::error::ErrorKind;
 
     #[test]
     fn validate_cli() {

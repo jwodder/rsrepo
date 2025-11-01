@@ -1,4 +1,4 @@
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use fs_err::read_to_string;
 use serde::Deserialize;
 use std::borrow::Cow;

@@ -4,8 +4,8 @@ use crate::github::{CreateRelease, Topic};
 use crate::project::{HasReadme, Package, PackageSet, Project};
 use crate::provider::Provider;
 use crate::readme::{Badge, Repostatus};
-use crate::util::{bump_version, move_dirtree_into, this_year, workspace_tag_prefix, Bump};
-use anyhow::{bail, Context};
+use crate::util::{Bump, bump_version, move_dirtree_into, this_year, workspace_tag_prefix};
+use anyhow::{Context, bail};
 use cargo_metadata::semver::{Op, Prerelease, Version, VersionReq};
 use clap::Args;
 use ghrepo::LocalRepo;
@@ -400,7 +400,9 @@ fn bump_dependents(
         // a prelease does not equal `version` being a prerelease, bump.
         if !req.matches(version) || uses_prerelease(req) == version.pre.is_empty() {
             let Some(rpkg) = pkgset.package_by_name(rname) else {
-                bail!("Inconsistent project metadata: {name} is depended on by {rname}, but the latter was not found");
+                bail!(
+                    "Inconsistent project metadata: {name} is depended on by {rname}, but the latter was not found"
+                );
             };
             log::info!("Updating {rname}'s dependency on {name} ...");
             rpkg.set_dependency_version(name, version.to_string(), false)?;
@@ -483,9 +485,11 @@ mod tests {
     #[case("1.2.3", "1.2.2-dev")]
     #[case("1.2.3-alpha.1", "1.2.3-alpha")]
     fn bumping_default_err(#[case] tag_version: Version, #[case] manifest_version: Version) {
-        assert!(Bumping::default()
-            .bump(Some(tag_version), &manifest_version)
-            .is_err());
+        assert!(
+            Bumping::default()
+                .bump(Some(tag_version), &manifest_version)
+                .is_err()
+        );
     }
 
     #[rstest]

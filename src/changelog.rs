@@ -5,12 +5,12 @@ use std::fmt;
 use std::str::FromStr;
 use thiserror::Error;
 use winnow::{
-    ascii::{space1, Caseless},
+    Parser,
+    ascii::{Caseless, space1},
     combinator::alt,
     error::ModalResult,
     stream::AsChar,
     token::{take_till, take_while},
-    Parser,
 };
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]

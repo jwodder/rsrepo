@@ -6,12 +6,12 @@ use std::str::FromStr;
 use thiserror::Error;
 use url::Url;
 use winnow::{
+    Parser,
     ascii::{line_ending, space1},
     combinator::{delimited, preceded, repeat, separated, terminated},
     error::{ModalResult, ParserError},
     seq,
     token::{rest, take_till},
-    Parser,
 };
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
