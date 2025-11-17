@@ -1,12 +1,12 @@
-use crate::changelog::{Changelog, ChangelogHeader, ChangelogSection};
+use crate::changelog::ChangelogHeader;
 use crate::cmd::LoggedCommand;
 use crate::github::{CreateRelease, Topic};
-use crate::project::{HasReadme, Package, PackageSet, Project};
+use crate::project::{HasReadme, Project};
 use crate::provider::Provider;
 use crate::readme::{Badge, Repostatus};
 use crate::util::{Bump, bump_version, move_dirtree_into, this_year, workspace_tag_prefix};
 use anyhow::{Context, bail};
-use cargo_metadata::semver::{Op, Prerelease, Version, VersionReq};
+use cargo_metadata::semver::Version;
 use clap::Args;
 use ghrepo::LocalRepo;
 use renamore::rename_exclusive;
@@ -74,22 +74,16 @@ impl Release {
 
         log::info!("Preparing version {new_version} ...");
 
-        let update_lock = project.path().join("Cargo.lock").exists();
         if &new_version != old_version {
             log::info!("Setting version in Cargo.toml ...");
-            package.set_cargo_version(&new_version)?;
-            bump_dependents(&pkgset, package, &new_version)?;
-            if update_lock {
-                // Do this AFTER updating dependents!
-                package.update_lockfile(&new_version)?;
-            }
+            package.set_version_and_bump_dependents(&new_version, &pkgset)?;
         }
 
         let release_date = chrono::Local::now().date_naive();
         let chlog_content;
         if let Some(mut chlog) = chlog_file.get()? {
             log::info!("Updating CHANGELOG.md ...");
-            if let Some(most_recent) = chlog.sections.iter_mut().next() {
+            if let Some(most_recent) = chlog.sections.first_mut() {
                 match most_recent.header {
                     ChangelogHeader::Released { .. } => bail!("No changelog section to update"),
                     _ => {
@@ -273,43 +267,11 @@ impl Release {
             }
         }
 
-        log::info!("Preparing for work on next version ...");
-        let next_version = bump_version(new_version.clone(), Bump::Minor);
-        let mut dev_next = next_version.clone();
-        dev_next.pre =
-            Prerelease::new("dev").expect("'dev' should be a valid prerelease identifier");
-
-        // Update version in Cargo.toml
-        log::info!("Setting next version in Cargo.toml ...");
-        package.set_cargo_version(&dev_next)?;
-        bump_dependents(&pkgset, package, &dev_next)?;
-        if update_lock {
-            // Do this AFTER updating dependents!
-            package.update_lockfile(&dev_next)?;
-        }
-
-        // Ensure CHANGELOG is present and contains section for upcoming
-        // version
-        log::info!("Adding next section to CHANGELOG.md ...");
-        let mut chlog = chlog_file.get()?.unwrap_or_else(|| Changelog {
-            sections: vec![ChangelogSection {
-                header: ChangelogHeader::Released {
-                    version: new_version,
-                    date: release_date,
-                },
-                content: "Initial release\n".into(),
-            }],
-        });
-        chlog.sections.insert(
-            0,
-            ChangelogSection {
-                header: ChangelogHeader::InProgress {
-                    version: next_version,
-                },
-                content: String::new(),
-            },
-        );
-        chlog_file.set(chlog)?;
+        package
+            .begin_dev(&pkgset)
+            .latest_release(new_version)
+            .latest_release_date(release_date)
+            .run()?;
 
         // Ensure "Changelog" link is in README
         let Some(mut readme) = readme_file.get()? else {
@@ -384,37 +346,6 @@ impl Bumping {
 fn parse_v_version(value: &str) -> Result<Version, cargo_metadata::semver::Error> {
     let value = value.strip_prefix('v').unwrap_or(value);
     value.parse::<Version>()
-}
-
-fn bump_dependents(
-    pkgset: &PackageSet,
-    package: &Package,
-    version: &Version,
-) -> anyhow::Result<()> {
-    let name = package.name();
-    for (rname, req) in package.dependents() {
-        // When a package `foo`'s version is bumped from `0.3.0-dev` to
-        // `0.3.0`, any package `bar` that depends on `foo 0.3.0-dev` should
-        // have its version requirement bumped to `0.3.0`, but Cargo's semver
-        // rules mean that `^0.3.0-dev` accepts `0.3.0`.  Thus, if `req` using
-        // a prelease does not equal `version` being a prerelease, bump.
-        if !req.matches(version) || uses_prerelease(req) == version.pre.is_empty() {
-            let Some(rpkg) = pkgset.package_by_name(rname) else {
-                bail!(
-                    "Inconsistent project metadata: {name} is depended on by {rname}, but the latter was not found"
-                );
-            };
-            log::info!("Updating {rname}'s dependency on {name} ...");
-            rpkg.set_dependency_version(name, version.to_string(), false)?;
-        }
-    }
-    Ok(())
-}
-
-fn uses_prerelease(req: &VersionReq) -> bool {
-    req.comparators
-        .iter()
-        .any(|c| c.op == Op::Caret && !c.pre.is_empty())
 }
 
 fn write_commit_template<W: Write>(

@@ -1,15 +1,14 @@
-use super::Flavor;
 use super::textfile::TextFile;
 use super::traits::HasReadme;
-use crate::changelog::Changelog;
+use super::{Flavor, PackageSet, Project};
+use crate::changelog::{Changelog, ChangelogHeader, ChangelogSection};
 use crate::cmd::LoggedCommand;
-use crate::project::Project;
 use crate::readme::Readme;
-use crate::util::CopyrightLine;
+use crate::util::{Bump, CopyrightLine, bump_version};
 use anyhow::{Context, bail};
 use cargo_metadata::{
     Package as CargoPackage, TargetKind,
-    semver::{Version, VersionReq},
+    semver::{Op, Prerelease, Version, VersionReq},
 };
 use in_place::InPlace;
 use std::collections::BTreeMap;
@@ -118,6 +117,20 @@ impl Package {
         Ok(())
     }
 
+    pub(crate) fn set_version_and_bump_dependents(
+        &self,
+        new_version: &Version,
+        pkgset: &PackageSet,
+    ) -> anyhow::Result<()> {
+        self.set_cargo_version(new_version)?;
+        bump_dependents(pkgset, self, new_version)?;
+        if self.path().join("Cargo.lock").exists() {
+            // Do this AFTER updating dependents!
+            self.update_lockfile(new_version)?;
+        }
+        Ok(())
+    }
+
     pub(crate) fn update_lockfile(&self, v: &Version) -> anyhow::Result<()> {
         LoggedCommand::new("cargo")
             .arg("update")
@@ -214,6 +227,10 @@ impl Package {
         Ok(())
     }
 
+    pub(crate) fn begin_dev<'a>(&'a self, package_set: &'a PackageSet) -> BeginDev<'a> {
+        BeginDev::new(self, package_set)
+    }
+
     pub(crate) fn flavor(&self) -> Flavor {
         Flavor {
             name: Some(self.metadata.name.to_string()),
@@ -228,6 +245,129 @@ impl HasReadme for Package {
     fn readme(&self) -> TextFile<'_, Readme> {
         TextFile::new(self.path(), "README.md")
     }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct BeginDev<'a> {
+    package: &'a Package,
+    pkgset: &'a PackageSet,
+    latest_release: Option<Version>,
+    latest_release_date: Option<chrono::NaiveDate>,
+    quiet: bool,
+}
+
+impl<'a> BeginDev<'a> {
+    fn new(package: &'a Package, package_set: &'a PackageSet) -> Self {
+        BeginDev {
+            package,
+            pkgset: package_set,
+            latest_release: None,
+            latest_release_date: None,
+            quiet: false,
+        }
+    }
+
+    pub(crate) fn latest_release(mut self, version: Version) -> Self {
+        self.latest_release = Some(version);
+        self
+    }
+
+    pub(crate) fn latest_release_date(mut self, date: chrono::NaiveDate) -> Self {
+        self.latest_release_date = Some(date);
+        self
+    }
+
+    #[expect(unused)]
+    pub(crate) fn quiet(mut self, yes: bool) -> Self {
+        self.quiet = yes;
+        self
+    }
+
+    pub(crate) fn run(self) -> anyhow::Result<()> {
+        let chlog_file = self.package.changelog();
+        let chlog = chlog_file.get()?;
+        if chlog.as_ref().is_some_and(|ch| {
+            ch.sections
+                .first()
+                .is_some_and(|sect| !matches!(sect.header, ChangelogHeader::Released { .. }))
+        }) {
+            if !self.quiet {
+                log::info!("Project is already in dev state; not adjusting");
+            }
+            return Ok(());
+        }
+
+        log::info!("Preparing for work on next version ...");
+        let latest_release = self
+            .latest_release
+            .unwrap_or_else(|| self.package.metadata().version.clone());
+        let next_version = bump_version(latest_release.clone(), Bump::Minor);
+        let mut dev_next = next_version.clone();
+        dev_next.pre =
+            Prerelease::new("dev").expect("'dev' should be a valid prerelease identifier");
+
+        // Update version in Cargo.toml
+        log::info!("Setting next version in Cargo.toml ...");
+        self.package
+            .set_version_and_bump_dependents(&dev_next, self.pkgset)?;
+
+        // Ensure CHANGELOG is present and contains section for upcoming
+        // version
+        log::info!("Adding next section to CHANGELOG.md ...");
+        let mut chlog = chlog.unwrap_or_else(|| Changelog {
+            sections: vec![ChangelogSection {
+                header: ChangelogHeader::Released {
+                    version: latest_release,
+                    date: self
+                        .latest_release_date
+                        .unwrap_or_else(|| chrono::Local::now().date_naive()),
+                },
+                content: "Initial release\n".into(),
+            }],
+        });
+        chlog.sections.insert(
+            0,
+            ChangelogSection {
+                header: ChangelogHeader::InProgress {
+                    version: next_version,
+                },
+                content: String::new(),
+            },
+        );
+        chlog_file.set(chlog)?;
+        Ok(())
+    }
+}
+
+fn bump_dependents(
+    pkgset: &PackageSet,
+    package: &Package,
+    version: &Version,
+) -> anyhow::Result<()> {
+    let name = package.name();
+    for (rname, req) in package.dependents() {
+        // When a package `foo`'s version is bumped from `0.3.0-dev` to
+        // `0.3.0`, any package `bar` that depends on `foo 0.3.0-dev` should
+        // have its version requirement bumped to `0.3.0`, but Cargo's semver
+        // rules mean that `^0.3.0-dev` accepts `0.3.0`.  Thus, if `req` using
+        // a prelease does not equal `version` being a prerelease, bump.
+        if !req.matches(version) || uses_prerelease(req) == version.pre.is_empty() {
+            let Some(rpkg) = pkgset.package_by_name(rname) else {
+                bail!(
+                    "Inconsistent project metadata: {name} is depended on by {rname}, but the latter was not found"
+                );
+            };
+            log::info!("Updating {rname}'s dependency on {name} ...");
+            rpkg.set_dependency_version(name, version.to_string(), false)?;
+        }
+    }
+    Ok(())
+}
+
+fn uses_prerelease(req: &VersionReq) -> bool {
+    req.comparators
+        .iter()
+        .any(|c| c.op == Op::Caret && !c.pre.is_empty())
 }
 
 #[cfg(test)]
