@@ -149,11 +149,12 @@ impl Package {
         package: &str,
         req: V,
         create: bool,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<Vec<&'static str>> {
         let manifest = self.manifest();
         let Some(mut doc) = manifest.get()? else {
             bail!("Package lacks Cargo.toml");
         };
+        let mut changed = Vec::new();
         for tblname in ["dependencies", "dev-dependencies", "build-dependencies"] {
             let Some(tbl) = doc.get_mut(tblname) else {
                 continue;
@@ -166,16 +167,18 @@ impl Package {
             };
             if reqitem.is_str() {
                 tbl.insert(package, toml_edit::value(req.clone()));
+                changed.push(tblname);
             } else if let Some(t) = reqitem.as_table_like_mut() {
                 if create || t.contains_key("version") {
                     t.insert("version", toml_edit::value(req.clone()));
+                    changed.push(tblname);
                 }
             } else {
                 bail!("{tblname}.{package} in Cargo.toml is not a string or table");
             }
         }
         manifest.set(doc)?;
-        Ok(())
+        Ok(changed)
     }
 
     pub(crate) fn package_key_inherits_workspace(&self, key: &str) -> anyhow::Result<bool> {
@@ -358,8 +361,8 @@ fn bump_dependents(
                 );
             };
             log::info!("Updating {rname}'s dependency on {name} ...");
-            rpkg.set_dependency_version(name, version.to_string(), false)?;
-            if version.pre.is_empty() {
+            let changed = rpkg.set_dependency_version(name, version.to_string(), false)?;
+            if version.pre.is_empty() && changed.contains(&"dependencies") {
                 let chlog_file = rpkg.changelog();
                 if chlog_file.exists() {
                     rpkg.begin_dev(pkgset).quiet(true).run()?;
