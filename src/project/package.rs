@@ -277,13 +277,8 @@ impl<'a> BeginDev<'a> {
     }
 
     pub(crate) fn run(self) -> anyhow::Result<()> {
-        let chlog_file = self.package.changelog();
-        let mut chlog = chlog_file.get()?;
-        if chlog.as_ref().is_some_and(|ch| {
-            ch.sections
-                .first()
-                .is_some_and(|sect| !matches!(sect.header, ChangelogHeader::Released { .. }))
-        }) {
+        let current_version = &self.package.metadata().version;
+        if !current_version.pre.is_empty() {
             if !self.quiet {
                 log::info!("Project is already in dev state; not adjusting");
             }
@@ -293,7 +288,7 @@ impl<'a> BeginDev<'a> {
         log::info!("Preparing for work on next version ...");
         let latest_version = match self.latest_release {
             Some((ref version, _)) => version.clone(),
-            None => self.package.metadata().version.clone(),
+            None => current_version.clone(),
         };
         let next_version = bump_version(latest_version, Bump::Minor);
         let mut dev_next = next_version.clone();
@@ -306,6 +301,8 @@ impl<'a> BeginDev<'a> {
             .set_version_and_bump_dependents(&dev_next, self.pkgset)?;
 
         // If `self.latest_release` is set, ensure CHANGELOG exists
+        let chlog_file = self.package.changelog();
+        let mut chlog = chlog_file.get()?;
         if chlog.is_none()
             && let Some((version, date)) = self.latest_release
         {
