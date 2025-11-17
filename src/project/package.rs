@@ -540,9 +540,11 @@ mod tests {
                 [dependencies]
                 quux = "0.1.0"
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("quux", "1.2.3", true)
                 .unwrap();
+            assert_eq!(changed, ["dependencies"]);
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -568,9 +570,11 @@ mod tests {
                 [dev-dependencies]
                 glarch = "1.2.3"
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("glarch", "42.0", true)
                 .unwrap();
+            assert_eq!(changed, ["dev-dependencies"]);
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -599,9 +603,11 @@ mod tests {
                 [build-dependencies]
                 glarch = "1.2.3"
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("glarch", "42.0", true)
                 .unwrap();
+            assert_eq!(changed, ["build-dependencies"]);
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -636,9 +642,14 @@ mod tests {
                 glarch = "1.2.3"
                 quux = "0.1.0"
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("glarch", "42.0", true)
                 .unwrap();
+            assert_eq!(
+                changed,
+                ["dependencies", "dev-dependencies", "build-dependencies"]
+            );
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -670,9 +681,11 @@ mod tests {
                 [dependencies]
                 quux = { version = "0.1.0", default-features = false }
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("quux", "1.2.3", true)
                 .unwrap();
+            assert_eq!(changed, ["dependencies"]);
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -695,9 +708,11 @@ mod tests {
                 [dependencies]
                 quux = { version = "0.1.0", default-features = false }
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("quux", "1.2.3", false)
                 .unwrap();
+            assert_eq!(changed, ["dependencies"]);
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -720,9 +735,11 @@ mod tests {
                 [dependencies]
                 quux = { path = "../quux", default-features = false }
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("quux", "1.2.3", true)
                 .unwrap();
+            assert_eq!(changed, ["dependencies"]);
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -745,9 +762,11 @@ mod tests {
                 [dependencies]
                 quux = { path = "../quux", default-features = false }
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("quux", "1.2.3", false)
                 .unwrap();
+            assert!(changed.is_empty());
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -771,9 +790,11 @@ mod tests {
                 version = "0.1.0"
                 default-features = false
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("quux", "1.2.3", true)
                 .unwrap();
+            assert_eq!(changed, ["dependencies"]);
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -798,9 +819,11 @@ mod tests {
                 path = "../quux"
                 default-features = false
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("quux", "1.2.3", true)
                 .unwrap();
+            assert_eq!(changed, ["dependencies"]);
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
