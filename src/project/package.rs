@@ -361,26 +361,29 @@ fn bump_dependents(
             rpkg.set_dependency_version(name, version.to_string(), false)?;
             if version.pre.is_empty() {
                 let chlog_file = rpkg.changelog();
-                if let Some(mut chlog) = chlog_file.get()?
-                    && let Some(most_recent) = chlog.sections.first_mut()
-                {
-                    log::info!("Updating CHANGELOG.md for {rname} ...");
-                    let prefix = format!("- Increase `{name}` dependency to ");
-                    let mut new_content = String::with_capacity(most_recent.content.len());
-                    let mut changed = false;
-                    for ln in most_recent.content.lines() {
-                        if !changed && ln.starts_with(&prefix) {
-                            let _ = writeln!(&mut new_content, "{prefix}`{version}`");
-                            changed = true;
-                        } else {
-                            let _ = writeln!(&mut new_content, "{ln}");
+                if chlog_file.exists() {
+                    rpkg.begin_dev(pkgset).quiet(true).run()?;
+                    if let Some(mut chlog) = chlog_file.get()?
+                        && let Some(most_recent) = chlog.sections.first_mut()
+                    {
+                        log::info!("Updating CHANGELOG.md for {rname} ...");
+                        let prefix = format!("- Increase `{name}` dependency to ");
+                        let mut new_content = String::with_capacity(most_recent.content.len());
+                        let mut changed = false;
+                        for ln in most_recent.content.lines() {
+                            if !changed && ln.starts_with(&prefix) {
+                                let _ = writeln!(&mut new_content, "{prefix}`{version}`");
+                                changed = true;
+                            } else {
+                                let _ = writeln!(&mut new_content, "{ln}");
+                            }
                         }
+                        if !changed {
+                            let _ = writeln!(&mut new_content, "{prefix}`{version}`");
+                        }
+                        most_recent.content = new_content;
+                        chlog_file.set(chlog)?;
                     }
-                    if !changed {
-                        let _ = writeln!(&mut new_content, "{prefix}`{version}`");
-                    }
-                    most_recent.content = new_content;
-                    chlog_file.set(chlog)?;
                 }
             }
         }
