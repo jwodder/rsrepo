@@ -351,8 +351,9 @@ This command performs the following operations in order:
     rsrepo [<global-options>] set-msrv <version>
 
 Set the package's MSRV as declared in `Cargo.toml` and `README.md`'s badges to
-the given rustc version.  A basic attempt at updating `CHANGELOG.md` to mention
-the change is also performed.
+the given rustc version.  The package is also put into "dev mode" by running
+`begin-dev` on it, and a basic attempt at updating `CHANGELOG.md` to mention
+the MSRV change is also performed.
 
 ### Options
 

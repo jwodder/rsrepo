@@ -270,7 +270,6 @@ impl<'a> BeginDev<'a> {
         self
     }
 
-    #[expect(unused)]
     pub(crate) fn quiet(mut self, yes: bool) -> Self {
         self.quiet = yes;
         self
@@ -315,17 +314,23 @@ impl<'a> BeginDev<'a> {
         }
         // If CHANGELOG exists, ensure it contains section for upcoming version
         if let Some(mut chlog) = chlog {
-            log::info!("Adding next section to CHANGELOG.md ...");
-            chlog.sections.insert(
-                0,
-                ChangelogSection {
-                    header: ChangelogHeader::InProgress {
-                        version: next_version,
+            if chlog
+                .sections
+                .first()
+                .is_none_or(|sect| matches!(sect.header, ChangelogHeader::Released { .. }))
+            {
+                log::info!("Adding next section to CHANGELOG.md ...");
+                chlog.sections.insert(
+                    0,
+                    ChangelogSection {
+                        header: ChangelogHeader::InProgress {
+                            version: next_version,
+                        },
+                        content: String::new(),
                     },
-                    content: String::new(),
-                },
-            );
-            chlog_file.set(chlog)?;
+                );
+                chlog_file.set(chlog)?;
+            }
         } else {
             log::info!("No CHANGELOG.md file to add next section to");
         }

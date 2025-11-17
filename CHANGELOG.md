@@ -7,6 +7,7 @@ v0.7.0 (in development)
     - Update lints for Rust 1.91
     - Set `package.edition` to 2024
 - Added `begin-dev` command
+- `set-msrv`: Run `begin-dev` before updating CHANGELOG
 
 v0.6.0 (2025-06-27)
 -------------------
