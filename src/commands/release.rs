@@ -269,8 +269,7 @@ impl Release {
 
         package
             .begin_dev(&pkgset)
-            .latest_release(new_version)
-            .latest_release_date(release_date)
+            .latest_release(new_version, release_date)
             .run()?;
 
         // Ensure "Changelog" link is in README

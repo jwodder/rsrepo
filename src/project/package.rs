@@ -251,8 +251,7 @@ impl HasReadme for Package {
 pub(crate) struct BeginDev<'a> {
     package: &'a Package,
     pkgset: &'a PackageSet,
-    latest_release: Option<Version>,
-    latest_release_date: Option<chrono::NaiveDate>,
+    latest_release: Option<(Version, chrono::NaiveDate)>,
     quiet: bool,
 }
 
@@ -262,18 +261,12 @@ impl<'a> BeginDev<'a> {
             package,
             pkgset: package_set,
             latest_release: None,
-            latest_release_date: None,
             quiet: false,
         }
     }
 
-    pub(crate) fn latest_release(mut self, version: Version) -> Self {
-        self.latest_release = Some(version);
-        self
-    }
-
-    pub(crate) fn latest_release_date(mut self, date: chrono::NaiveDate) -> Self {
-        self.latest_release_date = Some(date);
+    pub(crate) fn latest_release(mut self, version: Version, date: chrono::NaiveDate) -> Self {
+        self.latest_release = Some((version, date));
         self
     }
 
@@ -285,7 +278,7 @@ impl<'a> BeginDev<'a> {
 
     pub(crate) fn run(self) -> anyhow::Result<()> {
         let chlog_file = self.package.changelog();
-        let chlog = chlog_file.get()?;
+        let mut chlog = chlog_file.get()?;
         if chlog.as_ref().is_some_and(|ch| {
             ch.sections
                 .first()
@@ -298,10 +291,11 @@ impl<'a> BeginDev<'a> {
         }
 
         log::info!("Preparing for work on next version ...");
-        let latest_release = self
-            .latest_release
-            .unwrap_or_else(|| self.package.metadata().version.clone());
-        let next_version = bump_version(latest_release.clone(), Bump::Minor);
+        let latest_version = match self.latest_release {
+            Some((ref version, _)) => version.clone(),
+            None => self.package.metadata().version.clone(),
+        };
+        let next_version = bump_version(latest_version, Bump::Minor);
         let mut dev_next = next_version.clone();
         dev_next.pre =
             Prerelease::new("dev").expect("'dev' should be a valid prerelease identifier");
@@ -311,30 +305,33 @@ impl<'a> BeginDev<'a> {
         self.package
             .set_version_and_bump_dependents(&dev_next, self.pkgset)?;
 
-        // Ensure CHANGELOG is present and contains section for upcoming
-        // version
-        log::info!("Adding next section to CHANGELOG.md ...");
-        let mut chlog = chlog.unwrap_or_else(|| Changelog {
-            sections: vec![ChangelogSection {
-                header: ChangelogHeader::Released {
-                    version: latest_release,
-                    date: self
-                        .latest_release_date
-                        .unwrap_or_else(|| chrono::Local::now().date_naive()),
+        // If `self.latest_release` is set, ensure CHANGELOG exists
+        if chlog.is_none()
+            && let Some((version, date)) = self.latest_release
+        {
+            chlog = Some(Changelog {
+                sections: vec![ChangelogSection {
+                    header: ChangelogHeader::Released { version, date },
+                    content: "Initial release\n".into(),
+                }],
+            });
+        }
+        // If CHANGELOG exists, ensure it contains section for upcoming version
+        if let Some(mut chlog) = chlog {
+            log::info!("Adding next section to CHANGELOG.md ...");
+            chlog.sections.insert(
+                0,
+                ChangelogSection {
+                    header: ChangelogHeader::InProgress {
+                        version: next_version,
+                    },
+                    content: String::new(),
                 },
-                content: "Initial release\n".into(),
-            }],
-        });
-        chlog.sections.insert(
-            0,
-            ChangelogSection {
-                header: ChangelogHeader::InProgress {
-                    version: next_version,
-                },
-                content: String::new(),
-            },
-        );
-        chlog_file.set(chlog)?;
+            );
+            chlog_file.set(chlog)?;
+        } else {
+            log::info!("No CHANGELOG.md file to add next section to");
+        }
         Ok(())
     }
 }
