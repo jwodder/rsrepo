@@ -66,35 +66,39 @@ fn update_readme<P: HasReadme>(p: &P, msrv: RustVersion) -> anyhow::Result<()> {
 }
 
 fn update_chlog(package: &Package, pkgset: &PackageSet, msrv: RustVersion) -> anyhow::Result<()> {
-    package.begin_dev(pkgset).quiet(true).run()?;
     let chlog_file = package.changelog();
-    if let Some(mut chlog) = chlog_file.get()? {
-        log::info!("Updating CHANGELOG.md ...");
-        if let Some(sect1) = chlog.sections.first_mut() {
-            let mut content = String::new();
-            let mut found = false;
-            for ln in sect1.content.lines() {
-                if ln.starts_with("- Increased MSRV to ") && !std::mem::replace(&mut found, true) {
+    if chlog_file.exists() {
+        package.begin_dev(pkgset).quiet(true).run()?;
+        if let Some(mut chlog) = chlog_file.get()? {
+            log::info!("Updating CHANGELOG.md ...");
+            if let Some(sect1) = chlog.sections.first_mut() {
+                let mut content = String::new();
+                let mut found = false;
+                for ln in sect1.content.lines() {
+                    if ln.starts_with("- Increased MSRV to ")
+                        && !std::mem::replace(&mut found, true)
+                    {
+                        writeln!(&mut content, "- Increased MSRV to {msrv}")
+                            .expect("formatting a String should not fail");
+                    } else {
+                        content.push_str(ln);
+                        content.push('\n');
+                    }
+                }
+                if !found {
+                    let mut nlqty = 0;
+                    while content.ends_with("\n\n") {
+                        content.pop();
+                        nlqty += 1;
+                    }
                     writeln!(&mut content, "- Increased MSRV to {msrv}")
                         .expect("formatting a String should not fail");
-                } else {
-                    content.push_str(ln);
-                    content.push('\n');
+                    content.push_str(&"\n".repeat(nlqty));
                 }
+                sect1.content = content;
             }
-            if !found {
-                let mut nlqty = 0;
-                while content.ends_with("\n\n") {
-                    content.pop();
-                    nlqty += 1;
-                }
-                writeln!(&mut content, "- Increased MSRV to {msrv}")
-                    .expect("formatting a String should not fail");
-                content.push_str(&"\n".repeat(nlqty));
-            }
-            sect1.content = content;
+            chlog_file.set(chlog)?;
         }
-        chlog_file.set(chlog)?;
     }
     Ok(())
 }

@@ -20,6 +20,10 @@ impl<'a, T> TextFile<'a, T> {
         }
     }
 
+    pub(crate) fn exists(&self) -> bool {
+        self.dirpath.join(self.filename).exists()
+    }
+
     pub(crate) fn get(&self) -> anyhow::Result<Option<T>>
     where
         T: std::str::FromStr,

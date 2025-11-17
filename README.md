@@ -256,7 +256,8 @@ This command performs the following operations in order:
 
     - If operating in a workspace, any packages in the workspace that depend on
       the package being released have their dependency requirements updated to
-      the new version if they're not already compatible with it.
+      the new version if they're not already compatible with it, and their
+      changelogs (if they have one) will be updated.
 
 - If `CHANGELOG.md` exists, the header for the topmost section is edited to
   contain the release version and the current date.  It is an error if the
@@ -351,9 +352,9 @@ This command performs the following operations in order:
     rsrepo [<global-options>] set-msrv <version>
 
 Set the package's MSRV as declared in `Cargo.toml` and `README.md`'s badges to
-the given rustc version.  The package is also put into "dev mode" by running
-`begin-dev` on it, and a basic attempt at updating `CHANGELOG.md` to mention
-the MSRV change is also performed.
+the given rustc version.  If the package has a `CHANGELOG.md` file, a basic
+attempt at updating it to mention the MSRV change is performed, and the package
+is also put into "dev mode" by running `begin-dev` on it.
 
 ### Options
 

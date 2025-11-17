@@ -12,6 +12,7 @@ use cargo_metadata::{
 };
 use in_place::InPlace;
 use std::collections::BTreeMap;
+use std::fmt::Write as _;
 use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 use toml_edit::DocumentMut;
@@ -148,11 +149,12 @@ impl Package {
         package: &str,
         req: V,
         create: bool,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<Vec<&'static str>> {
         let manifest = self.manifest();
         let Some(mut doc) = manifest.get()? else {
             bail!("Package lacks Cargo.toml");
         };
+        let mut changed = Vec::new();
         for tblname in ["dependencies", "dev-dependencies", "build-dependencies"] {
             let Some(tbl) = doc.get_mut(tblname) else {
                 continue;
@@ -165,16 +167,18 @@ impl Package {
             };
             if reqitem.is_str() {
                 tbl.insert(package, toml_edit::value(req.clone()));
+                changed.push(tblname);
             } else if let Some(t) = reqitem.as_table_like_mut() {
                 if create || t.contains_key("version") {
                     t.insert("version", toml_edit::value(req.clone()));
+                    changed.push(tblname);
                 }
             } else {
                 bail!("{tblname}.{package} in Cargo.toml is not a string or table");
             }
         }
         manifest.set(doc)?;
-        Ok(())
+        Ok(changed)
     }
 
     pub(crate) fn package_key_inherits_workspace(&self, key: &str) -> anyhow::Result<bool> {
@@ -357,7 +361,34 @@ fn bump_dependents(
                 );
             };
             log::info!("Updating {rname}'s dependency on {name} ...");
-            rpkg.set_dependency_version(name, version.to_string(), false)?;
+            let changed = rpkg.set_dependency_version(name, version.to_string(), false)?;
+            if version.pre.is_empty() && changed.contains(&"dependencies") {
+                let chlog_file = rpkg.changelog();
+                if chlog_file.exists() {
+                    rpkg.begin_dev(pkgset).quiet(true).run()?;
+                    if let Some(mut chlog) = chlog_file.get()?
+                        && let Some(most_recent) = chlog.sections.first_mut()
+                    {
+                        log::info!("Updating CHANGELOG.md for {rname} ...");
+                        let prefix = format!("- Increase `{name}` dependency to ");
+                        let mut new_content = String::with_capacity(most_recent.content.len());
+                        let mut changed = false;
+                        for ln in most_recent.content.lines() {
+                            if !changed && ln.starts_with(&prefix) {
+                                let _ = writeln!(&mut new_content, "{prefix}`{version}`");
+                                changed = true;
+                            } else {
+                                let _ = writeln!(&mut new_content, "{ln}");
+                            }
+                        }
+                        if !changed {
+                            let _ = writeln!(&mut new_content, "{prefix}`{version}`");
+                        }
+                        most_recent.content = new_content;
+                        chlog_file.set(chlog)?;
+                    }
+                }
+            }
         }
     }
     Ok(())
@@ -509,9 +540,11 @@ mod tests {
                 [dependencies]
                 quux = "0.1.0"
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("quux", "1.2.3", true)
                 .unwrap();
+            assert_eq!(changed, ["dependencies"]);
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -537,9 +570,11 @@ mod tests {
                 [dev-dependencies]
                 glarch = "1.2.3"
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("glarch", "42.0", true)
                 .unwrap();
+            assert_eq!(changed, ["dev-dependencies"]);
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -568,9 +603,11 @@ mod tests {
                 [build-dependencies]
                 glarch = "1.2.3"
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("glarch", "42.0", true)
                 .unwrap();
+            assert_eq!(changed, ["build-dependencies"]);
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -605,9 +642,14 @@ mod tests {
                 glarch = "1.2.3"
                 quux = "0.1.0"
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("glarch", "42.0", true)
                 .unwrap();
+            assert_eq!(
+                changed,
+                ["dependencies", "dev-dependencies", "build-dependencies"]
+            );
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -639,9 +681,11 @@ mod tests {
                 [dependencies]
                 quux = { version = "0.1.0", default-features = false }
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("quux", "1.2.3", true)
                 .unwrap();
+            assert_eq!(changed, ["dependencies"]);
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -664,9 +708,11 @@ mod tests {
                 [dependencies]
                 quux = { version = "0.1.0", default-features = false }
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("quux", "1.2.3", false)
                 .unwrap();
+            assert_eq!(changed, ["dependencies"]);
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -689,9 +735,11 @@ mod tests {
                 [dependencies]
                 quux = { path = "../quux", default-features = false }
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("quux", "1.2.3", true)
                 .unwrap();
+            assert_eq!(changed, ["dependencies"]);
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -714,9 +762,11 @@ mod tests {
                 [dependencies]
                 quux = { path = "../quux", default-features = false }
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("quux", "1.2.3", false)
                 .unwrap();
+            assert!(changed.is_empty());
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -740,9 +790,11 @@ mod tests {
                 version = "0.1.0"
                 default-features = false
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("quux", "1.2.3", true)
                 .unwrap();
+            assert_eq!(changed, ["dependencies"]);
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
@@ -767,9 +819,11 @@ mod tests {
                 path = "../quux"
                 default-features = false
             "#});
-            tpkg.package
+            let changed = tpkg
+                .package
                 .set_dependency_version("quux", "1.2.3", true)
                 .unwrap();
+            assert_eq!(changed, ["dependencies"]);
             tpkg.manifest.assert(indoc! {r#"
                 [package]
                 name = "foobar"
