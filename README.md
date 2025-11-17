@@ -137,6 +137,24 @@ The following files are created in the directory:
 - `--repo-name <name>` — Specify the GitHub repository name (sans owner) to use
   in URLs in generated files; defaults to the package name
 
+`rsrepo begin-dev`
+------------------
+
+    rsrepo [<global options>] begin-dev
+
+Prepare for development on the next version of the current package:
+
+- Set `package.version` in `Cargo.toml` to the next minor version number plus
+  "-dev"
+
+- In a workspace, update the version requirements of the package's dependents
+
+- If `CHANGELOG.md` exists, add a new section for the next minor version to the top
+
+This is (almost) the same behavior as the last step of `rsrepo release`.
+
+If the project is already in "dev mode", nothing is done.
+
 `rsrepo inspect`
 ----------------
 

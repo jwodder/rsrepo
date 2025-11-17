@@ -6,6 +6,7 @@ v0.7.0 (in development)
 - `Cargo.toml` template:
     - Update lints for Rust 1.91
     - Set `package.edition` to 2024
+- Added `begin-dev` command
 
 v0.6.0 (2025-06-27)
 -------------------
