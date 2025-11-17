@@ -270,7 +270,6 @@ impl<'a> BeginDev<'a> {
         self
     }
 
-    #[expect(unused)]
     pub(crate) fn quiet(mut self, yes: bool) -> Self {
         self.quiet = yes;
         self

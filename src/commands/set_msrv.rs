@@ -1,4 +1,4 @@
-use crate::project::{HasReadme, Package, Project};
+use crate::project::{HasReadme, Package, PackageSet, Project};
 use crate::provider::Provider;
 use crate::util::RustVersion;
 use clap::Args;
@@ -36,22 +36,22 @@ impl SetMsrv {
             for package in &pkgset {
                 if package.package_key_inherits_workspace("rust-version")? {
                     log::info!("Updating {} ...", package.name());
-                    update_extras(package, self.msrv)?;
+                    update_extras(package, &pkgset, self.msrv)?;
                 }
             }
         } else {
             let package = pkgset.get(self.package.as_deref())?;
             log::info!("Updating Cargo.toml ...");
             package.set_package_field("rust-version", self.msrv.to_string())?;
-            update_extras(package, self.msrv)?;
+            update_extras(package, &pkgset, self.msrv)?;
         }
         Ok(())
     }
 }
 
-fn update_extras(package: &Package, msrv: RustVersion) -> anyhow::Result<()> {
+fn update_extras(package: &Package, pkgset: &PackageSet, msrv: RustVersion) -> anyhow::Result<()> {
     update_readme(package, msrv)?;
-    update_chlog(package, msrv)?;
+    update_chlog(package, pkgset, msrv)?;
     Ok(())
 }
 
@@ -65,7 +65,8 @@ fn update_readme<P: HasReadme>(p: &P, msrv: RustVersion) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn update_chlog(package: &Package, msrv: RustVersion) -> anyhow::Result<()> {
+fn update_chlog(package: &Package, pkgset: &PackageSet, msrv: RustVersion) -> anyhow::Result<()> {
+    package.begin_dev(pkgset).quiet(true).run()?;
     let chlog_file = package.changelog();
     if let Some(mut chlog) = chlog_file.get()? {
         log::info!("Updating CHANGELOG.md ...");
