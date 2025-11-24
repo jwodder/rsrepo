@@ -1,7 +1,7 @@
 v0.7.0 (in development)
 -----------------------
 - `test.yml` template:
-    - Update `actions/checkout` to v5
+    - Update `actions/checkout` to v6
 - Update `.pre-commit-config.yaml` template
 - `Cargo.toml` template:
     - Update lints for Rust 1.91
