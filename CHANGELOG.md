@@ -10,6 +10,8 @@ v0.7.0 (in development)
 - `set-msrv`: If `CHANGELOG.md` exists, run `begin-dev` before updating it
 - `release`: When bumping local workspace inter-dependencies, update dependent
   packages' changelogs
+- `release`: When releasing in a workspace, tags are no longer prefixed with
+  the package name if the package is the only public package in the workspace
 
 v0.6.0 (2025-06-27)
 -------------------

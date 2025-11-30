@@ -88,6 +88,10 @@ impl Package {
         &self.dependents
     }
 
+    pub(crate) fn is_public(&self) -> bool {
+        self.metadata.publish.as_deref() != Some(&[])
+    }
+
     pub(crate) fn changelog(&self) -> TextFile<'_, Changelog> {
         TextFile::new(self.path(), "CHANGELOG.md")
     }
