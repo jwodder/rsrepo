@@ -12,6 +12,7 @@ v0.7.0 (in development)
   packages' changelogs
 - `release`: When releasing in a workspace, tags are no longer prefixed with
   the package name if the package is the only public package in the workspace
+- No longer optimize the "release" profile for space
 
 v0.6.0 (2025-06-27)
 -------------------

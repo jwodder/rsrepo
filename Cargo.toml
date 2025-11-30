@@ -59,10 +59,6 @@ zip = "6.0.0"
 [build-dependencies]
 anyhow = "1.0.82"
 
-[profile.release]
-lto = true
-strip = true
-
 [lints.rust]
 # Lint groups:
 deprecated_safe = { level = "deny", priority = -1 }
