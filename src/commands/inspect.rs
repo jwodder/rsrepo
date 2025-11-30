@@ -53,6 +53,7 @@ struct PackageDetails<'a> {
     bin: bool,
     lib: bool,
     root_package: bool,
+    public: bool,
     dependents: &'a BTreeMap<String, VersionReq>,
 }
 
@@ -64,6 +65,7 @@ impl<'a> From<&'a Package> for PackageDetails<'a> {
             bin: p.is_bin(),
             lib: p.is_lib(),
             root_package: p.is_root_package(),
+            public: p.is_public(),
             dependents: p.dependents(),
         }
     }

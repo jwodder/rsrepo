@@ -9,6 +9,7 @@
     "bin": false,
     "lib": true,
     "root_package": false,
+    "public": false,
     "dependents": {
       "fibonacci-cli": "^0.1.0"
     }

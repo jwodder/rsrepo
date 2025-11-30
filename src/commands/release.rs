@@ -38,7 +38,6 @@ impl Release {
     pub(crate) fn run(self, provider: Provider) -> anyhow::Result<()> {
         let github = provider.github()?;
         let project = Project::locate()?;
-        let is_workspace = project.project_type().is_workspace();
         let pkgset = project.package_set()?;
         let package = pkgset.get(self.package.as_deref())?;
         let name = package.name();
@@ -51,12 +50,17 @@ impl Release {
             .github_remote("origin")
             .context("Could not determine GitHub repository for local repository")?;
         let is_lib = package.is_lib();
-        let publish = metadata.publish.as_deref() != Some(&[]);
+        let publish = package.is_public();
         let Some(default_branch) = git.default_branch()? else {
             bail!("Could not determine repository's default branch");
         };
 
-        let tag_prefix = is_workspace.then(|| workspace_tag_prefix(name));
+        let needs_prefix = if publish {
+            pkgset.iter().filter(|p| p.is_public()).count() != 1
+        } else {
+            project.project_type().is_workspace()
+        };
+        let tag_prefix = needs_prefix.then(|| workspace_tag_prefix(name));
         // Determine new version
         let new_version = if let Some(v) = self.version {
             v // Skips the checks from the other branch
@@ -138,7 +142,7 @@ impl Release {
             let mut template = NamedTempFile::new().context("could not create temporary file")?;
             write_commit_template(
                 template.as_file_mut(),
-                is_workspace.then_some(name),
+                needs_prefix.then_some(name),
                 &new_version,
                 chlog_content,
             )
@@ -159,7 +163,7 @@ impl Release {
             .arg("tag")
             .arg("-s")
             .arg("-m")
-            .arg(if is_workspace {
+            .arg(if needs_prefix {
                 format!("{name} version {new_version}")
             } else {
                 format!("Version {new_version}")

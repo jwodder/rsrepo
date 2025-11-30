@@ -9,6 +9,7 @@
     "bin": true,
     "lib": false,
     "root_package": false,
+    "public": false,
     "dependents": {}
   }
 }
