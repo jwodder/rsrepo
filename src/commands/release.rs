@@ -274,6 +274,12 @@ impl Release {
         package
             .begin_dev(&pkgset)
             .latest_release(new_version, release_date)
+            // Without `force()`, begin-dev won't be run, because it does
+            // nothing if `package.metadata.version` is already a dev version,
+            // but the field isn't updated when `version` in `Cargo.toml` is
+            // updated, and so it remains at its original value from the start
+            // of command execution.
+            .force(true)
             .run()?;
 
         // Ensure "Changelog" link is in README
