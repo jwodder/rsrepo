@@ -261,6 +261,7 @@ pub(crate) struct BeginDev<'a> {
     pkgset: &'a PackageSet,
     latest_release: Option<(Version, chrono::NaiveDate)>,
     quiet: bool,
+    force: bool,
 }
 
 impl<'a> BeginDev<'a> {
@@ -270,6 +271,7 @@ impl<'a> BeginDev<'a> {
             pkgset: package_set,
             latest_release: None,
             quiet: false,
+            force: false,
         }
     }
 
@@ -283,9 +285,14 @@ impl<'a> BeginDev<'a> {
         self
     }
 
+    pub(crate) fn force(mut self, yes: bool) -> Self {
+        self.force = yes;
+        self
+    }
+
     pub(crate) fn run(self) -> anyhow::Result<()> {
         let current_version = &self.package.metadata().version;
-        if !current_version.pre.is_empty() {
+        if !self.force && !current_version.pre.is_empty() {
             if !self.quiet {
                 log::info!("Project is already in dev state; not adjusting");
             }
