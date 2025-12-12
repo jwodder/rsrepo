@@ -4,7 +4,7 @@ v0.7.0 (in development)
     - Update `actions/checkout` to v6
 - Update `.pre-commit-config.yaml` template
 - `Cargo.toml` template:
-    - Update lints for Rust 1.91
+    - Update lints for Rust 1.92
     - Set `package.edition` to 2024
 - Added `begin-dev` command
 - `set-msrv`: If `CHANGELOG.md` exists, run `begin-dev` before updating it
