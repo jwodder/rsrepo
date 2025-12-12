@@ -19,8 +19,7 @@ impl<'a> Templater<'a> {
         let mut engine = TinyTemplate::new();
         log::debug!("Loading templates");
         let mut dirs = VecDeque::from([&TEMPLATE_DATA]);
-        loop {
-            let Some(d) = dirs.pop_front() else { break };
+        while let Some(d) = dirs.pop_front() {
             for entry in d.entries() {
                 match entry {
                     DirEntry::Dir(entry) => dirs.push_back(entry),
