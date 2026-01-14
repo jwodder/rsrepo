@@ -30,11 +30,12 @@ pub(crate) fn this_year() -> i32 {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct StringLines {
     content: String,
+    offset: usize,
 }
 
 impl StringLines {
     pub(crate) fn new(content: String) -> StringLines {
-        StringLines { content }
+        StringLines { content, offset: 0 }
     }
 }
 
@@ -42,18 +43,22 @@ impl Iterator for StringLines {
     type Item = String;
 
     fn next(&mut self) -> Option<String> {
-        if self.content.is_empty() {
+        if self.offset == self.content.len() {
             return None;
         }
-        let i = self.content.find('\n').unwrap_or(self.content.len() - 1);
-        let mut line = self.content.drain(0..=i).collect::<String>();
-        if line.ends_with('\n') {
-            line.pop();
-            if line.ends_with('\r') {
-                line.pop();
-            }
+        let next_offset = self.content[self.offset..]
+            .find('\n')
+            .map_or(self.content.len(), |i| self.offset + i + 1);
+        let mut end = next_offset;
+        if end > 0 && self.content.as_bytes()[end - 1] == b'\n' {
+            end -= 1;
         }
-        Some(line)
+        if end > 0 && self.content.as_bytes()[end - 1] == b'\r' {
+            end -= 1;
+        }
+        let line = &self.content[self.offset..end];
+        self.offset = next_offset;
+        Some(line.to_owned())
     }
 }
 
