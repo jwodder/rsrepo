@@ -180,6 +180,7 @@ pub(crate) enum BadgeKind {
 }
 
 impl BadgeKind {
+    #[expect(clippy::needless_collect)]
     fn for_url(s: &str) -> Option<BadgeKind> {
         let url = Url::parse(s).ok()?;
         match url.domain() {
