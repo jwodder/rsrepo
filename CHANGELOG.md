@@ -3,6 +3,8 @@ v0.7.0 (in development)
 - `test.yml` template:
     - Update `actions/checkout` to v6
     - Update `codecov/codecov-action` to v6
+    - Set `permissions: {}`
+    - Set `persist-credentials: false` under `actions/checkout`
 - Update `.pre-commit-config.yaml` template
 - `Cargo.toml` template:
     - Update lints for Rust 1.92
