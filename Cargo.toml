@@ -1,6 +1,6 @@
 [package]
 name = "rsrepo"
-version = "0.7.0-dev"
+version = "0.7.0"
 edition = "2024"
 description = "Rust project templater & releaser"
 authors = ["John Thorvald Wodder II <rsrepo@varonathe.org>"]

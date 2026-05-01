@@ -1,5 +1,5 @@
-v0.7.0 (in development)
------------------------
+v0.7.0 (2026-05-01)
+-------------------
 - `test.yml` template:
     - Update `actions/checkout` to v6
     - Update `codecov/codecov-action` to v6
