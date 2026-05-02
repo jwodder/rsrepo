@@ -31,17 +31,16 @@ respectively.
 Global Options
 --------------
 
-- `-c <file>`, `--config <file>` — Read configuration from the given file; by
+- `-c FILE`, `--config FILE` — Read configuration from the given file; by
   default, configuration is read from `~/.config/rsrepo.toml`.  See
   "Configuration File" below for more information.
 
-- `-C <dir>`, `--chdir <dir>` — Change to the given directory before taking any
+- `-C DIR`, `--chdir DIR` — Change to the given directory before taking any
   further actions
 
-- `-l <level>`, `--log-level <level>` — Set the logging level to the given
-  value.  The possible options are "`OFF`", "`ERROR`", "`WARN`", "`INFO`",
-  "`DEBUG`", and "`TRACE`", all case-insensitive.  The default value is
-  "`INFO`".
+- `-l LEVEL`, `--log-level LEVEL` — Set the logging level to the given value.
+  The possible options are "`OFF`", "`ERROR`", "`WARN`", "`INFO`", "`DEBUG`",
+  and "`TRACE`", all case-insensitive.  The default value is "`INFO`".
 
 External Dependencies
 ---------------------
@@ -116,12 +115,12 @@ The following files are created in the directory:
 
 - `--bin` — Create a binary crate
 
-- `--copyright-year <string>` — Specify the copyright year(s) to put in the
+- `--copyright-year STRING` — Specify the copyright year(s) to put in the
   `LICENSE` file; defaults to the current year
 
-- `-d <text>`, `--description <text>` — Specify a description for the new
-  package; if not specified, the `description` field in `Cargo.toml` will be
-  commented out.
+- `-d TEXT`, `--description TEXT` — Specify a description for the new package;
+  if not specified, the `description` field in `Cargo.toml` will be commented
+  out.
 
 - `--lib` — Create a library crate.  This is the default if neither `--bin` nor
   `--lib` is given.
@@ -131,10 +130,10 @@ The following files are created in the directory:
   component removed.  The version must be given as either two or three
   dot-separated integers.
 
-- `--name <name>` — Specify the package name to declare in the `Cargo.toml`
-  file; defaults to the basename of the directory
+- `--name NAME` — Specify the package name to declare in the `Cargo.toml` file;
+  defaults to the basename of the directory
 
-- `--repo-name <name>` — Specify the GitHub repository name (sans owner) to use
+- `--repo-name NAME` — Specify the GitHub repository name (sans owner) to use
   in URLs in generated files; defaults to the package name
 
 `rsrepo begin-dev`
@@ -211,7 +210,7 @@ value.
 
 ### Options
 
-- `--codecov-token <secret>` — Specify the value to use for the `CODECOV_TOKEN`
+- `--codecov-token SECRET` — Specify the value to use for the `CODECOV_TOKEN`
   secret.  This option can be set via the `CODECOV_TOKEN` environment variable,
   and a default value can be set via the configuration file.
 
@@ -339,9 +338,8 @@ This command performs the following operations in order:
 - `--minor` — Set the release's version to the next minor version after the
   most recent Git tag
 
-- `-p <NAME>`, `--package <NAME>` — Release the package with the given name in
-  the workspace.  By default, the package for the current directory is
-  released.
+- `-p NAME`, `--package NAME` — Release the package with the given name in the
+  workspace.  By default, the package for the current directory is released.
 
 - `--patch` — Set the release's version to the next micro version after the
   most recent Git tag
@@ -358,8 +356,8 @@ is also put into "dev mode" by running `begin-dev` on it.
 
 ### Options
 
-- `-p <NAME>`, `--package <NAME>` — Update the package with the given name in
-  the workspace.  By default, the package for the current directory is updated.
+- `-p NAME`, `--package NAME` — Update the package with the given name in the
+  workspace.  By default, the package for the current directory is updated.
 
 - `-w`, `--workspace` — Instead of updating a single package's
   `package.rust-version`, update `workspace.package.rust-version` in the
