@@ -68,7 +68,7 @@ jobs:
         uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
 
       - name: Install cargo-hack
-        uses: taiki-e/install-action@a9806628a7203f2a1142694d6a24a29405ae3fc4 # cargo-hack
+        uses: taiki-e/install-action@22c42ec3f0d44399f96bfd1127b61398a1405b3b # cargo-hack
 
       - name: Build crate
         run: cargo hack --workspace --feature-powerset build --all-targets --verbose
@@ -104,7 +104,7 @@ jobs:
         uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
 
       - name: Install cargo-hack and cargo-minimal-versions
-        uses: taiki-e/install-action@7769b73c2ec98c38dfcf2e18c83cfd4880c038c1 # v2
+        uses: taiki-e/install-action@cca35edeb1d01366c2843b68fc3ca441446d73d3 # v2
         with:
           tool: cargo-hack,cargo-minimal-versions
 
@@ -141,7 +141,7 @@ jobs:
         uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
 
       - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@7769b73c2ec98c38dfcf2e18c83cfd4880c038c1 # v2
+        uses: taiki-e/install-action@cca35edeb1d01366c2843b68fc3ca441446d73d3 # v2
         with:
           tool: cargo-llvm-cov
 
@@ -174,7 +174,7 @@ jobs:
         uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
 
       - name: Install cargo-hack
-        uses: taiki-e/install-action@a9806628a7203f2a1142694d6a24a29405ae3fc4 # cargo-hack
+        uses: taiki-e/install-action@22c42ec3f0d44399f96bfd1127b61398a1405b3b # cargo-hack
 
       - name: Check code
         run: cargo hack --workspace --feature-powerset clippy -- -Dwarnings
