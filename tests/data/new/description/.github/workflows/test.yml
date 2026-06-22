@@ -62,7 +62,9 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Install cargo-hack
-        uses: taiki-e/install-action@cargo-hack
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-hack
 
       - name: Build crate
         run: cargo hack --workspace --feature-powerset build --all-targets --verbose
@@ -156,7 +158,9 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Install cargo-hack
-        uses: taiki-e/install-action@cargo-hack
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-hack
 
       - name: Check code
         run: cargo hack --workspace --feature-powerset clippy -- -Dwarnings
