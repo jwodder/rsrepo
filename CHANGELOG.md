@@ -3,6 +3,7 @@ v0.8.0 (in development)
 - `test.yml` template:
     - Update `codecov/codecov-action` to v7
     - Update `actions/checkout` to v7
+    - Make actions installing `cargo-hack` properly pinnable
 
 v0.7.0 (2026-05-01)
 -------------------
