@@ -523,9 +523,9 @@ dependencies = [
 
 [[package]]
 name = "dryoc"
-version = "0.9.0"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a976e1da2134545bac480d6b2cb69b5bbb492d4bcf09cb5f6695c4b4f0f0914"
+checksum = "2a9268c01fc6ec1f2a104ae9e40343c255fbcafea97a48f334237206c96838b2"
 dependencies = [
  "chacha20",
  "curve25519-dalek",
