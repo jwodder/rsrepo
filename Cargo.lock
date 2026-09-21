@@ -917,9 +917,9 @@ dependencies = [
 
 [[package]]
 name = "in-place"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c265b44b3e6b668b39f4fc856febd1a16c7f6a049393496cd2b652749ffc72ef"
+checksum = "5281da6ec9e8d559f3bbea3997e38bccf1ef56e4ab172c7a836da220c0df987f"
 dependencies = [
  "tempfile",
 ]
