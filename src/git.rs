@@ -71,10 +71,10 @@ impl<'a> Git<'a> {
         self.run("remote", ["add", remote, url])
     }
 
-    pub(crate) fn commit_years(&self) -> anyhow::Result<HashSet<i32>> {
+    pub(crate) fn commit_years(&self) -> anyhow::Result<HashSet<i16>> {
         self.readlines("log", ["--format=%ad", "--date=format:%Y"])?
             .map(|s| s.parse())
-            .collect::<Result<HashSet<i32>, _>>()
+            .collect::<Result<HashSet<i16>, _>>()
             .context("Error parsing Git commit years")
     }
 

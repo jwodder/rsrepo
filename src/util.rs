@@ -1,5 +1,4 @@
 use cargo_metadata::semver::Version;
-use chrono::Datelike;
 use fs_err::{create_dir_all, read_dir, remove_dir};
 use rangemap::RangeInclusiveSet;
 use renamore::rename_exclusive;
@@ -23,8 +22,8 @@ use winnow::{
     token::rest,
 };
 
-pub(crate) fn this_year() -> i32 {
-    chrono::Local::now().year()
+pub(crate) fn this_year() -> i16 {
+    jiff::Zoned::now().year()
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -165,12 +164,12 @@ pub(crate) fn bump_version(v: Version, level: Bump) -> Version {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct CopyrightLine {
     prefix: String,
-    years: RangeInclusiveSet<i32>,
+    years: RangeInclusiveSet<i16>,
     authors: String,
 }
 
 impl CopyrightLine {
-    pub(crate) fn add_year(&mut self, year: i32) {
+    pub(crate) fn add_year(&mut self, year: i16) {
         self.years.insert(year..=year);
     }
 }
@@ -210,14 +209,14 @@ fn copyright(input: &mut &str) -> ModalResult<CopyrightLine> {
     seq! {
         CopyrightLine {
             prefix: (space0, "Copyright", space1, opt(("(c)", space1))).take().map(String::from),
-            years: separated(1.., year_range, (space0, ',', space0)).map(|ranges: Vec<RangeInclusive<i32>>| ranges.into_iter().collect()),
+            years: separated(1.., year_range, (space0, ',', space0)).map(|ranges: Vec<RangeInclusive<i16>>| ranges.into_iter().collect()),
             _: space1,
             authors: rest.map(String::from),
         }
     }.parse_next(input)
 }
 
-fn year_range(input: &mut &str) -> ModalResult<RangeInclusive<i32>> {
+fn year_range(input: &mut &str) -> ModalResult<RangeInclusive<i16>> {
     let (start, end) = (
         digit1.parse_to(),
         opt(preceded((space0, '-', space0), digit1.parse_to())),

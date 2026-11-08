@@ -1,5 +1,5 @@
 use cargo_metadata::semver::Version;
-use chrono::naive::NaiveDate;
+use jiff::civil::Date;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
@@ -93,7 +93,7 @@ impl fmt::Display for ChangelogSection {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case", tag = "type")]
 pub(crate) enum ChangelogHeader {
-    Released { version: Version, date: NaiveDate },
+    Released { version: Version, date: Date },
     InProgress { version: Version },
     InDevelopment,
 }
@@ -190,7 +190,7 @@ fn versioned_header(input: &mut &str) -> ModalResult<ChangelogHeader> {
     }
 }
 
-fn ymd(input: &mut &str) -> ModalResult<NaiveDate> {
+fn ymd(input: &mut &str) -> ModalResult<Date> {
     (
         take_while(4, AsChar::is_dec_digit),
         '-',
@@ -199,7 +199,7 @@ fn ymd(input: &mut &str) -> ModalResult<NaiveDate> {
         take_while(2, AsChar::is_dec_digit),
     )
         .take()
-        .try_map(|s: &str| s.parse::<NaiveDate>())
+        .try_map(|s: &str| s.parse::<Date>())
         .parse_next(input)
 }
 
