@@ -204,7 +204,7 @@ impl Package {
 
     pub(crate) fn update_license_years<I>(&self, years: I) -> anyhow::Result<()>
     where
-        I: IntoIterator<Item = i32>,
+        I: IntoIterator<Item = i16>,
     {
         let mut years = Some(years);
         let inp = InPlace::new(self.path().join("LICENSE"))
@@ -259,7 +259,7 @@ impl HasReadme for Package {
 pub(crate) struct BeginDev<'a> {
     package: &'a Package,
     pkgset: &'a PackageSet,
-    latest_release: Option<(Version, chrono::NaiveDate)>,
+    latest_release: Option<(Version, jiff::civil::Date)>,
     quiet: bool,
     force: bool,
 }
@@ -275,7 +275,7 @@ impl<'a> BeginDev<'a> {
         }
     }
 
-    pub(crate) fn latest_release(mut self, version: Version, date: chrono::NaiveDate) -> Self {
+    pub(crate) fn latest_release(mut self, version: Version, date: jiff::civil::Date) -> Self {
         self.latest_release = Some((version, date));
         self
     }
