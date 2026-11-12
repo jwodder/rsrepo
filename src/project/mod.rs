@@ -38,17 +38,17 @@ impl Project {
         let (projtype, flavor) = match data {
             Cargo::Package { package } => {
                 let PackageTbl { name, flavor } = package;
-                let mut flavor = flavor.map(Flavor::from).unwrap_or_default();
+                let mut flavor = flavor.map_or_default(Flavor::from);
                 flavor.name = Some(name);
                 (ProjectType::Package, flavor)
             }
             Cargo::Workspace { workspace, .. } => (
                 ProjectType::Workspace,
-                workspace.package.map(Flavor::from).unwrap_or_default(),
+                workspace.package.map_or_default(Flavor::from),
             ),
             Cargo::Virtual { workspace } => (
                 ProjectType::VirtualWorkspace,
-                workspace.package.map(Flavor::from).unwrap_or_default(),
+                workspace.package.map_or_default(Flavor::from),
             ),
         };
         Ok(Project {
