@@ -23,7 +23,7 @@ use winnow::{
 };
 
 pub(crate) fn this_year() -> i16 {
-    jiff::Zoned::now().year()
+    jiff::ZonedDateTime::now().year()
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

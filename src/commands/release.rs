@@ -83,7 +83,7 @@ impl Release {
             package.set_version_and_bump_dependents(&new_version, &pkgset)?;
         }
 
-        let release_date = jiff::Zoned::now().date();
+        let release_date = jiff::ZonedDateTime::now().date();
         let chlog_content;
         if let Some(mut chlog) = chlog_file.get()? {
             log::info!("Updating CHANGELOG.md ...");
